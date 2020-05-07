@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion : "2010-09-09"
+
+#   --------------------------------------------------------
+#   Version History
+#
+#   v1.0  J. Vandenbergen   Initial Version
+#   --------------------------------------------------------
+
+Description: >-
+  v1.0. Script to create policy and group for CloudBroker in the Master account to allow STS assumeRole
+
+Resources:
+  rCloudBrokerGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: ECCloudBrokerGroup
+      Policies: 
+        - 
+          PolicyName: CloudBrokerXaccountPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - 
+                Effect: Allow
+                Action:
+                  - "sts:AssumeRole"
+                Resource: 
+                  - "arn:aws:iam::*:role/CloudBrokerAccountAccessRole"
+                  - "arn:aws:iam::*:role/OrganizationAccountAccessRole"

@@ -1,0 +1,162 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: >-
+  v1.0. Enables AWS Config and AWS Security Hub in the wished account
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Recorder Configuration
+        Parameters:
+          - AllSupported
+          - IncludeGlobalResourceTypes
+          - ResourceTypes
+      - Label:
+          default: Delivery Channel Configuration
+        Parameters:
+          - DeliveryChannelName
+          - Frequency
+    ParameterLabels:
+      AllSupported:
+        default: Support all resource types
+      IncludeGlobalResourceTypes:
+        default: Include global resource types
+      ResourceTypes:
+        default: List of resource types if not all supported
+      DeliveryChannelName:
+        default: Configuration delivery channel name
+      Frequency:
+        default: Snapshot delivery frequency
+
+Parameters:
+
+  SecLogMasterAccountId:
+    Type: String
+    Description: Seclog master account ID
+
+  AllSupported:
+    Type: String
+    Default: True
+    Description: Indicates whether to record all supported resource types.
+    AllowedValues:
+      - True
+      - False
+
+  IncludeGlobalResourceTypes:
+    Type: String
+    Default: False
+    Description: Indicates whether AWS Config records all supported global resource types.
+    AllowedValues:
+      - True
+      - False
+
+  ResourceTypes:
+    Type: CommaDelimitedList
+    Description: A list of valid AWS resource types to include in this recording group, such as AWS::EC2::Instance or AWS::CloudTrail::Trail.
+    Default: ""
+
+  DeliveryChannelName:
+    Type: String
+    Default: lz-config-logging-channel
+    Description: The name of the delivery channel.
+
+  Frequency:
+    Type: String
+    Default: 6hours
+    Description: The frequency with which AWS Config delivers configuration snapshots.
+    AllowedValues:
+      - 1hour
+      - 3hours
+      - 6hours
+      - 12hours
+      - 24hours
+
+Conditions:
+  IsAllSupported: !Equals
+    - !Ref AllSupported
+    - True
+  IsGeneratedDeliveryChannelName: !Equals
+    - !Ref DeliveryChannelName
+    - ""
+
+Mappings:
+  Settings:
+    FrequencyMap:
+      1hour   : One_Hour
+      3hours  : Three_Hours
+      6hours  : Six_Hours
+      12hours : Twelve_Hours
+      24hours : TwentyFour_Hours
+
+Resources:
+
+  ConfigRecorderRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - config.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSConfigRole
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 's3:GetBucketAcl'
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:s3:::'
+                    - !Sub "config-logs-${SecLogMasterAccountId}-do-not-delete"
+              - Effect: Allow
+                Action: 's3:PutObject'
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:s3:::'
+                    - !Sub "config-logs-${SecLogMasterAccountId}-do-not-delete"
+                    - /AWSLogs/*
+                Condition:
+                  StringEquals:
+                    's3:x-amz-acl': bucket-owner-full-control
+              - Effect: Allow
+                Action: 'config:Put*'
+                Resource: '*'
+
+  ConfigRecorder:
+    Type: AWS::Config::ConfigurationRecorder
+    Properties:
+      RoleARN: !GetAtt ConfigRecorderRole.Arn
+      RecordingGroup:
+        AllSupported: !Ref AllSupported
+        IncludeGlobalResourceTypes: !Ref IncludeGlobalResourceTypes
+        ResourceTypes: !If
+          - IsAllSupported
+          - !Ref AWS::NoValue
+          - !Ref ResourceTypes
+
+  ConfigDeliveryChannel:
+    Type: AWS::Config::DeliveryChannel
+    Properties:
+      Name: !If
+        - IsGeneratedDeliveryChannelName
+        - !Ref AWS::NoValue
+        - !Ref DeliveryChannelName
+      ConfigSnapshotDeliveryProperties:
+        DeliveryFrequency: !FindInMap
+          - Settings
+          - FrequencyMap
+          - !Ref Frequency
+      S3BucketName: !Sub "config-logs-${SecLogMasterAccountId}-do-not-delete"
+
+  rSecHub:
+    Type: "AWS::SecurityHub::Hub"
+    DependsOn: ConfigRecorder

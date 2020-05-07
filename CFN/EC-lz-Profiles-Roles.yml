@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion : "2010-09-09"
+
+#   --------------------------------------------------------
+#   Version History
+#
+#   v1.0  Alexandre Levret   Initial Version
+#   --------------------------------------------------------
+
+Description: >-
+  v1.0. Script to create three roles (ReadOnly, FullAccess and PowerUser) for AWS accounts within a Secure Landing Zone solution
+
+Parameters:
+  AccountType:
+    Type: String
+    Default: Client
+    AllowedValues:
+      - Client
+      - SecLog
+    Description: Type of the account
+
+  IdentityAccount:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /org/member/SecLogMasterAccountId
+    Description: SecLog ID
+
+  EnableMFA:
+    Type: String
+    Default: false
+    AllowedValues:
+      - true
+      - false
+    Description: Disables MFA by default
+
+Resources:
+  SECLZReadOnly:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "SECLZ-${AccountType}-ReadOnly"
+      Description: ReadOnly role
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/ReadOnlyAccess
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              AWS: !Sub "arn:aws:iam::${IdentityAccount}:root"
+            Action:
+              - "sts:AssumeRole"
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent:
+                  Ref: EnableMFA
+      Path: "/"
+
+  SECLZAdminAccess:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "SECLZ-${AccountType}-Admin"
+      Description: Admin role
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              AWS: !Sub "arn:aws:iam::${IdentityAccount}:root"
+            Action:
+              - "sts:AssumeRole"
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent:
+                  Ref: EnableMFA
+      Path: "/"
+
+  SECLZPowerUser:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "SECLZ-${AccountType}-PowerUser"
+      Description: PowerUser role
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/PowerUserAccess
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              AWS: !Sub "arn:aws:iam::${IdentityAccount}:root"
+            Action:
+              - "sts:AssumeRole"
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent:
+                  Ref: EnableMFA
+      Path: "/"

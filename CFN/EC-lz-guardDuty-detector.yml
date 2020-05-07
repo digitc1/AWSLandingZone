@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+#   --------------------------------------------------------
+#   Version History
+#
+#   v1.0  J. Vandenbergen   Initial Version
+#   --------------------------------------------------------
+
+Description: >-
+  v1.0. Script to create Guardduty detector
+
+Metadata: 
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Guardduty"
+        Parameters:
+          - GuardDutyMasterId
+
+Parameters:
+  SNSNotificationTopic:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /org/member/SecLog_sns_arn
+    Description: "Local Admin SNS Topic for Landing Zone"
+  SecLogMasterAccountId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /org/member/SecLogMasterAccountId
+    Description: "Contains account id of SecLogMaster"
+
+Conditions:
+  IsSecLogMasterAccount: !Equals
+    - !Ref AWS::AccountId
+    - !Ref SecLogMasterAccountId
+
+Resources:
+  GuardDutyDetector:
+    Type: AWS::GuardDuty::Detector
+    Properties:
+        Enable: true
+        FindingPublishingFrequency: FIFTEEN_MINUTES
+
+  # GuardDuty CloudWatch Event - For GuardDuty
+  GuardDutyEvent: 
+    Type: AWS::Events::Rule
+    Condition: IsSecLogMasterAccount
+    Properties: 
+      Name: GuardDuty-Event
+      Description: "GuardDuty Event Handler"
+      EventPattern: 
+        source:
+        - aws.guardduty
+      State: ENABLED
+      Targets: 
+        - 
+          Arn: !Ref SNSNotificationTopic
+          Id: "GuardDutySNSTopic-SecLog"

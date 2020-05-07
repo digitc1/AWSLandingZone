@@ -1,0 +1,184 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  v1.0. Creates a Lambda function and trigger in the master account
+
+  Execution:
+    - Create this CloudFormation stack only in the Master account
+
+Parameters:
+  StackSetName:
+    Type: String
+    Default: AB-SECLZ-AccountBaseline
+  StackSetHomeRegion:
+    Description: Region where the baseline stack set is deployed
+    Type: String
+    Default: us-east-1
+  StackSetDeploymentRegions:
+    Description: Comma separated list of regions where the stack instances of the
+      stack set is deployed to.
+    Type: String
+    Default: eu-west-1
+  StackSetExecutionRole:
+    Type: String
+    Default: OrganizationAccountAccessRole
+Resources:
+  rLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: NewAccountToStackSetLambdaRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Description: Role for Lambda function that is responsible for adding newly created
+        accounts to Account baseline StackSet
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+      - PolicyName: root
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: DescribeAccountStatus
+            Effect: Allow
+            Action: organizations:DescribeCreateAccountStatus
+            Resource: "*"
+          - Sid: UseControlTowerRoleForStackSet
+            Effect: Allow
+            Action: iam:PassRole
+            Resource:
+              Fn::Sub: arn:aws:iam::${AWS::AccountId}:role/service-role/${StackSetExecutionRole}
+          - Sid: AddStackSetInstances
+            Effect: Allow
+            Action: cloudformation:CreateStackInstances
+            Resource:
+              Fn::Sub: arn:aws:cloudformation:${StackSetHomeRegion}:${AWS::AccountId}:stackset/${StackSetName}:*
+      Tags: []
+  Lambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+           import json
+           import boto3
+           import time
+           import os
+ 
+           stackset_name = os.environ['STACK_SET_NAME']
+           stackset_execution_role = os.environ['STACK_SET_EXECUTION_ROLE']
+           stackset_home_region = os.environ['STACK_SET_HOME_REGION']
+           regions_to_deploy = os.environ['STACK_SET_DEPLOYMENT_REGIONS'].split(',')
+           
+           cf = boto3.client('cloudformation', stackset_home_region)
+           org = boto3.client('organizations')
+ 
+           def poll_for_account_id(create_account_request_id):
+               response = org.describe_create_account_status(CreateAccountRequestId=create_account_request_id)
+               State = response.get("CreateAccountStatus").get("State")
+               if State == "IN_PROGRESS":
+                   time.sleep(5)
+                   return poll_for_account_id(create_account_request_id)
+               elif State == "FAILED":
+                   raise Exception("Failed to create account")
+               else:
+                   return response.get("CreateAccountStatus").get("AccountId")
+ 
+ 
+           def lambda_handler(event, context):
+               request_id = event.get('detail').get("responseElements").get("createAccountStatus").get("id")
+               account_id = poll_for_account_id(request_id)
+ 
+           print("Adding accountId: {account_id} to {stackset_name}")
+       
+           cf.create_stack_instances(
+               StackSetName=stackset_name,
+               Accounts=[account_id],
+               Regions=regions_to_deploy
+           )
+      Description: Lambda function that is responsible for adding newly created accounts to account baseline StackSet
+      FunctionName: AddNewAccountToStackSetFunction
+      Handler: 'index.lambda_handler'
+      Environment:
+        Variables:
+          STACK_SET_NAME:
+            Ref: StackSetName
+          STACK_SET_HOME_REGION:
+            Ref: StackSetHomeRegion
+          STACK_SET_DEPLOYMENT_REGIONS:
+            Ref: StackSetDeploymentRegions
+          STACK_SET_EXECUTION_ROLE:
+            Ref: StackSetExecutionRole
+      MemorySize: 128
+      Timeout: 900
+      Role:
+        Fn::GetAtt:
+        - rLambdaRole
+        - Arn
+      Runtime: python3.7
+      Tags: []
+  EventRuleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: events.amazonaws.com
+          Action: sts:AssumeRole
+      Description: Role that allows rule to trigger Lambda function that is responsible
+        for adding newly created accounts to Account baseline StackSet
+      Policies:
+      - PolicyName: root
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action: lambda:InvokeFunction
+            Resource:
+              Fn::GetAtt:
+              - Lambda
+              - Arn
+  EventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Event rule that triggers Lambda function when new accounts have
+        been created
+      EventPattern:
+        source:
+        - aws.organizations
+        detail-type:
+        - AWS API Call via CloudTrail
+        detail:
+          eventSource:
+          - organizations.amazonaws.com
+          eventName:
+          - CreateAccount
+      Name: NewAccountCreatedEvent
+      RoleArn:
+        Fn::GetAtt:
+        - EventRuleRole
+        - Arn
+      State: ENABLED
+      Targets:
+      - Arn:
+          Fn::GetAtt:
+          - Lambda
+          - Arn
+        Id: UpdateBaselineStackSetLambdaFunction
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Ref: Lambda
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+        - EventRule
+        - Arn
+

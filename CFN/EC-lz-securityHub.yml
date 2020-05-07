@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+#   --------------------------------------------------------
+#   Version History
+#
+#   v1.0  J. Vandenbergen   Initial Version
+#   --------------------------------------------------------
+
+Description: >-
+  v1.0. Script to create SecurityHub in SecLog master accountS
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Tags"
+        Parameters:
+          - owner
+          - project
+          - environment
+          - criticity
+          - dataClassification
+
+Parameters:
+    owner:
+        Description: "Tag: owner. Creator or responsible for the project"
+        Type: String
+        Default: ''
+
+    environment:
+        Description: "Tag: environment. Environnement of the resource (Dev, test, prod etc.)"
+        Type: String
+        Default: ''
+
+    criticity:
+        Description: "Tag: criticity. Criticity of the application"
+        Type: String
+        Default: ''
+
+    project:
+        Description: "Tag: project. Name of the application or project"
+        Type: String
+        Default: 'Landing Zone'
+
+    dataClassification:
+        Description: "Tag: data-classification. Level of criticality of the stored data"
+        Type: String
+        Default: ''
+
+Resources:
+  rSecHubWithTags:
+    Type: "AWS::SecurityHub::Hub"
+    Properties:
+      Tags:
+        "project": !Ref project
+        "owner": !Ref owner
+        "environment": !Ref environment
+        "criticity": !Ref criticity
+        "dataClassification": !Ref dataClassification
+
+Outputs:
+  HubArn:
+    Value: !Ref rSecHubWithTags

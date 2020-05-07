@@ -1,0 +1,292 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+#   --------------------------------------------------------
+#   Version History
+#
+#   v1.0    J. Vandenbergen   Initial Version
+#   --------------------------------------------------------
+
+Description: >-
+    v1.0. Creates S3 buckets for CloudTrail, Config and Access Logs.
+    Enables versioning for CloudTrail and Config buckets.
+    CloudTrail and Config Buckets push access logs to Access Logs Bucket.
+    Script to be run in the SecLog-Master account
+    StackName should contain EC-Customer
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Tags"
+        Parameters:
+          - owner
+          - project
+          - environment
+          - criticity
+          - dataClassification
+
+Parameters:
+    owner:
+        Description: "Tag: owner. Creator or responsible for the project"
+        Type: String
+        Default: ''
+
+    environment:
+        Description: "Tag: environment. Environnement of the resource (Dev, test, prod etc.)"
+        Type: String
+        Default: ''
+
+    criticity:
+        Description: "Tag: criticity. Criticity of the application"
+        Type: String
+        Default: ''
+
+    project:
+        Description: "Tag: project. Name of the application or project"
+        Type: String
+        Default: 'Landing Zone'
+
+    dataClassification:
+        Description: "Tag: data-classification. Level of criticality of the stored data"
+        Type: String
+        Default: ''
+
+Mappings: {}
+
+Resources:
+
+    #   -------------------
+    #   CloudTrail Bucket
+    #   -------------------
+
+    CloudTrailBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+            BucketName:
+                Fn::Join:
+                - ""
+                - - "cloudtrail-logs-"
+                  - Ref: AWS::AccountId
+                  - "-do-not-delete"
+            PublicAccessBlockConfiguration: 
+              BlockPublicAcls: true
+              BlockPublicPolicy: true
+              IgnorePublicAcls: true
+              RestrictPublicBuckets: true
+            LifecycleConfiguration:
+                Rules:
+                 - 
+                    Status: Enabled
+                    ExpirationInDays: 425
+                    NoncurrentVersionExpirationInDays: 425
+                    Transitions:
+                     - 
+                        TransitionInDays: 60
+                        StorageClass: GLACIER
+                     - 
+                        TransitionInDays: 30
+                        StorageClass: STANDARD_IA
+
+                    NoncurrentVersionTransitions:
+                     - 
+                        TransitionInDays: 60
+                        StorageClass: GLACIER
+                     - 
+                        TransitionInDays: 30
+                        StorageClass: STANDARD_IA
+
+            LoggingConfiguration:
+                DestinationBucketName: !Ref AccessLogsBucket
+            VersioningConfiguration:
+                Status: Enabled
+            Tags:
+            - Key: owner
+              Value: !Ref owner
+            - Key: environment
+              Value: !Ref environment
+            - Key: criticity
+              Value: !Ref criticity
+            - Key: project
+              Value: !Ref project
+            - Key: data-classification
+              Value: !Ref dataClassification
+
+    CloudTrailBucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+            Bucket:
+                Ref: CloudTrailBucket
+            PolicyDocument:
+                Statement: 
+                 - 
+                   Sid: "CloudTrailBucketPolicyDelivery1"
+                   Effect: "Allow"
+                   Principal:
+                    Service:
+                     - "cloudtrail.amazonaws.com"
+                   Action:
+                    - "s3:GetBucketAcl"
+                   Resource: !GetAtt CloudTrailBucket.Arn
+
+                 - 
+                   Sid: "CloudTrailBucketPolicyDelivery2"
+                   Effect: "Allow"
+                   Principal:
+                    Service:
+                     - "cloudtrail.amazonaws.com"
+                   Action:
+                    - "s3:PutObject"
+                   Resource: 
+                     Fn::Join: 
+                       - ""
+                       - 
+                         - !GetAtt CloudTrailBucket.Arn
+                         - "/*"
+                   Condition:
+                    StringEquals:
+                        "s3:x-amz-acl": "bucket-owner-full-control"
+
+
+    #   -------------------
+    #   Config Bucket
+    #   -------------------
+
+    ConfigBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+            BucketName:
+                Fn::Join:
+                - ""
+                - - "config-logs-"
+                  - Ref: AWS::AccountId
+                  - "-do-not-delete"
+            LifecycleConfiguration:
+                Rules:
+                 - 
+                    Status: Enabled
+                    ExpirationInDays: 425
+                    NoncurrentVersionExpirationInDays: 425
+                    Transitions:
+                     - 
+                        TransitionInDays: 60
+                        StorageClass: GLACIER
+                     - 
+                        TransitionInDays: 30
+                        StorageClass: STANDARD_IA
+
+                    NoncurrentVersionTransitions:
+                     - 
+                        TransitionInDays: 60
+                        StorageClass: GLACIER
+                     - 
+                        TransitionInDays: 30
+                        StorageClass: STANDARD_IA
+            LoggingConfiguration:
+                DestinationBucketName: !Ref AccessLogsBucket
+            VersioningConfiguration:
+                Status: Enabled
+            PublicAccessBlockConfiguration: 
+              BlockPublicAcls: true
+              BlockPublicPolicy: true
+              IgnorePublicAcls: true
+              RestrictPublicBuckets: true
+            Tags:
+            - Key: owner
+              Value: !Ref owner
+            - Key: environment
+              Value: !Ref environment
+            - Key: criticity
+              Value: !Ref criticity
+            - Key: project
+              Value: !Ref project
+            - Key: data-classification
+              Value: !Ref dataClassification
+
+    ConfigBucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+            Bucket:
+                Ref: ConfigBucket
+            PolicyDocument:
+                Statement: 
+                 - 
+                   Sid: "AWSConfigBucketPermissionsCheck"
+                   Effect: "Allow"
+                   Principal:
+                    Service:
+                     - "config.amazonaws.com"
+                   Action:
+                    - "s3:GetBucketAcl"
+                   Resource: !GetAtt ConfigBucket.Arn
+
+                 - 
+                   Sid: "AWSConfigBucketDelivery"
+                   Effect: "Allow"
+                   Principal:
+                    Service:
+                     - "config.amazonaws.com"
+                   Action:
+                    - "s3:PutObject"
+                   Resource: 
+                     Fn::Join: 
+                       - ""
+                       - 
+                         - !GetAtt ConfigBucket.Arn
+                         - "/*"
+                   Condition:
+                    StringEquals:
+                        "s3:x-amz-acl": "bucket-owner-full-control"
+
+
+    #   -------------------
+    #   AccessLogs Bucket
+    #   -------------------
+
+    AccessLogsBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+          BucketName:
+            Fn::Join:
+            - ""
+            - - "access-logs-"
+              - Ref: AWS::AccountId
+              - "-do-not-delete"
+          AccessControl: LogDeliveryWrite
+          Tags:
+          - Key: owner
+            Value: !Ref owner
+          - Key: environment
+            Value: !Ref environment
+          - Key: criticity
+            Value: !Ref criticity
+          - Key: project
+            Value: !Ref project
+          - Key: data-classification
+            Value: !Ref dataClassification
+          PublicAccessBlockConfiguration: 
+            BlockPublicAcls: true
+            BlockPublicPolicy: true
+            IgnorePublicAcls: true
+            RestrictPublicBuckets: true
+
+Outputs:
+  ConfigBucket:
+    Description: Bucket for storing config-logs
+    Value: !Ref ConfigBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-ConfigBucket"
+
+  CloudTrailBucket:
+    Description: Bucket for storing cloudtrail-logs
+    Value: !Ref CloudTrailBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-CloudTrailBucket"
+
+  AccessLogsBucket:
+    Description: Bucket for storing access-logs
+    Value: !Ref AccessLogsBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-AccessLogsBucket"
+
+

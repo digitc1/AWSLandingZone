@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion : "2010-09-09"
+
+#   --------------------------------------------------------
+#   Version History
+#
+#   v1.0  J. Vandenbergen   Initial Version
+#   --------------------------------------------------------
+
+Description: >-
+  v1.0. Script to create admin role requiring MFA to trust a user in the master account
+
+Parameters:
+  MasterAccount:
+    Type: Number
+    Description: Master account ID
+    Default: "123456789011"
+    ConstraintDescription: "the ID must be 12 numbers"
+
+Resources:
+  rCloudBrokerAdminRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Admin role linked to master account user
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              AWS: !Sub "arn:aws:iam::${MasterAccount}:root"
+            Action:
+              - "sts:AssumeRole"
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent: true
+      RoleName: CloudBrokerAccountAccessRole
+      Path: "/"
+      Tags:
+        - Key: Name
+          Value: CloudBrokerAdmin

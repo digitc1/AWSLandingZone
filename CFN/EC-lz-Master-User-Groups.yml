@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion : "2010-09-09"
+
+#   --------------------------------------------------------
+#   Version History
+#
+#   v1.0  J. Vandenbergen   Initial Version
+#   --------------------------------------------------------
+
+Description: >-
+  v1.0. Script to create policies and groups for SECLZ users in the Master account to allow STS assumeRole
+
+Resources:
+  rDeveloperGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: SECLZ-Developer
+      Policies: 
+        - 
+          PolicyName: SECLZ-DeveloperPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - 
+                Effect: Allow
+                Action:
+                  - "sts:AssumeRole"
+                Resource: 
+                  - "arn:aws:iam::*:role/SECLZ-SecLog-ReadOnly"
+                  - "arn:aws:iam::*:role/SECLZ-Client-PowerUser"
+  rAuditGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: SECLZ-Audit
+      Policies: 
+        - 
+          PolicyName: SECLZ-AuditPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - 
+                Effect: Allow
+                Action:
+                  - "sts:AssumeRole"
+                Resource: 
+                  - "arn:aws:iam::*:role/SECLZ-SecLog-ReadOnly"
+                  - "arn:aws:iam::*:role/SECLZ-Client-ReadOnly"
+  rAdminGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: SECLZ-Admin
+      Policies: 
+        - 
+          PolicyName: SECLZ-AdminPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - 
+                Effect: Allow
+                Action:
+                  - "sts:AssumeRole"
+                Resource: 
+                  - "arn:aws:iam::*:role/SECLZ-SecLog-ReadOnly"
+                  - "arn:aws:iam::*:role/SECLZ-Client-Admin"
+  rSecLogAdminGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: SECLZ-SecLogAdmin
+      Policies: 
+        - 
+          PolicyName: SECLZ-SecLogPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - 
+                Effect: Allow
+                Action:
+                  - "sts:AssumeRole"
+                Resource: 
+                  - "arn:aws:iam::*:role/SECLZ-SecLog-Admin"
