@@ -7,16 +7,20 @@
 #       - Setup cloudtrail, config and creates an SNS topic
 #       - Enables Guardduty and Guardduty notifications to SNS
 #       - Enables Security Hub
+#       - Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub
 #       - Deploys CIS notifications for Cloudtrail based on cloudwatch log metric filters
 #       - Sets password policy for IAM
+#       - Sets the Firehose subscription log destination
 #
 #       Usage
-#       $ ./EC-Configure-SecLog-Account.sh ORG_PROFILE E-SECLOG_PROFILE SECLOG_NOTIF_EMAIL
+#       $  ./EC-Configure-SecLog-Account.sh ORG_PROFILE SECLOG_PROFILE SPLUNK_PROFILE SECLOG_NOTIF_EMAIL LOG_DESTINATION_DG
 #
 #   Version History
 #
 #   v1.0    J. Vandenbergen   Initial Version
 #   v2.0    L. Leonard        Version dedicated to EC-BROKER-IAM
+#   v2.1    J. Silva          Add Cloudwatch Event Rules to Cloudwatch logs for Security Hub 
+#   v2.2    J. Silva          Add Splunk log destinations for Cloudwatch logs
 #   --------------------------------------------------------
 
 #   --------------------
@@ -24,7 +28,9 @@
 #       --------------------
 ORG_PROFILE=$1
 SECLOG_PROFILE=$2
-SECLOG_NOTIF_EMAIL=$3
+SPLUNK_PROFILE=$3
+ACC_EMAIL_SecNotifications SECLOG_NOTIF_EMAIL=$4
+LOG_DESTINATION_NAME=$5
 
 # Script Spinner waiting for cloudformation completion
 export i=1
@@ -47,16 +53,20 @@ CFN_STACKSET_EXEC_ROLE='CFN/AWSCloudFormationStackSetExecutionRole.yml'
 CFN_STACKSET_CONFIG_SECHUB_GLOBAL='CFN/EC-lz-Config-SecurityHub-all-regions.yml'
 CFN_USER_GROUP='CFN/EC-lz-Master-User-Groups.yml'
 CFN_PROFILES_ROLES='CFN/EC-lz-Profiles-Roles.yml'
+CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
 
 
 #   ---------------------
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 ORG_PROFILE E-SECLOG_PROFILE SECLOG_NOTIF_EMAIL" >&2
+    echo "Usage: $0 ORG_PROFILE E-SECLOG_PROFILE SPLUNK_PROFILE SECLOG_NOTIF_EMAIL LOG_DESTINATION_DG" >&2
     echo ""
-    echo "   Provide an account name of the SecLog account to configure"
-    echo "   and e-mail address for the security notifications."
+    echo "   Provide the name of the main account associated with the SecLog account"
+    echo "   the account name of the SecLog account to configure"
+    echo "   the C2 Splunk account profile to be used for log shipping"
+    echo "   an e-mail address for the security notifications and the"
+    echo "   DG Name for the destination log to Splunk."
     echo ""
     exit 1
 }
@@ -74,12 +84,27 @@ configure_seclog() {
     # Getting SecLog Account Id
     SECLOG_ACCOUNT_ID=`aws --profile $SECLOG_PROFILE sts get-caller-identity --query 'Account' --output text`
 
+    # Getting C2 Splunk Account Id
+    SPLUNK_ACCOUNT_ID=`aws --profile $SPLUNK_PROFILE sts get-caller-identity --query 'Account' --output text`
+
+    # Getting available log destinations from 
+    DESCRIBE_DESTINATIONS=`aws --profile $SPLUNK_PROFILE  logs describe-destinations`
+
+    # Extract select Log destination details
+    FIREHOSE_ARN=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$LOG_DESTINATION_NAME'")) .arn'`
+    FIREHOSE_DESTINATION_NAME=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$LOG_DESTINATION_NAME'")) .destinationName'`
+    FIREHOSE_ACCESS_POLICY=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$LOG_DESTINATION_NAME'")) .accessPolicy'`
+
+
     echo ""
     echo "- This script will configure a the SecLog account with following settings:"
     echo "   ----------------------------------------------------"
     echo "     SecLog Account to be configured:  $SECLOG_PROFILE"
     echo "     SecLog Account Id:                $SECLOG_ACCOUNT_ID"
+    echo "     Splunk Account Id:                $SPLUNK_ACCOUNT_ID"
     echo "     Security Notifications e-mail:    $SECLOG_NOTIF_EMAIL"
+    echo "     Log Destination Name:             $FIREHOSE_DESTINATION_NAME"
+    echo "     Log Destination ARN:              $FIREHOSE_ARN"
     echo "     in AWS Region:                    $AWS_REGION"
     echo "   ----------------------------------------------------"
     echo ""
@@ -204,6 +229,26 @@ configure_seclog() {
 
     sleep 5
 
+    #	------------------------------------
+    #	 Creates a policy that defines write access to the log destination on the C2 SPLUNK account
+    #	------------------------------------
+
+    echo ""
+    echo "- Creates a policy that defines write access to the log destination"
+    echo "--------------------------------------------------"
+    echo ""
+
+    echo $FIREHOSE_ACCESS_POLICY | jq '.Statement[0].Principal.AWS = (.Statement[0].Principal.AWS | if type == "array" then . += ["'$SECLOG_ACCOUNT_ID'", "'$ORG_ACCOUNT_ID'"] else [.,"'$SECLOG_ACCOUNT_ID'", "'$ORG_ACCOUNT_ID'"] end)' > ./SecLogAccessPolicy.json  
+
+    aws logs put-destination-policy \
+    --destination-name $FIREHOSE_DESTINATION_NAME \
+    --profile $SPLUNK_PROFILE \
+    --access-policy file://./SecLogAccessPolicy.json
+
+    rm -f ./SecLogAccessPolicy.json
+
+    sleep 5
+
     #   ------------------------------------
     #   Creating config, cloudtrail, SNS notifications
     #   ------------------------------------
@@ -220,6 +265,7 @@ configure_seclog() {
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $SECLOG_PROFILE
+    --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN
 
     StackName="SECLZ-config-cloudtrail-SNS"
     aws --profile $SECLOG_PROFILE cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
@@ -242,7 +288,9 @@ configure_seclog() {
     --stack-name 'SECLZ-Guardduty-detector' \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
     --enable-termination-protection \
+    --capabilities CAPABILITY_IAM \
     --profile $SECLOG_PROFILE
+    --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN
 
     sleep 5
 
@@ -281,6 +329,30 @@ configure_seclog() {
     while [ `aws --profile $SECLOG_PROFILE cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $SECLOG_PROFILE cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
+	#   ------------------------------------
+	#   Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub
+	#   ------------------------------------
+
+
+	echo ""
+	echo "- Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub"
+	echo "---------------------------------------"
+	echo ""
+
+	aws cloudformation create-stack \
+	--stack-name 'SECLZ-CloudwatchLogs-SecurityHub' \
+	--template-body file://$CFN_SECURITYHUB_LOG_TEMPLATE \
+	--enable-termination-protection \
+    --capabilities CAPABILITY_IAM \
+	--profile $SECLOG_PROFILE \
+    --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN 
+
+	StackName="SECLZ-CloudwatchLogs-SecurityHub"
+	aws --profile $SECLOG_PROFILE cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+	while [ `aws --profile $SECLOG_PROFILE cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` = "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+	aws --profile $SECLOG_PROFILE cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+
     #   ------------------------------------
     #   Enable Config and SecurityHub globally using stacksets
     #   ------------------------------------
@@ -309,8 +381,14 @@ configure_seclog() {
 # on the commandline and start configurations
 # ---------------------------------------------
 
+# Check to validate number of parameters entered
+if [ "$#" -ne 5 ]; then
+    display_help
+    exit 0
+fi
+
 # Simple check to see if 3rd argument looks like an e-mail address "@"
-mail=`echo $3 | sed -e s/.*@.*/@/g`
+mail=`echo $4 | sed -e s/.*@.*/@/g`
 
 while :
 do

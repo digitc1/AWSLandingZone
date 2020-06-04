@@ -8,14 +8,15 @@ AWSTemplateFormatVersion: '2010-09-09'
 #   --------------------------------------------------------
 
 Description: >-
+    v1.2  J. Silva          Updated LogGroupName to be compliant with naming convention
     v1.1. AWS CloudTrail API Activity Alarm Template for CloudWatch Logs
 
 
 Parameters:
   LogGroupName:
     Type: String
-    Default: CloudTrail/Landing-Zone-Logs
-    Description: Enter CloudWatch Logs log group name. Default is CloudTrail/DefaultLogGroup
+    Default: '/aws/cloudtrail'
+    Description: Enter CloudWatch Logs log group name. Default is '/aws/cloudtrail'
   EnableSecurityGroupChangeAlarm:
     Type: String
     Description: "Enable alarm for security group changes?"

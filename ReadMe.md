@@ -32,12 +32,15 @@ $ ./EC-Create-Account.sh D3_seclog D3_seclog@ec.europa.eu
 ### Configure the SecLog account
 
 To configure the SecLog account that you just created, we'll need to run the "EC-Configure-SecLog-Account.sh" script by adding two parameters:
-- The name of the SecLog account as used in the profile in ".aws/config" (for example 'D3_seclog')
-- The email address used for security notifications (for example 'D3-SecNotif@ec.europa.eu')
+- The name of the **SecLog account** as used in the profile in ".aws/config" (for example 'D3_seclog')
+- The name of the **organisation account** as used in the profile in ".aws/config" (for example 'D3_Acc1')
+- The name of the **C2 Splunk account** as used in the profile in ".aws/config" (for example 'EC_DIGIT_C2-SPLUNK')
+- The **email address** used for security notifications (for example 'D3-SecNotif@ec.europa.eu')
+- **Log destination name** It should be the name of the DG of the firehose log destination (i.e. 'dgtest'). Note that this value requires resource provisioning for Splunk so please take into account that C2 may need to be contacted to check if the log destination needs to be created.
 
 Run the script
 ```
-$ ./EC-Setup-SecLog.sh D3_seclog D3-SecNotif@ec.europa.eu
+$ ./EC-Setup-SecLog.sh D3_Acc1 D3_seclog EC_DIGIT_C2-SPLUNK D3-SecNotif@ec.europa.eu dgtest
 ```
 
 
