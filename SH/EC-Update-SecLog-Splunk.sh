@@ -36,9 +36,9 @@ AWS_REGION='eu-west-1'
 ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
 
 # parameters for scripts
-CFN_LOG_TEMPLATE='CFN/EC-lz-config-cloudtrail-logging.yml'
-CFN_GUARDDUTY_DETECTOR_TEMPLATE='CFN/EC-lz-guardDuty-detector.yml'
-CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
+CFN_LOG_TEMPLATE='../CFN/EC-lz-config-cloudtrail-logging.yml'
+CFN_GUARDDUTY_DETECTOR_TEMPLATE='../CFN/EC-lz-guardDuty-detector.yml'
+CFN_SECURITYHUB_LOG_TEMPLATE='../CFN/EC-lz-config-securityhub-logging.yml'
 
 
 #   ---------------------
@@ -90,11 +90,11 @@ update_seclog() {
 
 
     #	------------------------------------
-    #	 Creates a policy that defines write access to the log destination on the C2 SPLUNK account
+    #	 Updates the policy that defines write access to the log destination on the C2 SPLUNK account
     #	------------------------------------
 
     echo ""
-    echo "- Creates a policy that defines write access to the log destination"
+    echo "- Updates the policy that defines write access to the log destination"
     echo "--------------------------------------------------"
     echo ""
 
@@ -123,7 +123,7 @@ update_seclog() {
     --stack-name 'SECLZ-config-cloudtrail-SNS' \
     --template-body file://$CFN_LOG_TEMPLATE \
     --capabilities CAPABILITY_NAMED_IAM \
-    --profile $SECLOG_PROFILE
+    --profile $SECLOG_PROFILE \
     --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN
 
     StackName="SECLZ-config-cloudtrail-SNS"
@@ -147,7 +147,7 @@ update_seclog() {
     --stack-name 'SECLZ-Guardduty-detector' \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
     --capabilities CAPABILITY_IAM \
-    --profile $SECLOG_PROFILE
+    --profile $SECLOG_PROFILE \
     --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN
 
     sleep 5

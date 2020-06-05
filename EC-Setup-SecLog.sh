@@ -264,7 +264,7 @@ configure_seclog() {
     --template-body file://$CFN_LOG_TEMPLATE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
-    --profile $SECLOG_PROFILE
+    --profile $SECLOG_PROFILE \
     --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN
 
     StackName="SECLZ-config-cloudtrail-SNS"
@@ -289,7 +289,7 @@ configure_seclog() {
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
     --enable-termination-protection \
     --capabilities CAPABILITY_IAM \
-    --profile $SECLOG_PROFILE
+    --profile $SECLOG_PROFILE \
     --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN
 
     sleep 5
