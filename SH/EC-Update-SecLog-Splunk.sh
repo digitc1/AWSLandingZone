@@ -26,8 +26,7 @@
 ORG_PROFILE=$1
 SECLOG_PROFILE=$2
 SPLUNK_PROFILE=$3
-ACC_EMAIL_SecNotifications SECLOG_NOTIF_EMAIL=$4
-LOG_DESTINATION_NAME=$5
+LOG_DESTINATION_NAME=$4
 
 # Script Spinner waiting for cloudformation completion
 export i=1
@@ -53,7 +52,7 @@ display_help() {
     exit 1
 }
 
-config_all_regions() {
+update_seclog() {
 
     # Get organizations Identity
     ORG_ACCOUNT_ID=`aws --profile $ORG_PROFILE sts get-caller-identity --query 'Account' --output text`
@@ -123,7 +122,6 @@ config_all_regions() {
     aws cloudformation update-stack \
     --stack-name 'SECLZ-config-cloudtrail-SNS' \
     --template-body file://$CFN_LOG_TEMPLATE \
-    --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $SECLOG_PROFILE
     --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN
@@ -148,7 +146,6 @@ config_all_regions() {
     aws cloudformation update-stack \
     --stack-name 'SECLZ-Guardduty-detector' \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
-    --enable-termination-protection \
     --capabilities CAPABILITY_IAM \
     --profile $SECLOG_PROFILE
     --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN

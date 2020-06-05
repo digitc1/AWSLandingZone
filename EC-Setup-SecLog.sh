@@ -29,7 +29,7 @@
 ORG_PROFILE=$1
 SECLOG_PROFILE=$2
 SPLUNK_PROFILE=$3
-ACC_EMAIL_SecNotifications SECLOG_NOTIF_EMAIL=$4
+SECLOG_NOTIF_EMAIL=$4
 LOG_DESTINATION_NAME=$5
 
 # Script Spinner waiting for cloudformation completion
