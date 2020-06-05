@@ -329,6 +329,8 @@ configure_seclog() {
     while [ `aws --profile $SECLOG_PROFILE cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $SECLOG_PROFILE cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
+    sleep 5
+    
 	#   ------------------------------------
 	#   Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub
 	#   ------------------------------------
@@ -352,6 +354,7 @@ configure_seclog() {
 	while [ `aws --profile $SECLOG_PROFILE cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` = "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
 	aws --profile $SECLOG_PROFILE cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
+    sleep 5
 
     #   ------------------------------------
     #   Enable Config and SecurityHub globally using stacksets
