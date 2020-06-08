@@ -76,13 +76,16 @@ Parameters:
     Default: Six_Hours
   CloudWatchLogsGroupName:
     Type: String
-    Default: 'CloudTrail/Landing-Zone-Logs'
+    Default: '/aws/cloudtrail'
     Description: CloudWatchLogs Group name.
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain CloudTrail log events in the CloudWatch Logs.'
     Type: Number
     Default: 90
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  FirehoseDestinationArn:
+    Type: String
+    Description: The ARN of the firehose stream aggregating the logs in the DIGIT C2 Log Aggregation Central Account
 #  AccountIdList:
 #    Type: AWS::SSM::Parameter::Value<CommaDelimitedList>
 #    Default: /org/member/ClientAccountIds
@@ -125,6 +128,12 @@ Resources:
     Properties:
       LogGroupName: !Ref CloudWatchLogsGroupName
       RetentionInDays: !Ref LogsRetentionInDays
+  SecurityHubSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Ref 'FirehoseDestinationArn'
+      FilterPattern: ''
+      LogGroupName: !Ref 'TrailLogGroup'
   TrailLogGroupRole:
     Type: AWS::IAM::Role
     Properties:
@@ -261,7 +270,7 @@ Resources:
     Type: AWS::Events::Rule
     Condition: IsSecLogMasterAccount
     Properties:
-      Name: Config-Rule-Compliance-Change-CloudWatch-Rule
+      Name: SECLZ-Config-Rule-Compliance-Change-CloudWatch-Rule
       Description: 'Landing Zone rule to send notification on Config Rule compliance changes.'
       EventPattern:
         {
@@ -358,7 +367,7 @@ Resources:
     Condition: IsNotSecLogMasterAccount
     DependsOn: AWSEventsInvokeEventBusSecLogRole
     Properties:
-      Name: Config-Rule-Compliance-Change-CloudWatch-Rule-To-SecLog
+      Name: SECLZ-Config-Rule-Compliance-Change-CloudWatch-Rule-To-SecLog
       Description: 'Landing Zone rule to send notification on Config Rule compliance changes to SecLog eventbus.'
       RoleArn: 
         Fn::GetAtt: 
