@@ -100,7 +100,7 @@ configure_seclog() {
     echo "   - /org/member/SecLog_notification-mail"
 
     aws --profile $SECLOG_PROFILE ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value $SECLOG_NOTIF_EMAIL --overwrite
-    aws --profile $SECLOG_PROFILE ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $ORG_ACCOUNT_ID --overwrite
+    aws --profile $SECLOG_PROFILE ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $SECLOG_ACCOUNT_ID --overwrite
     aws --profile $SECLOG_PROFILE ssm put-parameter --name /org/member/SecLogOU --type String --value $ORG_OU_ID --overwrite
 
     #   ------------------------------------
