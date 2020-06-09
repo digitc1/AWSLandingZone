@@ -1,41 +1,30 @@
 AWSTemplateFormatVersion: 2010-09-09
-
 #   --------------------------------------------------------
 #   Version History
 #
+#   v1.1  J. Neisius        Added CloudWatchEventsLogGroupRole and SecurityHubSubscriptionFilter 
 #   v1.0  J. Vandenbergen   Initial Version
 #   --------------------------------------------------------
-
 Description: >-
-  v1.0. Script to create Guardduty detector
+  v1.1. Add SecurityHubSubscriptionFilter to send logs to splunk
+  v1.0. Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub
+ 
 
-Metadata: 
-  AWS::CloudFormation::Interface:
-    ParameterGroups:
-      -
-        Label:
-          default: "Guardduty"
-        Parameters:
-          - GuardDutyMasterId
 
 Parameters:
+
+  SecurityHubLogsGroupName:
+    Type: String
+    Default: /aws/events/securityhub
+    Description: CloudWatch LogGroup name for Security Hub cloudwatch events
+  FirehoseDestinationArn:
+    Type: String
+    Description: The ARN of the firehose stream aggregating the logs in the DIGIT C2 Log Aggregation Central Account
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain CloudTrail log events in the CloudWatch Logs.'
     Type: Number
     Default: 90
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
-  AwsConfigLogsGroupName:
-    Type: String
-    Default: /aws/events/config
-    Description: CloudWatch LogGroup name for AWS config cloudwatch events
-  FirehoseDestinationArn:
-    Type: String
-    Default: arn:aws:logs:eu-west-1:189111522208:destination:digit-splunk-dgtest-awslogs-dest
-    Description: The ARN of the firehose stream aggregating the logs in the DIGIT C2 Log Aggregation Central Account
-  SNSNotificationTopic:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /org/member/SecLog_sns_arn
-    Description: "Local Admin SNS Topic for Landing Zone"
   SecLogMasterAccountId:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /org/member/SecLogMasterAccountId
@@ -47,25 +36,19 @@ Conditions:
     - !Ref SecLogMasterAccountId
 
 Resources:
-  AwsConfigLogGroup:
+  SecurityHubLogGroup:
     Type: AWS::Logs::LogGroup
     Condition: IsSecLogMasterAccount
     Properties:
-      LogGroupName: !Ref AwsConfigLogsGroupName
+      LogGroupName: !Ref SecurityHubLogsGroupName
       RetentionInDays: !Ref LogsRetentionInDays
 
-  AwsConfigSubscriptionFilter:
+  SecurityHubSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
-      LogGroupName: !Ref 'AwsConfigLogGroup'
-
-  GuardDutyDetector:
-    Type: AWS::GuardDuty::Detector
-    Properties:
-        Enable: true
-        FindingPublishingFrequency: FIFTEEN_MINUTES
+      LogGroupName: !Ref 'SecurityHubLogGroup'
 
   CloudWatchEventsLogGroupRole:
     Type: AWS::IAM::Role
@@ -75,9 +58,9 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service:
+              Service: 
                 - events.amazonaws.com
-            Action:
+            Action: 
               - sts:AssumeRole
       Policies:
         - PolicyName: SECLZ-CloudWatchEvents-policy
@@ -86,28 +69,25 @@ Resources:
             Statement:
             - Effect: Allow
               Action: logs:CreateLogStream
-              Resource:
-              - !GetAtt AwsConfigLogGroup.Arn
+              Resource: 
+              - !GetAtt SecurityHubLogGroup.Arn
             - Effect: Allow
               Action: logs:PutLogEvents
-              Resource:
-              - !GetAtt AwsConfigLogGroup.Arn
+              Resource: 
+              - !GetAtt SecurityHubLogGroup.Arn
 
-  # GuardDuty CloudWatch Event - For GuardDuty
-  GuardDutyEvent: 
+  # SecurityHub CloudWatch Events to Cloudwatch LogGroup
+  SecurityHubEvent:
     Type: AWS::Events::Rule
     Condition: IsSecLogMasterAccount
-    Properties: 
-      Name: SECLZ-GuardDuty-Event
-      Description: "GuardDuty Event Handler"
-      EventPattern: 
+    Properties:
+      Name: SECLZ-SecurityHub
+      Description: "SecurityHub Event Handler"
+      EventPattern:
         source:
-        - aws.guardduty
+        - aws.securityhub
       State: ENABLED
-      Targets: 
-        - 
-          Arn: !Ref SNSNotificationTopic
-          Id: "GuardDutySNSTopic-SecLog"
+      Targets:
         -
-          Arn: !GetAtt AwsConfigLogGroup.Arn
-          Id: "AwsConfigCloudWatch-Seclog"
+          Arn: !GetAtt SecurityHubLogGroup.Arn
+          Id: "SecurityHubCloudWatch-Seclog"
