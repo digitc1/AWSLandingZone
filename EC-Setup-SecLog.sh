@@ -113,7 +113,7 @@ configure_seclog() {
     DESCRIBE_DESTINATIONS=`aws --profile $splunkprofile  logs describe-destinations`
 
     # Extract select Log destination details
-    if [[$cloudtrailintegration eq "true"] || [$guarddutyintegration eq "true"] || [$securityhubintegration eq "true"]]; then
+    if [ "$cloudtrailintegration" == "true" ] || [ "$guarddutyintegration" == "true" ] || [ "$securityhubintegration" == "true" ]; then
         FIREHOSE_ARN=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .arn'`
         FIREHOSE_DESTINATION_NAME=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .destinationName'`
         FIREHOSE_ACCESS_POLICY=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .accessPolicy'`
@@ -129,7 +129,7 @@ configure_seclog() {
     echo "     CloudTrail integration with Splunk:  $cloudtrailintegration"
     echo "     GuardDuty integration with Splunk:   $guarddutyintegration"
     echo "     SecurityHub integration with Splunk: $securityhubintegration"
-    if [[$cloudtrailintegration eq "true"] || [$guarddutyintegration eq "true"] || [$securityhubintegration eq "true"]]; then
+    if [[ ("$cloudtrailintegration" == "true" || "$guarddutyintegration" == "true" || "$securityhubintegration" == "true" ) ]]; then
       echo "     Log Destination Name:                $FIREHOSE_DESTINATION_NAME"
       echo "     Log Destination ARN:                 $FIREHOSE_ARN"
     fi
@@ -255,7 +255,7 @@ configure_seclog() {
     while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
-    if [[$cloudtrailintegration eq "true"] || [$guarddutyintegration eq "true"] || [$securityhubintegration eq "true"]]; then
+    if [ $cloudtrailintegration == "true" ] || [ $guarddutyintegration == "true" ] || [ $securityhubintegration == "true" ]; then
         sleep 5
 
         #	------------------------------------
@@ -359,7 +359,7 @@ configure_seclog() {
     while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
-    if [$securityhubintegration eq "true"]; then
+    if  [ "$securityhubintegration" == "true" ]; then
         sleep 5
         
         #   ------------------------------------
@@ -417,7 +417,12 @@ configure_seclog() {
 # ---------------------------------------------
 
 # Check to validate number of parameters entered
-if [-z "$organisation"] || [-z "$seclogprofile"] || [-z "$notificationemail"] || [-z "$logdestination"] ; then
+if [ -z "$organisation" ] || [ -z "$seclogprofile" ] || [ -z "$notificationemail" ] ; then
+    display_help
+    exit 0
+fi
+
+if [[ ( -z "$logdestination" || -z "$splunkprofile" ) && ( "$cloudtrailintegration" == "true" ||  "$guarddutyintegration" == "true"  ||  "$securityhubintegration" == "true" ) ]]; then
     display_help
     exit 0
 fi
