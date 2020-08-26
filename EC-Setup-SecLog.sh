@@ -17,10 +17,11 @@
 #
 #   Version History
 #
-#   v1.0    J. Vandenbergen   Initial Version
-#   v2.0    L. Leonard        Version dedicated to EC-BROKER-IAM
-#   v2.1    J. Silva          Add Cloudwatch Event Rules to Cloudwatch logs for Security Hub 
-#   v2.2    J. Silva          Add Splunk log destinations for Cloudwatch logs
+#   v1.0      J. Vandenbergen   Initial Version
+#   v1.0.1    L. Leonard        Version dedicated to EC-BROKER-IAM
+#   v1.0.2    J. Silva          Add Cloudwatch Event Rules to Cloudwatch logs for Security Hub 
+#   v1.0.3    J. Silva          Add Splunk log destinations for Cloudwatch logs
+#   v1.1.0    J. Silva          Made log integration with Splunk optional.
 #   --------------------------------------------------------
 
 #   --------------------

@@ -14,16 +14,13 @@
 #       - We are assuming that the account has already a CloudBrokerAccountAccess role created
 #
 #       Usage:
-#       $ ./EC-Setup-Client.sh Client_ACCOUNT_NAME SecLog_ACCOUNT_NAME
-#
-#       ex:
-#       $ ./EC-Sanitize-Account.sh newAcc1 newSecLog
-#
+#       $ ./EC-Setup-Client.sh  --oganisation [Org. Acc. Profile] --clientaccprofile [Client Acc. Profile] --seclogprofile [Seclog. Acc. Profile]
 #
 #
 #   Version History
 #
 #   v1.0  Alexandre Levret   Initial Version
+#   v1.1  J. Silva           Updated parameter handling
 #
 #   --------------------------------------------------------
 
@@ -31,9 +28,27 @@
 #       Parameters
 #       --------------------
 
-export ORG_PROFILE=$1
-export CLIENT_PROFILE=$2
-export SECLOG_PROFILE=$3
+# export oganisation=$1
+# export clientaccprofile=$2
+# export seclogprofile=$3
+
+organisation=${organisation:-}
+seclogprofile=${seclogprofile:-}
+clientaccprofile=${clientaccprofile:-}
+
+
+while [ $# -gt 0 ]; do
+
+   if [[ $1 == *"--"* ]]; then
+        param="${1/--/}"
+        declare $param="$2"
+        # echo $1 $2 // Optional to see the parameter:value result
+   fi
+
+  shift
+done
+
+
 AWS_REGION='eu-west-1'
 
 #       --------------------
@@ -64,7 +79,7 @@ intro() {
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 ORG_PROFILE CLIENT_PROFILE SECLOG_PROFILE" >&2
+    echo "Usage: $0 --oganisation [Org. Acc. Profile] --clientaccprofile [Client Acc. Profile] --seclogprofile [Seclog. Acc. Profile]" >&2
     echo
     echo "   Provide "
     echo "     - the organization profile"
@@ -84,7 +99,7 @@ configure_client(){
         #   Sanitize the Client account
         #   -----------------------------
 
-    AlreadySanitized=`aws --profile $CLIENT_PROFILE ssm get-parameter --name /org/member/SECLZ-Account_sanitized-or-New_account --query "Parameter.Value" --output text`
+    AlreadySanitized=`aws --profile $clientaccprofile ssm get-parameter --name /org/member/SECLZ-Account_sanitized-or-New_account --query "Parameter.Value" --output text`
     if [ -z $AlreadySanitized ] || [ $AlreadySanitized == "1" ]
           then
             echo ""
@@ -93,31 +108,31 @@ configure_client(){
                 echo "   ---------------------------------------------------------"
                 echo ""
           else
-            sh ./SH/EC-Sanitize-Client-Account.sh $CLIENT_PROFILE
+            sh ./SH/EC-Sanitize-Client-Account.sh $clientaccprofile
           fi
 
         #   -----------------------------
         #   Configure the Client account
         #   -----------------------------
 
-        sh ./SH/EC-Configure-Client-Account.sh $CLIENT_PROFILE $SECLOG_PROFILE
+        sh ./SH/EC-Configure-Client-Account.sh $clientaccprofile $seclogprofile
 
         #   -----------------------------------------------------------------------------
         #   Send invitations (Config, GuardDuty, Security Hub) from the SecLog account
         #   -----------------------------------------------------------------------------
 
-        sh ./SH/EC-Invite-from-SecLog-Account.sh $ORG_PROFILE $CLIENT_PROFILE $SECLOG_PROFILE
+        sh ./SH/EC-Invite-from-SecLog-Account.sh $oganisation $clientaccprofile $seclogprofile
         #   -----------------------------------------------------------------------------
         #   Accept invitations (Config, GuardDuty, Security Hub) from the Client account
         #   -----------------------------------------------------------------------------
 
-        sh ./SH/EC-Accept-from-Client-Account.sh $CLIENT_PROFILE $SECLOG_PROFILE
+        sh ./SH/EC-Accept-from-Client-Account.sh $clientaccprofile $seclogprofile
 
         #   -----------------------------
         #   Validate the Client account
         #   -----------------------------
 
-        sh ./SH/EC-Validate-Client-Account.sh $CLIENT_PROFILE $SECLOG_PROFILE
+        sh ./SH/EC-Validate-Client-Account.sh $clientaccprofile $seclogprofile
 }
 
 # ---------------------------------------------
