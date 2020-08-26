@@ -198,8 +198,8 @@ update_seclog() {
 # ---------------------------------------------
 
 # Simple check if two arguments are provided
-if [ -z $4 ]; then
-    display_help  # Call your function
+if [ -z "$organisation" ] || [ -z "$seclogprofile" ] || [ -z "$splunkprofile" ]  || [ -z "$logdestination" ] ; then
+    display_help
     exit 0
 fi
 

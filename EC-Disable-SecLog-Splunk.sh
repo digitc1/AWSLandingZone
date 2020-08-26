@@ -149,10 +149,11 @@ update_seclog() {
 # ---------------------------------------------
 
 # Simple check if two arguments are provided
-if [ -z $4 ]; then
-    display_help  # Call your function
+if [ -z "$seclogprofile" ]; then
+    display_help
     exit 0
 fi
+
 
 #start account configuration
 update_seclog
