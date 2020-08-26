@@ -40,11 +40,30 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /org/member/SecLogMasterAccountId
     Description: "Contains account id of SecLogMaster"
+  EnableSecLogIntegrationFoGuardDutyParam:
+    Type: String
+    Description: "Enable SecLog integration for GuardDuty?"
+    Default: true
+    AllowedValues:
+    - true
+    - false
 
 Conditions:
-  IsSecLogMasterAccount: !Equals
+  IsSecLogMasterAccountWithoutSOCIntegration: !And
+  - !Equals
     - !Ref AWS::AccountId
     - !Ref SecLogMasterAccountId
+  - !Equals
+    - !Ref EnableSecLogIntegrationFoGuardDutyParam
+    - 'false'
+
+  IsSecLogMasterAccountWithSOCIntegration: !And
+  - !Equals
+    - !Ref AWS::AccountId
+    - !Ref SecLogMasterAccountId
+  - !Equals
+    - !Ref EnableSecLogIntegrationFoGuardDutyParam
+    - 'true'
 
 Resources:
   AwsConfigLogGroup:
@@ -94,9 +113,9 @@ Resources:
               - !GetAtt AwsConfigLogGroup.Arn
 
   # GuardDuty CloudWatch Event - For GuardDuty
-  GuardDutyEvent: 
+  GuardDutyEventWithSOC: 
     Type: AWS::Events::Rule
-    Condition: IsSecLogMasterAccount
+    Condition: IsSecLogMasterAccountWithSOCIntegration
     Properties: 
       Name: SECLZ-GuardDuty-Event
       Description: "GuardDuty Event Handler"
@@ -104,10 +123,25 @@ Resources:
         source:
         - aws.guardduty
       State: ENABLED
-      Targets: 
+      Targets:
         - 
           Arn: !Ref SNSNotificationTopic
           Id: "GuardDutySNSTopic-SecLog"
         -
           Arn: !GetAtt AwsConfigLogGroup.Arn
           Id: "AwsConfigCloudWatch-Seclog"
+  
+  GuardDutyEventWithoutSOC: 
+    Type: AWS::Events::Rule
+    Condition: IsSecLogMasterAccountWithoutSOCIntegration
+    Properties: 
+      Name: SECLZ-GuardDuty-Event
+      Description: "GuardDuty Event Handler"
+      EventPattern: 
+        source:
+        - aws.guardduty
+      State: ENABLED
+      Targets:
+        - 
+          Arn: !Ref SNSNotificationTopic
+          Id: "GuardDutySNSTopic-SecLog"
