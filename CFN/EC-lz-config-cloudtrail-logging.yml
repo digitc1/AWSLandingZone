@@ -70,7 +70,7 @@ Parameters:
     AllowedValues:
     - true
     - false
-    EnableSecLogForCloudTrail:
+  EnableSecLogForCloudTrailParam:
     Type: String
     Description: "Enable SecLog integration for CloudTrail?"
     Default: true
@@ -110,7 +110,7 @@ Conditions:
       - !Ref AWS::AccountId
       - !Ref SecLogMasterAccountId
   EnableSecLogForCloudTrail: !Equals
-  - !Ref EnableSecLogForCloudTrail
+  - !Ref EnableSecLogForCloudTrailParam
   - 'true'
 
 Mappings: {}
