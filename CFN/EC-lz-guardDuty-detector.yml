@@ -49,6 +49,10 @@ Parameters:
     - false
 
 Conditions:
+  IsSecLogMasterAccount: !Equals
+    - !Ref AWS::AccountId
+    - !Ref SecLogMasterAccountId
+
   IsSecLogMasterAccountWithoutSOCIntegration: !And
   - !Equals
     - !Ref AWS::AccountId
@@ -75,6 +79,7 @@ Resources:
 
   AwsConfigSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsSecLogMasterAccountWithSOCIntegration
     Properties:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
@@ -88,6 +93,7 @@ Resources:
 
   CloudWatchEventsLogGroupRole:
     Type: AWS::IAM::Role
+    Condition: IsSecLogMasterAccountWithSOCIntegration
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
