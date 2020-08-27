@@ -119,7 +119,7 @@ Resources:
               - !GetAtt AwsConfigLogGroup.Arn
 
   # GuardDuty CloudWatch Event - For GuardDuty
-  GuardDutyEventWithSOC: 
+  GuardDutyEvent: 
     Type: AWS::Events::Rule
     Condition: IsSecLogMasterAccountWithSOCIntegration
     Properties: 
@@ -137,7 +137,7 @@ Resources:
           Arn: !GetAtt AwsConfigLogGroup.Arn
           Id: "AwsConfigCloudWatch-Seclog"
   
-  GuardDutyEventWithoutSOC: 
+  GuardDutyEvent: 
     Type: AWS::Events::Rule
     Condition: IsSecLogMasterAccountWithoutSOCIntegration
     Properties: 

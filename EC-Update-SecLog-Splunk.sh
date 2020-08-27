@@ -50,6 +50,7 @@ ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-
 # parameters for scripts
 
 CFN_BUCKETS_TEMPLATE='CFN/EC-lz-s3-buckets.yml'
+CFN_TAGS_PARAMS_FILE='CFN/EC-lz-TAGS-params.json'
 CFN_LOG_TEMPLATE='CFN/EC-lz-config-cloudtrail-logging.yml'
 CFN_GUARDDUTY_DETECTOR_TEMPLATE='CFN/EC-lz-guardDuty-detector.yml'
 CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
@@ -102,6 +103,23 @@ update_seclog() {
     echo "   If this is correct press enter to continue"
     read -p "  or CTRL-C to break"
 
+    #   ------------------------------------
+    # Store notification-E-mail, OrgID, SecAccountID in SSM parameters
+    #   ------------------------------------
+
+    echo ""
+    echo "- Storing SSM parameters for Seclog accunt and notification e-mail"
+    echo "--------------------------------------------------"
+    echo ""
+    echo "  populating: "
+    echo "   - /org/member/SecLogMasterAccountId"
+    echo "   - /org/member/SecLogOU"
+    echo "   - /org/member/SecLog_notification-mail"
+
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value $notificationemail --overwrite
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $SECLOG_ACCOUNT_ID --overwrite
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogOU --type String --value $ORG_OU_ID --overwrite
+
 
     #	------------------------------------
     #	 Updates the policy that defines write access to the log destination on the C2 SPLUNK account
@@ -152,7 +170,7 @@ update_seclog() {
     #   ------------------------------------
 
 
-    echo ""
+    echo "" 
     echo "- Enable guardduty in seclog master account"
     echo "--------------------"
     echo ""

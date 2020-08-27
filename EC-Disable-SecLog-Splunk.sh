@@ -76,6 +76,23 @@ update_seclog() {
     echo "   If this is correct press enter to continue"
     read -p "  or CTRL-C to break"
 
+     #   ------------------------------------
+    # Store notification-E-mail, OrgID, SecAccountID in SSM parameters
+    #   ------------------------------------
+
+    echo ""
+    echo "- Storing SSM parameters for Seclog accunt and notification e-mail"
+    echo "--------------------------------------------------"
+    echo ""
+    echo "  populating: "
+    echo "   - /org/member/SecLogMasterAccountId"
+    echo "   - /org/member/SecLogOU"
+    echo "   - /org/member/SecLog_notification-mail"
+
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value $notificationemail --overwrite
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $SECLOG_ACCOUNT_ID --overwrite
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogOU --type String --value $ORG_OU_ID --overwrite
+
 
     #   ------------------------------------
     #   Creating config, cloudtrail, SNS notifications
@@ -92,7 +109,7 @@ update_seclog() {
     --template-body file://$CFN_LOG_TEMPLATE \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile \
-    --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN,ParameterKey=EnableSecLogForCloudTrailParam,ParameterValue=false
+    --parameters ParameterKey=EnableSecLogForCloudTrailParam,ParameterValue=false
 
     StackName="SECLZ-config-cloudtrail-SNS"
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
@@ -104,7 +121,7 @@ update_seclog() {
     #   ------------------------------------
     #   Enable guardduty and securityhub in seclog master account
     #   ------------------------------------
-
+ 
 
     echo ""
     echo "- Enable guardduty in seclog master account"
@@ -116,7 +133,7 @@ update_seclog() {
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile \
-    --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN,ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration
+    --parameters ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=false
 
     sleep 5
 
