@@ -113,12 +113,8 @@ update_seclog() {
     echo ""
     echo "  populating: "
     echo "   - /org/member/SecLogMasterAccountId"
-    echo "   - /org/member/SecLogOU"
-    echo "   - /org/member/SecLog_notification-mail"
 
-    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value $notificationemail --overwrite
     aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $SECLOG_ACCOUNT_ID --overwrite
-    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogOU --type String --value $ORG_OU_ID --overwrite
 
 
     #	------------------------------------
