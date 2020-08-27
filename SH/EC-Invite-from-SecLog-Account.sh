@@ -74,7 +74,7 @@ invite_client() {
   
   CLIENT_ID=`aws --profile $CLIENT_PROFILE sts get-caller-identity --query 'Account' --output text`
   
-  EMAIL=`aws organizations --profile $ORG_PROFILE list-accounts --query 'Accounts[*].[Id, Name, Email]' --output text | grep $CLIENT_ID | awk '{print $3}'`
+  EMAIL=`aws organizations --profile $ORG_PROFILE list-accounts --query 'Accounts[*].[Id, Name, Email]' --output text | grep $CLIENT_ID | awk '{print $NF}'`
 
   if [ -z "$AGGREGATOR_NAME" ]
   then

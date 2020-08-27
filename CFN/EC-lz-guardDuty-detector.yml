@@ -30,7 +30,7 @@ Parameters:
     Description: CloudWatch LogGroup name for AWS config cloudwatch events
   FirehoseDestinationArn:
     Type: String
-    Default: arn:aws:logs:eu-west-1:189111522208:destination:digit-splunk-dgtest-awslogs-dest
+    Default: ""
     Description: The ARN of the firehose stream aggregating the logs in the DIGIT C2 Log Aggregation Central Account
   SNSNotificationTopic:
     Type: AWS::SSM::Parameter::Value<String>
@@ -40,11 +40,26 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /org/member/SecLogMasterAccountId
     Description: "Contains account id of SecLogMaster"
+  EnableSecLogIntegrationFoGuardDutyParam:
+    Type: String
+    Description: "Enable SecLog integration for GuardDuty?"
+    Default: 'true'
+    AllowedValues:
+    - 'true'
+    - 'false'
 
 Conditions:
   IsSecLogMasterAccount: !Equals
     - !Ref AWS::AccountId
     - !Ref SecLogMasterAccountId
+
+  IsSecLogMasterAccountWithSOCIntegration: !And
+  - !Equals
+    - !Ref AWS::AccountId
+    - !Ref SecLogMasterAccountId
+  - !Equals
+    - !Ref EnableSecLogIntegrationFoGuardDutyParam
+    - 'true'
 
 Resources:
   AwsConfigLogGroup:
@@ -56,6 +71,7 @@ Resources:
 
   AwsConfigSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsSecLogMasterAccountWithSOCIntegration
     Properties:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
@@ -69,6 +85,7 @@ Resources:
 
   CloudWatchEventsLogGroupRole:
     Type: AWS::IAM::Role
+    Condition: IsSecLogMasterAccountWithSOCIntegration
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -94,9 +111,8 @@ Resources:
               - !GetAtt AwsConfigLogGroup.Arn
 
   # GuardDuty CloudWatch Event - For GuardDuty
-  GuardDutyEvent: 
+  GuardDutyEvents: 
     Type: AWS::Events::Rule
-    Condition: IsSecLogMasterAccount
     Properties: 
       Name: SECLZ-GuardDuty-Event
       Description: "GuardDuty Event Handler"
@@ -104,10 +120,11 @@ Resources:
         source:
         - aws.guardduty
       State: ENABLED
-      Targets: 
+      Targets:
         - 
           Arn: !Ref SNSNotificationTopic
           Id: "GuardDutySNSTopic-SecLog"
         -
           Arn: !GetAtt AwsConfigLogGroup.Arn
           Id: "AwsConfigCloudWatch-Seclog"
+  
