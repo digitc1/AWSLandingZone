@@ -60,7 +60,7 @@ CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile] --logdestination [Log Destination DG name]" >&2
+    echo "Usage: $0 --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile]  --notificationemail [Notification Email] --logdestination [Log Destination DG name]" >&2
     echo
     echo "   Provide an account name to configure, account name of the central SecLog account as configured in your AWS profile,"
     echo "   account name for the Splunk log destination as in your AWS profile and the name of the DG of the firehose log destination"
@@ -95,6 +95,7 @@ update_seclog() {
     echo "     SecLog Account to be configured:  $seclogprofile"
     echo "     SecLog Account Id:                $SECLOG_ACCOUNT_ID"
     echo "     Splunk Account Id:                $SPLUNK_ACCOUNT_ID"
+    echo "     Security Notifications e-mail:    $notificationemail"
     echo "     Log Destination Name:             $FIREHOSE_DESTINATION_NAME"
     echo "     Log Destination ARN:              $FIREHOSE_ARN"
     echo "     in AWS Region:                    $AWS_REGION"
@@ -113,7 +114,9 @@ update_seclog() {
     echo ""
     echo "  populating: "
     echo "   - /org/member/SecLogMasterAccountId"
+    echo "   - /org/member/SecLog_notification-mail"
 
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value $notificationemail --overwrite
     aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $SECLOG_ACCOUNT_ID --overwrite
 
 
@@ -237,7 +240,7 @@ update_seclog() {
 # ---------------------------------------------
 
 # Simple check if two arguments are provided
-if [ -z "$organisation" ] || [ -z "$seclogprofile" ] || [ -z "$splunkprofile" ]  || [ -z "$logdestination" ] ; then
+if [ -z "$organisation" ] || [ -z "$seclogprofile" ] || [ -z "$splunkprofile" ]  || [ -z "$logdestination" ] || [ -z "$notificationemail" ]; then
     display_help
     exit 0
 fi

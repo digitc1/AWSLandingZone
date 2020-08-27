@@ -53,9 +53,9 @@ CFN_GUARDDUTY_DETECTOR_TEMPLATE='CFN/EC-lz-guardDuty-detector.yml'
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 --seclogprofile [Seclog Acc Profile]" >&2
+    echo "Usage: $0 --seclogprofile [Seclog Acc Profile]  --notificationemail [Notification Email]" >&2
     echo
-    echo "   Provide an account name to configure, account name of the central SecLog account as configured in your AWS profile,"
+    echo "   Provide the account name of the central SecLog account as configured in your AWS profile,"
     exit 1
 }
 
@@ -69,6 +69,7 @@ update_seclog() {
     echo "- This script will configure a the SecLog account with following settings:"
     echo "   ----------------------------------------------------"
     echo "     SecLog Account to be configured:  $seclogprofile"
+    echo "     Security Notifications e-mail:    $notificationemail"
     echo "     SecLog Account Id:                $SECLOG_ACCOUNT_ID"
     echo "     in AWS Region:                    $AWS_REGION"
     echo "   ----------------------------------------------------"
@@ -86,7 +87,9 @@ update_seclog() {
     echo ""
     echo "  populating: "
     echo "   - /org/member/SecLogMasterAccountId"
+    echo "   - /org/member/SecLog_notification-mail"
 
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value $notificationemail --overwrite
     aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $SECLOG_ACCOUNT_ID --overwrite
 
 
@@ -162,7 +165,7 @@ update_seclog() {
 # ---------------------------------------------
 
 # Simple check if two arguments are provided
-if [ -z "$seclogprofile" ]; then
+if [ -z "$seclogprofile" ] || [ -z "$notificationemail" ]; then
     display_help
     exit 0
 fi
