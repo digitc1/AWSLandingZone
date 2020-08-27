@@ -83,7 +83,7 @@ update_seclog() {
 
 
     echo ""
-    echo "- Creating config, cloudtrail, SNS notifications"
+    echo "- Updating config, cloudtrail, SNS notifications"
     echo "--------------------------------------------------"
     echo ""
 
@@ -96,7 +96,7 @@ update_seclog() {
 
     StackName="SECLZ-config-cloudtrail-SNS"
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     sleep 5

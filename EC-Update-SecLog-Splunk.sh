@@ -48,6 +48,8 @@ AWS_REGION='eu-west-1'
 ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
 
 # parameters for scripts
+
+CFN_BUCKETS_TEMPLATE='CFN/EC-lz-s3-buckets.yml'
 CFN_LOG_TEMPLATE='CFN/EC-lz-config-cloudtrail-logging.yml'
 CFN_GUARDDUTY_DETECTOR_TEMPLATE='CFN/EC-lz-guardDuty-detector.yml'
 CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
@@ -140,7 +142,7 @@ update_seclog() {
 
     StackName="SECLZ-config-cloudtrail-SNS"
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     sleep 5
@@ -190,6 +192,29 @@ update_seclog() {
     sleep 5
 
     
+    #   ------------------------------------
+    #   Cloudtrail bucket / Config bucket / Access_log bucket ...
+    #   ------------------------------------
+
+    echo ""
+    echo "- Cloudtrail bucket / Config bucket / Access_log bucket ... "
+    echo "-----------------------------------------------------------"
+    echo ""
+
+    aws cloudformation create-stack \
+    --stack-name 'SECLZ-Central-Buckets' \
+    --template-body file://$CFN_BUCKETS_TEMPLATE \
+    --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --enable-termination-protection \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --profile $seclogprofile
+
+    StackName=SECLZ-Central-Buckets
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+    sleep 5
 }
 
 # ---------------------------------------------
