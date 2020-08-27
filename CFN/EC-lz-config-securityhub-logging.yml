@@ -19,6 +19,7 @@ Parameters:
     Description: CloudWatch LogGroup name for Security Hub cloudwatch events
   FirehoseDestinationArn:
     Type: String
+    Default: ""
     Description: The ARN of the firehose stream aggregating the logs in the DIGIT C2 Log Aggregation Central Account
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain CloudTrail log events in the CloudWatch Logs.'

@@ -30,7 +30,7 @@ Parameters:
     Description: CloudWatch LogGroup name for AWS config cloudwatch events
   FirehoseDestinationArn:
     Type: String
-    Default: arn:aws:logs:eu-west-1:189111522208:destination:digit-splunk-dgtest-awslogs-dest
+    Default: ""
     Description: The ARN of the firehose stream aggregating the logs in the DIGIT C2 Log Aggregation Central Account
   SNSNotificationTopic:
     Type: AWS::SSM::Parameter::Value<String>

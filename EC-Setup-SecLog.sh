@@ -291,7 +291,7 @@ configure_seclog() {
     echo ""
 
     cloudtrailparams = "ParameterKey=EnableSecLogForCloudTrailParam,ParameterValue=$cloudtrailintegration"
-    if [ "$cloudtrailintegration" == "true"]; then
+    if [ "$cloudtrailintegration" == "true" ]; then
         cloudtrailparams += "$cloudtrailparams,ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN"
     fi
 
@@ -322,7 +322,7 @@ configure_seclog() {
     echo ""
 
     guarddutyparams = "ParameterKey=EnableSecLogForCloudTrailParam,ParameterValue=$guarddutyintegration"
-    if [ "$guarddutyintegration" == "true"]; then
+    if [ "$guarddutyintegration" == "true" ]; then
         guarddutyparams += "$guarddutyparams,ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN"
     fi
 
