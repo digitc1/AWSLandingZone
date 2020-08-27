@@ -41,22 +41,22 @@ Parameters:
     DirectorateGeneral:
         Description: ''
         Type: String
-        Default: ''
+        Default: 'n/a'
 
     BusinessUnit:
         Description: ''
         Type: String
-        Default: ''
+        Default: 'n/a'
 
     OwnerId:
         Description: ''
         Type: String
-        Default: ''
+        Default: 'n/a'
 
     DataClassification:
         Description: ''
         Type: String
-        Default: ''
+        Default: 'n/a'
 
 Mappings: {}
 

@@ -107,14 +107,14 @@ configure_seclog() {
     # Getting SecLog Account Id
     SECLOG_ACCOUNT_ID=`aws --profile $seclogprofile sts get-caller-identity --query 'Account' --output text`
 
-    # Getting C2 Splunk Account Id
-    SPLUNK_ACCOUNT_ID=`aws --profile $splunkprofile sts get-caller-identity --query 'Account' --output text`
-
-    # Getting available log destinations from 
-    DESCRIBE_DESTINATIONS=`aws --profile $splunkprofile  logs describe-destinations`
-
-    # Extract select Log destination details
     if [ "$cloudtrailintegration" == "true" ] || [ "$guarddutyintegration" == "true" ] || [ "$securityhubintegration" == "true" ]; then
+        # Getting C2 Splunk Account Id
+        SPLUNK_ACCOUNT_ID=`aws --profile $splunkprofile sts get-caller-identity --query 'Account' --output text`
+
+        # Getting available log destinations from
+        DESCRIBE_DESTINATIONS=`aws --profile $splunkprofile  logs describe-destinations`
+
+        # Extract select Log destination details
         FIREHOSE_ARN=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .arn'`
         FIREHOSE_DESTINATION_NAME=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .destinationName'`
         FIREHOSE_ACCESS_POLICY=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .accessPolicy'`
@@ -125,12 +125,12 @@ configure_seclog() {
     echo "   ----------------------------------------------------"
     echo "     SecLog Account to be configured:     $seclogprofile"
     echo "     SecLog Account Id:                   $SECLOG_ACCOUNT_ID"
-    echo "     Splunk Account Id:                   $SPLUNK_ACCOUNT_ID"
-    echo "     Security Notifications e-mail:       $notificationemail"   
+    echo "     Security Notifications e-mail:       $notificationemail"
     echo "     CloudTrail integration with Splunk:  $cloudtrailintegration"
     echo "     GuardDuty integration with Splunk:   $guarddutyintegration"
     echo "     SecurityHub integration with Splunk: $securityhubintegration"
     if [[ ("$cloudtrailintegration" == "true" || "$guarddutyintegration" == "true" || "$securityhubintegration" == "true" ) ]]; then
+      echo "     Splunk Account Id:                   $SPLUNK_ACCOUNT_ID"
       echo "     Log Destination Name:                $FIREHOSE_DESTINATION_NAME"
       echo "     Log Destination ARN:                 $FIREHOSE_ARN"
     fi
@@ -290,13 +290,19 @@ configure_seclog() {
     echo "--------------------------------------------------"
     echo ""
 
+    cloudtrailparams = "ParameterKey=EnableSecLogForCloudTrailParam,ParameterValue=$cloudtrailintegration"
+    if [ "$cloudtrailintegration" == "true"]; then
+        cloudtrailparams += "$cloudtrailparams,ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN"
+    fi
+
+
     aws cloudformation create-stack \
     --stack-name 'SECLZ-config-cloudtrail-SNS' \
     --template-body file://$CFN_LOG_TEMPLATE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile \
-    --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN,ParameterKey=EnableSecLogForCloudTrailParam,ParameterValue=$cloudtrailintegration
+    --parameters $cloudtrailparams
 
     StackName="SECLZ-config-cloudtrail-SNS"
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
@@ -315,13 +321,18 @@ configure_seclog() {
     echo "--------------------"
     echo ""
 
+    guarddutyparams = "ParameterKey=EnableSecLogForCloudTrailParam,ParameterValue=$guarddutyintegration"
+    if [ "$guarddutyintegration" == "true"]; then
+        guarddutyparams += "$guarddutyparams,ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN"
+    fi
+
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Guardduty-detector' \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
     --enable-termination-protection \
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile \
-    --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN,ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration
+    --parameters $guarddutyparams
 
     sleep 5
 
