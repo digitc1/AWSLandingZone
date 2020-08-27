@@ -146,6 +146,21 @@ Resources:
                    Condition:
                     StringEquals:
                         "s3:x-amz-acl": "bucket-owner-full-control"
+                 -
+                   Sid: "AWSCloudTrailgBucketSSL"
+                   Action: s3:*
+                   Principal:
+                    Service: cloudtrail.amazonaws.com
+                   Effect: Deny
+                   Resource: 
+                     Fn::Join: 
+                       - ""
+                       - 
+                         - !GetAtt CloudTrailBucket.Arn
+                         - "/*"
+                   Condition:
+                     Bool:
+                       "aws:SecureTransport": "false"
 
 
     #   -------------------
@@ -237,7 +252,21 @@ Resources:
                    Condition:
                     StringEquals:
                         "s3:x-amz-acl": "bucket-owner-full-control"
-
+                 -
+                   Sid: "AWSConfigBucketSSL"
+                   Action: "s3:*"
+                   Principal:
+                    Service: config.amazonaws.com
+                   Effect: Deny
+                   Resource: 
+                     Fn::Join: 
+                       - ""
+                       - 
+                         - !GetAtt ConfigBucket.Arn
+                         - "/*"
+                   Condition:
+                    Bool:
+                      "aws:SecureTransport": "false"
 
     #   -------------------
     #   AccessLogs Bucket
@@ -269,6 +298,29 @@ Resources:
             BlockPublicPolicy: true
             IgnorePublicAcls: true
             RestrictPublicBuckets: true
+
+    AccessLogsPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+            Bucket:
+                Ref: AccessLogsBucket
+            PolicyDocument:
+                Statement:                  
+                 -
+                   Sid: "AWSAccessLogsBucketSSL"
+                   Action: "s3:*"
+                   Effect: Deny
+                   Principal:
+                    Service: cloudwatch.amazonaws.com
+                   Resource: 
+                     Fn::Join: 
+                       - ""
+                       - 
+                         - !GetAtt AccessLogsBucket.Arn
+                         - "/*"
+                   Condition:
+                    Bool:
+                      "aws:SecureTransport": "false"
 
 Outputs:
   ConfigBucket:
