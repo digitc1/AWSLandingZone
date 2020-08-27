@@ -292,7 +292,7 @@ configure_seclog() {
 
     cloudtrailparams="ParameterKey=EnableSecLogForCloudTrailParam,ParameterValue=$cloudtrailintegration"
     if [ "$cloudtrailintegration" == "true" ]; then
-        cloudtrailparams+="$cloudtrailparams,ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN"
+        cloudtrailparams="ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN"
     fi
 
 
@@ -323,7 +323,7 @@ configure_seclog() {
 
     guarddutyparams="ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration"
     if [ "$guarddutyintegration" == "true" ]; then
-        guarddutyparams+="$guarddutyparams,ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN"
+        guarddutyparams="ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN"
     fi
 
     aws cloudformation create-stack \
