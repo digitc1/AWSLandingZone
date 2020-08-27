@@ -149,13 +149,15 @@ Resources:
                  -
                    Sid: "AWSCloudTrailgBucketSSL"
                    Action: s3:*
+                   Principal:
+                    Service: cloudtrail.amazonaws.com
                    Effect: Deny
-                   Resource:
+                   Resource: 
                      Fn::Join: 
                        - ""
                        - 
-                       - !GetAtt CloudTrailBucket.Arn
-                       - "/*"
+                         - !GetAtt CloudTrailBucket.Arn
+                         - "/*"
                    Condition:
                      Bool:
                        "aws:SecureTransport": "false"
@@ -253,13 +255,15 @@ Resources:
                  -
                    Sid: "AWSConfigBucketSSL"
                    Action: "s3:*"
+                   Principal:
+                    Service: config.amazonaws.com
                    Effect: Deny
-                   Resource:
+                   Resource: 
                      Fn::Join: 
                        - ""
                        - 
-                       - !GetAtt ConfigBucket.Arn
-                       - "/*"
+                         - !GetAtt ConfigBucket.Arn
+                         - "/*"
                    Condition:
                     Bool:
                       "aws:SecureTransport": "false"
@@ -306,12 +310,14 @@ Resources:
                    Sid: "AWSAccessLogsBucketSSL"
                    Action: "s3:*"
                    Effect: Deny
-                   Resource:
+                   Principal:
+                    Service: cloudwatch.amazonaws.com
+                   Resource: 
                      Fn::Join: 
                        - ""
                        - 
-                       - !GetAtt AccessLogsBucket.Arn
-                       - "/*"
+                         - !GetAtt AccessLogsBucket.Arn
+                         - "/*"
                    Condition:
                     Bool:
                       "aws:SecureTransport": "false"
