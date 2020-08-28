@@ -70,6 +70,13 @@ Parameters:
     AllowedValues:
     - true
     - false
+  EnableSecLogForCloudTrailParam:
+    Type: String
+    Description: "Enable SecLog integration for CloudTrail?"
+    Default: true
+    AllowedValues:
+    - true
+    - false
   ConfigDeliverySnapshotFrequency:
     Type: String
     Description: "Frequency of config snapshots being delivered to SecLog account"
@@ -85,6 +92,7 @@ Parameters:
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
   FirehoseDestinationArn:
     Type: String
+    Default: ""
     Description: The ARN of the firehose stream aggregating the logs in the DIGIT C2 Log Aggregation Central Account
 #  AccountIdList:
 #    Type: AWS::SSM::Parameter::Value<CommaDelimitedList>
@@ -102,6 +110,9 @@ Conditions:
     - !Equals 
       - !Ref AWS::AccountId
       - !Ref SecLogMasterAccountId
+  EnableSecLogForCloudTrail: !Equals
+  - !Ref EnableSecLogForCloudTrailParam
+  - 'true'
 
 Mappings: {}
 
@@ -130,6 +141,7 @@ Resources:
       RetentionInDays: !Ref LogsRetentionInDays
   SecurityHubSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: EnableSecLogForCloudTrail
     Properties:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
