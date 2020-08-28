@@ -2,8 +2,9 @@ AWSTemplateFormatVersion: 2010-09-09
 #   --------------------------------------------------------
 #   Version History
 #
-#   v1.1  J. Neisius        Added CloudWatchEventsLogGroupRole and SecurityHubSubscriptionFilter 
-#   v1.0  J. Vandenbergen   Initial Version
+#   v1.0.0  J. Vandenbergen   Initial Version
+#   v1.0.1  J. Neisius        Added CloudWatchEventsLogGroupRole and SecurityHubSubscriptionFilter 
+#   v1.1.0  J. Silva          Enables optional resource installation (SOC integration)
 #   --------------------------------------------------------
 Description: >-
   v1.1. Add SecurityHubSubscriptionFilter to send logs to splunk

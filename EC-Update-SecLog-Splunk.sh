@@ -15,7 +15,10 @@
 #
 #   Version History
 #
-#   v1.0  João Silva  Initial Version
+#   v1.0.0  João Silva  Initial Version
+#   v1.1.0  João Silva  Updates to cater for parameter based conditionality or resource installation
+#   v1.1.1  João Silva  Updated instructions
+
 #   --------------------------------------------------------
 
 #       --------------------
@@ -62,8 +65,9 @@ CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
 display_help() {
     echo "Usage: $0 --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile]  --notificationemail [Notification Email] --logdestination [Log Destination DG name]" >&2
     echo
-    echo "   Provide an account name to configure, account name of the central SecLog account as configured in your AWS profile,"
-    echo "   account name for the Splunk log destination as in your AWS profile and the name of the DG of the firehose log destination"
+    echo "   Provide the Org. account name to configure, account name of the central SecLog account as configured in your AWS profile,"
+    echo "   account name for the Splunk as in your AWS profile, notification email and the name of the DG of the firehose log destination"
+
     exit 1
 }
 
@@ -218,11 +222,10 @@ update_seclog() {
     echo "-----------------------------------------------------------"
     echo ""
 
-    aws cloudformation create-stack \
+    aws cloudformation update-stack \
     --stack-name 'SECLZ-Central-Buckets' \
     --template-body file://$CFN_BUCKETS_TEMPLATE \
     --parameters file://$CFN_TAGS_PARAMS_FILE \
-    --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
 

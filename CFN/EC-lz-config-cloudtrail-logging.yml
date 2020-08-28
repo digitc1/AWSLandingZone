@@ -3,10 +3,12 @@ AWSTemplateFormatVersion: 2010-09-09
 #   --------------------------------------------------------
 #   Version History
 #
-#   v1.3  L. Leonard        Notification allowed from several organizations
-#   v1.2  J. Vandenbergen   Added configuration for local SNS topics
-#   v1.1  J. Vandenbergen   Added description and disabled notifications for all changes
-#   v1.0  J. Vandenbergen   Initial Version
+#   
+#   v1.0.0  J. Vandenbergen   Initial Version
+#   v1.0.1  J. Vandenbergen   Added description and disabled notifications for all changes
+#   v1.0.2  J. Vandenbergen   Added configuration for local SNS topics
+#   v1.0.3  L. Leonard        Notification allowed from several organizations
+#   v1.1.0  J. Silva          Enables optional resource installation (SOC integration)
 #   --------------------------------------------------------
 
 Description: >-
