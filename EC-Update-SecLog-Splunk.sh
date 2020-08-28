@@ -18,6 +18,7 @@
 #   v1.0.0  João Silva  Initial Version
 #   v1.1.0  João Silva  Updates to cater for parameter based conditionality or resource installation
 #   v1.1.1  João Silva  Updated instructions
+
 #   --------------------------------------------------------
 
 #       --------------------
@@ -66,6 +67,7 @@ display_help() {
     echo
     echo "   Provide the Org. account name to configure, account name of the central SecLog account as configured in your AWS profile,"
     echo "   account name for the Splunk as in your AWS profile, notification email and the name of the DG of the firehose log destination"
+
     exit 1
 }
 
