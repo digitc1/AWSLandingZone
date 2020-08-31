@@ -47,6 +47,7 @@ Resources:
 
   SecurityHubSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
+    Condition: IsSecLogMasterAccount
     Properties:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''

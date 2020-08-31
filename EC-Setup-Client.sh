@@ -14,7 +14,7 @@
 #       - We are assuming that the account has already a CloudBrokerAccountAccess role created
 #
 #       Usage:
-#       $ ./EC-Setup-Client.sh  --oganisation [Org. Acc. Profile] --clientaccprofile [Client Acc. Profile] --seclogprofile [Seclog. Acc. Profile]
+#       $ ./EC-Setup-Client.sh  --organisation [Org. Acc. Profile] --clientaccprofile [Client Acc. Profile] --seclogprofile [Seclog. Acc. Profile]
 #
 #
 #   Version History
@@ -28,7 +28,7 @@
 #       Parameters
 #       --------------------
 
-# export oganisation=$1
+# export organisation=$1
 # export clientaccprofile=$2
 # export seclogprofile=$3
 
@@ -79,7 +79,7 @@ intro() {
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 --oganisation [Org. Acc. Profile] --clientaccprofile [Client Acc. Profile] --seclogprofile [Seclog. Acc. Profile]" >&2
+    echo "Usage: $0 --organisation [Org. Acc. Profile] --clientaccprofile [Client Acc. Profile] --seclogprofile [Seclog. Acc. Profile]" >&2
     echo
     echo "   Provide "
     echo "     - the organization profile"
@@ -121,7 +121,7 @@ configure_client(){
         #   Send invitations (Config, GuardDuty, Security Hub) from the SecLog account
         #   -----------------------------------------------------------------------------
 
-        sh ./SH/EC-Invite-from-SecLog-Account.sh $oganisation $clientaccprofile $seclogprofile
+        sh ./SH/EC-Invite-from-SecLog-Account.sh $organisation $clientaccprofile $seclogprofile
         #   -----------------------------------------------------------------------------
         #   Accept invitations (Config, GuardDuty, Security Hub) from the Client account
         #   -----------------------------------------------------------------------------
@@ -141,8 +141,8 @@ configure_client(){
 # ---------------------------------------------
 
 # Simple check if 3 arguments are provided
-if [ -z $3 ]; then
-    display_help  # Call your function
+if [ -z "$clientaccprofile" ] || [ -z "$seclogprofile" ] || [ -z "$organisation" ] ; then
+    display_help
     exit 0
 fi
 
