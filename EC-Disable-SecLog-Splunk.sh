@@ -3,7 +3,7 @@
 #   --------------------------------------------------------
 #
 #			Automates the following:
-#			- updates existing landing zone to push logs and alerts to C2 Splunk logs destinations 
+#			- updates existing landing zone to remove push logs and alerts to C2 Splunk logs destinations 
 #
 #			Usage
 #
@@ -15,7 +15,7 @@
 #
 #   Version History
 #
-#   v1.0  João Silva  Initial Version
+#   v1.0.0  J Silva  Initial Version
 #   --------------------------------------------------------
 
 #       --------------------

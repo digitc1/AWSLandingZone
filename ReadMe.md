@@ -14,7 +14,7 @@ $ aws organizations list-accounts
 ```
 - Execute the script from the folder "EC-landingzone-v2"
 ```
-$ cd EC-landingzone-v2
+$ cd AWSLandingZone
 ```
 
 ### Create the SecLog account (if it doesn't exist)
@@ -40,9 +40,21 @@ To configure the SecLog account that you just created, we'll need to run the "EC
 
 Run the script
 ```
-$ ./EC-Setup-SecLog.sh D3_Acc1 D3_seclog EC_DIGIT_C2-SPLUNK D3-SecNotif@ec.europa.eu dgtest
+$ ./EC-Configure-SecLog-Account.sh --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest 
 ```
-
+If you wish to disable any of the default SOC log integrations, use the appropriate flags (can be combined on a single script call)
+**Disable CloudTrail integration**
+```
+$ ./EC-Configure-SecLog-Account.sh --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest --cloudtrailintegration false
+```
+**Disable GuardDuty integration**
+```
+$ ./EC-Configure-SecLog-Account.sh --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest --guarddutyintegration false
+```
+**Disable SecurityHub integration**
+```
+$ ./EC-Configure-SecLog-Account.sh --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest --securityhubintegration false
+```
 
 ### Create a client account (only for new account)
 
@@ -69,5 +81,33 @@ This script will:
 
 Run the script
 ```
-$ ./EC-Setup-Client.sh D3_Acc1 D3_seclog
+$ ./EC-Setup-Client.sh  --oganisation DIGIT_ORG_ACC --clientaccprofile D3_Acc1 --seclogprofile D3_seclog
+```
+
+### Update SECLOG account to include SOC integration
+
+This script will update the current secure landing zone environment to include SOC integration. 
+Only run this script if the current SECLOG account has been installed with the LZ 1.0.0
+
+This script will:
+- set the Firehose subscription log destination
+- Update log groups to push to a log destination for Cloudtrail, cloudwatch and config logs
+- Update to S3 bucket policies - Added SSL Secure Transport Only policy on all buckets
+
+Run the script
+```
+$ ./EC-Update-SecLog-Splunk.sh --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2  --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest
+```
+
+### Downgrade Secure Landing zone - disable SECLOG to SOC integration
+
+This script will disable the existing SOC integration on an upgraded secure landing zone environment. 
+Only run this script if the current SECLOG account has been installed/upgraded with the LZ 1.1.x
+
+This script will:
+- Update log groups to push to remove link to a log destination for Cloudtrail, cloudwatch and config logs
+
+Run the script
+```
+$ ./EC-Disable-SecLog-Splunk.sh --seclogprofile D3_seclog --notificationemail D3-SecNotif@ec.europa.eu
 ```

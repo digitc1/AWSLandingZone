@@ -19,8 +19,8 @@
 #
 #   Version History
 #
-#   v1.0  Alexandre Levret   Initial Version
-#   v1.1  J. Silva           Updated parameter handling
+#   v1.0.0  Alexandre Levret   Initial Version
+#   v1.1.0  J. Silva           Updated parameter handling
 #
 #   --------------------------------------------------------
 
