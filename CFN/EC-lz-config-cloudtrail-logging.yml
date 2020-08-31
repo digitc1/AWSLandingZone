@@ -115,7 +115,13 @@ Conditions:
   EnableSecLogForCloudTrail: !Equals
   - !Ref EnableSecLogForCloudTrailParam
   - 'true'
-
+  IsSecLogMasterAccountWithSOCIntegration: !And
+  - !Equals
+    - !Ref AWS::AccountId
+    - !Ref SecLogMasterAccountId
+  - !Equals
+    - !Ref EnableSecLogForCloudTrailParam
+    - 'true'
 Mappings: {}
 
 Resources:
@@ -141,9 +147,9 @@ Resources:
     Properties:
       LogGroupName: !Ref CloudWatchLogsGroupName
       RetentionInDays: !Ref LogsRetentionInDays
-  SecurityHubSubscriptionFilter:
+  TrailSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: EnableSecLogForCloudTrail
+    Condition: IsSecLogMasterAccountWithSOCIntegration
     Properties:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
