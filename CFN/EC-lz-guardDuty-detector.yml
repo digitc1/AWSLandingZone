@@ -86,7 +86,7 @@ Resources:
 
   CloudWatchEventsLogGroupRole:
     Type: AWS::IAM::Role
-    Condition: IsSecLogMasterAccountWithSOCIntegration
+    Condition: IsSecLogMasterAccount
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -114,6 +114,7 @@ Resources:
   # GuardDuty CloudWatch Event - For GuardDuty
   GuardDutyEvents: 
     Type: AWS::Events::Rule
+    Condition: IsSecLogMasterAccount
     Properties: 
       Name: SECLZ-GuardDuty-Event
       Description: "GuardDuty Event Handler"
