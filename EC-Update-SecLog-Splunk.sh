@@ -56,6 +56,7 @@ CFN_TAGS_PARAMS_FILE='CFN/EC-lz-TAGS-params.json'
 CFN_LOG_TEMPLATE='CFN/EC-lz-config-cloudtrail-logging.yml'
 CFN_GUARDDUTY_DETECTOR_TEMPLATE='CFN/EC-lz-guardDuty-detector.yml'
 CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
+CFN_NOTIFICATIONS_CT_TEMPLATE='CFN/EC-lz-notifications.yml'
 
 
 #   ---------------------
@@ -210,6 +211,27 @@ update_seclog() {
 
     sleep 5
 
+    #   ------------------------------------
+    #   Enable Notifications for CIS cloudtrail metrics filters
+    #   ------------------------------------
+
+
+    echo ""
+    echo "- Enable Notifications for CIS cloudtrail metrics filters"
+    echo "---------------------------------------"
+    echo ""
+
+    aws cloudformation update-stack \
+    --stack-name 'SECLZ-Notifications-Cloudtrail' \
+    --template-body file://$CFN_NOTIFICATIONS_CT_TEMPLATE \
+    --profile $seclogprofile
+
+    StackName="SECLZ-Notifications-Cloudtrail"
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+    sleep 5
     
     #   ------------------------------------
     #   Cloudtrail bucket / Config bucket / Access_log bucket ...
