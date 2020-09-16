@@ -57,7 +57,7 @@ CFN_LOG_TEMPLATE='CFN/EC-lz-config-cloudtrail-logging.yml'
 CFN_GUARDDUTY_DETECTOR_TEMPLATE='CFN/EC-lz-guardDuty-detector.yml'
 CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
 CFN_NOTIFICATIONS_CT_TEMPLATE='CFN/EC-lz-notifications.yml'
-
+CFN_STACKSET_CONFIG_SECHUB_GLOBAL='CFN/EC-lz-Config-SecurityHub-all-regions.yml'
 
 #   ---------------------
 #   The command line help
@@ -255,6 +255,28 @@ update_seclog() {
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     sleep 5
+
+
+
+    #   ------------------------------------
+    #   Enable Config and SecurityHub globally using stacksets
+    #   ------------------------------------
+
+    # Create StackSet (Enable Config and SecurityHub globally)
+    aws cloudformation update-stack-set \
+    --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
+    --template-body file://$CFN_STACKSET_CONFIG_SECHUB_GLOBAL \
+    --parameters ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
+    --capabilities CAPABILITY_IAM \
+    --profile $seclogprofile
+
+    # Create StackInstances (globally except Ireland)
+    aws cloudformation update-stack-instances \
+    --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
+    --accounts $SECLOG_ACCOUNT_ID \
+    --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
+    --regions $ALL_REGIONS_EXCEPT_IRELAND \
+    --profile $seclogprofile
 }
 
 # ---------------------------------------------
