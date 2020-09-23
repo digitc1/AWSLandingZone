@@ -66,7 +66,7 @@ display_help() {
     echo "Usage: $0 --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile]  --notificationemail [Notification Email] --logdestination [Log Destination DG name]  --batch [true|false]" >&2
     echo ""
     echo "   Provide "
-    echo "   --organisation       : The orgnisation account as configured in your AWS profile "
+    echo "   --organisation       : The orgnisation account as configured in your AWS profile (optional)"
     echo "   --seclogprofile      : The account profile of the central SecLog account as configured in your AWS profile"
     echo "   --splunkprofile      : The Splunk account profile as configured in your AWS profile"
     echo "   --notificationemail  : The notification email to where logs are to be sent"
@@ -213,17 +213,16 @@ update_seclog() {
 	echo "---------------------------------------"
 	echo ""
 
-	aws cloudformation create-stack \
+	aws cloudformation update-stack \
 	--stack-name 'SECLZ-CloudwatchLogs-SecurityHub' \
 	--template-body file://$CFN_SECURITYHUB_LOG_TEMPLATE \
-	--enable-termination-protection \
     --capabilities CAPABILITY_IAM \
 	--profile $seclogprofile \
     --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN 
 
 	StackName="SECLZ-CloudwatchLogs-SecurityHub"
 	aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-	while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` = "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+	while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` = "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
 	aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     sleep 5
@@ -293,6 +292,7 @@ update_seclog() {
     --accounts $SECLOG_ACCOUNT_ID \
     --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
+    --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
     --profile $seclogprofile
 }
 
