@@ -78,11 +78,19 @@ display_help() {
 
 update_seclog() {
 
-    # Get organizations Identity
-    ORG_ACCOUNT_ID=`aws --profile $organisation sts get-caller-identity --query 'Account' --output text`
-
-    #getting organization ouId
-    ORG_OU_ID=`aws --profile $organisation organizations describe-organization --query '[Organization.Id]' --output text`
+    ORG_ACCOUNT_ID=''
+    ORG_OU_ID=''
+    
+    if [ -z "$organisation" ] ;
+        ORG_ACCOUNT_ID='246933597933'
+        ORG_OU_ID='o-jyyw8qs5c8'
+    else ;
+        # Get organizations Identity
+        ORG_ACCOUNT_ID=`aws --profile $organisation sts get-caller-identity --query 'Account' --output text`
+        #getting organization ouId
+        ORG_OU_ID=`aws --profile $organisation organizations describe-organization --query '[Organization.Id]' --output text`
+    fi
+   
 
     # Getting SecLog Account Id
     SECLOG_ACCOUNT_ID=`aws --profile $seclogprofile sts get-caller-identity --query 'Account' --output text`
@@ -293,7 +301,7 @@ update_seclog() {
 # ---------------------------------------------
 
 # Simple check if two arguments are provided
-if [ -z "$organisation" ] || [ -z "$seclogprofile" ] || [ -z "$splunkprofile" ]  || [ -z "$logdestination" ] || [ -z "$notificationemail" ]; then
+if [ -z "$seclogprofile" ] || [ -z "$splunkprofile" ]  || [ -z "$logdestination" ] || [ -z "$notificationemail" ]; then
     display_help
     exit 0
 fi
