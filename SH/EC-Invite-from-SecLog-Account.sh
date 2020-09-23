@@ -74,13 +74,14 @@ invite_client() {
   AGGREGATOR_NAME=`aws --profile $SECLOG_PROFILE configservice describe-configuration-aggregators --output text | grep CONFIGURATIONAGGREGATORS | awk '{print $3}'`
   
   CLIENT_ID=`aws --profile $CLIENT_PROFILE sts get-caller-identity --query 'Account' --output text`
+  
   EMAIL=''
-  if [ -z "$ORG_PROFILE"] ;
+  if [ -z "$ORG_PROFILE"] ; then
     EMAIL="digit-cloud-tech-account-a127@ec.europa.eu"
-  else ;
+  else 
     EMAIL=`aws organizations --profile $ORG_PROFILE list-accounts --query 'Accounts[*].[Id, Name, Email]' --output text | grep $CLIENT_ID | awk '{print $NF}'`
-
   fi
+
   if [ -z "$AGGREGATOR_NAME" ]
   then
     # There is no existing aggregator, so we create one by adding as first account the client account

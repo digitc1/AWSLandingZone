@@ -81,10 +81,10 @@ update_seclog() {
     ORG_ACCOUNT_ID=''
     ORG_OU_ID=''
     
-    if [ -z "$organisation" ] ;
+    if [ -z "$organisation" ] ; then
         ORG_ACCOUNT_ID='246933597933'
         ORG_OU_ID='o-jyyw8qs5c8'
-    else ;
+    else 
         # Get organizations Identity
         ORG_ACCOUNT_ID=`aws --profile $organisation sts get-caller-identity --query 'Account' --output text`
         #getting organization ouId
