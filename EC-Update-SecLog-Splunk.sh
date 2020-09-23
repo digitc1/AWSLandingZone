@@ -7,7 +7,7 @@
 #
 #			Usage
 #
-#			$ ./EC-Update-SecLog-Splunk.sh --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile] --logdestination [Log Destination DG name]
+#			$ ./EC-Update-SecLog-Splunk.sh --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile] --logdestination [Log Destination DG name] --batch [true|false]
 #
 #			
 #
@@ -28,7 +28,7 @@ organisation=${organisation:-}
 seclogprofile=${seclogprofile:-}
 splunkprofile=${splunkprofile:-}
 logdestination=${logdestination:-}
-
+batch=${batch:-false}
 
 while [ $# -gt 0 ]; do
 
@@ -47,7 +47,7 @@ export i=1
 export sp="/-\|"
 
 AWS_REGION='eu-west-1'
-ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
+ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
 
 # parameters for scripts
 
@@ -63,10 +63,16 @@ CFN_NOTIFICATIONS_CT_TEMPLATE='CFN/EC-lz-notifications.yml'
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile]  --notificationemail [Notification Email] --logdestination [Log Destination DG name]" >&2
-    echo
-    echo "   Provide the Org. account name to configure, account name of the central SecLog account as configured in your AWS profile,"
-    echo "   account name for the Splunk as in your AWS profile, notification email and the name of the DG of the firehose log destination"
+    echo "Usage: $0 --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile]  --notificationemail [Notification Email] --logdestination [Log Destination DG name]  --batch [true|false]" >&2
+    echo ""
+    echo "   Provide "
+    echo "   --organisation       : The orgnisation account as configured in your AWS profile "
+    echo "   --seclogprofile      : The account profile of the central SecLog account as configured in your AWS profile"
+    echo "   --splunkprofile      : The Splunk account profile as configured in your AWS profile"
+    echo "   --notificationemail  : The notification email to where logs are to be sent"
+    echo "   --logdestination     : The name of the DG of the firehose log destination"
+    echo "   --batch              : Flag to enable or disable batch execution mode. Default: false"
+    echo ""
     exit 1
 }
 
@@ -104,8 +110,10 @@ update_seclog() {
     echo "     in AWS Region:                    $AWS_REGION"
     echo "   ----------------------------------------------------"
     echo ""
-    echo "   If this is correct press enter to continue"
-    read -p "  or CTRL-C to break"
+    if ["$batch" == "true"]
+        echo "   If this is correct press enter to continue"
+        read -p "  or CTRL-C to break"
+    fi
 
     #   ------------------------------------
     # Store notification-E-mail, OrgID, SecAccountID in SSM parameters

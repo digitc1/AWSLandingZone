@@ -64,7 +64,7 @@ accept_seclog_invitation() {
     AggregatorInvitation=''
   else
     # There is an invitation from the SecLog account
-    for region in $(aws ec2 describe-regions --output text --query 'Regions[*].[RegionName]'); do
+    for region in $(aws --profile $CLIENT ec2 describe-regions --output text --query 'Regions[*].[RegionName]'); do
       aws --profile $CLIENT configservice put-aggregation-authorization --authorized-account-id $SECLOG_ID --authorized-aws-region $AWS_REGION --region $region
     done
   fi
