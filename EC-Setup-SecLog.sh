@@ -81,8 +81,8 @@ CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
 #   The command line help
 #   ---------------------
 display_help() {
+
     echo "Usage: $0 --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile] --notificationemail [Notification Email] --logdestination [Log Destination DG name]--cloudtrailintegration [true|false] --guarddutyintegration [true|false] --securityhubintegration [true|false] --batch [true|false]
-#" >&2
     echo ""
     echo "   Provide "
     echo "   --organisation           : The orgnisation account as configured in your AWS profile "
