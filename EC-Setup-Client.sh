@@ -85,7 +85,7 @@ display_help() {
     echo "Usage: $0 --organisation [Org. Acc. Profile] --clientaccprofile [Client Acc. Profile] --seclogprofile [Seclog. Acc. Profile]  --batch [true|false]" >&2
     echo ""
     echo "   Provide "
-    echo "   --organisation      : The orgnisation account as configured in your AWS profile "
+    echo "   --organisation      : The orgnisation account as configured in your AWS profile (optional) "
     echo "   --clientaccprofile  : The client account as configured in your AWS profile"
     echo "   --seclogprofile     : The account profile of the central SecLog account as configured in your AWS profile"
     echo "   --batch             : Flag to enable or disable batch execution mode. Default: false"
@@ -125,7 +125,7 @@ configure_client(){
         #   Send invitations (Config, GuardDuty, Security Hub) from the SecLog account
         #   -----------------------------------------------------------------------------
 
-        sh ./SH/EC-Invite-from-SecLog-Account.sh $organisation $clientaccprofile $seclogprofile
+        sh ./SH/EC-Invite-from-SecLog-Account.sh $clientaccprofile $seclogprofile $organisation 
         #   -----------------------------------------------------------------------------
         #   Accept invitations (Config, GuardDuty, Security Hub) from the Client account
         #   -----------------------------------------------------------------------------
@@ -145,7 +145,7 @@ configure_client(){
 # ---------------------------------------------
 
 # Simple check if 3 arguments are provided
-if [ -z "$clientaccprofile" ] || [ -z "$seclogprofile" ] || [ -z "$organisation" ] ; then
+if [ -z "$clientaccprofile" ] || [ -z "$seclogprofile" ] ; then
     display_help
     exit 0
 fi
