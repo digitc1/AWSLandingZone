@@ -118,7 +118,8 @@ update_seclog() {
     echo "     in AWS Region:                    $AWS_REGION"
     echo "   ----------------------------------------------------"
     echo ""
-    if ["$batch" == "true"]
+    
+    if [ "$batch" == "false" ] ; then
         echo "   If this is correct press enter to continue"
         read -p "  or CTRL-C to break"
     fi

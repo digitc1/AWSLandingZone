@@ -72,9 +72,10 @@ intro() {
         echo "     1. This first script is part of an AWS Secure Landing Zone Solution process"
         echo "     2. You need to know that this end-to-end process will start by disabling multiple AWS services (Config, GuardDuty, Security Hub)"
         echo "   ----------------------------------------------------"
-        if ["$batch" == "true"] ;
-          printf "\n\n\tIf you are entirely sure that you want to do it, press enter to continue"
-          read -p "  or CTRL-C to break"
+        
+        if [ "$batch" == "false" ] ; then
+            echo "   If this is correct press enter to continue"
+            read -p "  or CTRL-C to break"
         fi
 }
 
