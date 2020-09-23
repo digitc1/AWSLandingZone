@@ -114,8 +114,6 @@ Resources:
                 - - "cloudtrail-logs-"
                   - Ref: AWS::AccountId
                   - "-do-not-delete"
-            DependsOn:
-            - CloudTrailProcessingLambdaPermission
             NotificationConfiguration:
               LambdaConfigurations:
                 - Event: s3:ObjectCreated:*
@@ -343,8 +341,6 @@ Resources:
                 - - "config-logs-"
                   - Ref: AWS::AccountId
                   - "-do-not-delete"
-            DependsOn:
-            - ConfigProcessingLambdaPermission
             NotificationConfiguration:
               LambdaConfigurations:
                 - Event: s3:ObjectCreated:*
