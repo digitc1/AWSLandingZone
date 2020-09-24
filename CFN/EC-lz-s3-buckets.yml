@@ -86,6 +86,7 @@ Resources:
               Statement:
                 - Effect: Allow
                   Action:
+                    - 'logs:CreateLogGroup'
                     - 'logs:CreateLogStream'
                     - 'logs:DescribeLogStreams'
                   Resource: 
