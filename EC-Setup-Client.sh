@@ -14,7 +14,7 @@
 #       - We are assuming that the account has already a CloudBrokerAccountAccess role created
 #
 #       Usage:
-#       $ ./EC-Setup-Client.sh  --organisation [Org. Acc. Profile] --clientaccprofile [Client Acc. Profile] --seclogprofile [Seclog. Acc. Profile] --batch [true|false]
+#       $ ./EC-Setup-Client.sh  --organisation [--organisation <Org. Acc. Profile>] --clientaccprofile <Client Acc. Profile> --seclogprofile <Seclog. Acc. Profile>  [--batch <true|false>]
 #
 #
 #   Version History
@@ -83,13 +83,13 @@ intro() {
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 --organisation [Org. Acc. Profile] --clientaccprofile [Client Acc. Profile] --seclogprofile [Seclog. Acc. Profile]  --batch [true|false]" >&2
+    echo "Usage: $0 [--organisation <Org. Acc. Profile>] --clientaccprofile <Client Acc. Profile> --seclogprofile <Seclog. Acc. Profile>  [--batch <true|false>]" >&2
     echo ""
     echo "   Provide "
-    echo "   --organisation      : The orgnisation account as configured in your AWS profile (optional) "
+    echo "   --organisation      : The orgnisation account as configured in your AWS profile (optional)"
     echo "   --clientaccprofile  : The client account as configured in your AWS profile"
     echo "   --seclogprofile     : The account profile of the central SecLog account as configured in your AWS profile"
-    echo "   --batch             : Flag to enable or disable batch execution mode. Default: false"
+    echo "   --batch             : Flag to enable or disable batch execution mode. Default: false (optional)"
     echo ""
     exit 1
 }

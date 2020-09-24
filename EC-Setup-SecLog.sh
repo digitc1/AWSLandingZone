@@ -13,7 +13,7 @@
 #       - Sets the Firehose subscription log destination
 #
 #       Usage
-#       $  ./EC-Configure-SecLog-Account.sh --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile] --notificationemail [Notification Email] --logdestination [Log Destination DG name] --cloudtrailintegration [true|false] --guarddutyintegration [true|false] --securityhubintegration [true|false] --batch [true|false]
+#       $  ./EC-Configure-SecLog-Account.sh [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile> --notificationemail <Notification Email> --logdestination <Log Destination DG name> [--cloudtrailintegration <true|false] --guarddutyintegration [true|false>] [--securityhubintegration <true|false>] [--batch <true|false>]
 #
 #   Version History
 #
@@ -82,7 +82,7 @@ CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
 #   ---------------------
 display_help() {
 
-    echo "Usage: $0 --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile] --notificationemail [Notification Email] --logdestination [Log Destination DG name]--cloudtrailintegration [true|false] --guarddutyintegration [true|false] --securityhubintegration [true|false] --batch [true|false]"
+    echo "Usage: $0 [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile> --notificationemail <Notification Email> --logdestination <Log Destination DG name> [--cloudtrailintegration <true|false] --guarddutyintegration [true|false>] [--securityhubintegration <true|false>] [--batch <true|false>]"
     echo ""
     echo "   Provide "
     echo "   --organisation           : The orgnisation account as configured in your AWS profile (optional)"
@@ -90,10 +90,10 @@ display_help() {
     echo "   --splunkprofile          : The Splunk account profile as configured in your AWS profile"
     echo "   --notificationemail      : The notification email to where logs are to be sent"
     echo "   --logdestination         : The name of the DG of the firehose log destination"
-    echo "   --cloudtrailintegration  : Flag to enable or disable CloudTrail seclog integration. Default: true"
-    echo "   --guarddutyintegration   : Flag to enable or disable GuardDuty seclog integration. Default: true"
-    echo "   --securityhubintegration : Flag to enable or disable SecurityHub seclog integration. Default: true"
-    echo "   --batch                  : Flag to enable or disable batch execution mode. Default: false"
+    echo "   --cloudtrailintegration  : Flag to enable or disable CloudTrail seclog integration. Default: true (optional)"
+    echo "   --guarddutyintegration   : Flag to enable or disable GuardDuty seclog integration. Default: true (optional)"
+    echo "   --securityhubintegration : Flag to enable or disable SecurityHub seclog integration. Default: true (optional)"
+    echo "   --batch                  : Flag to enable or disable batch execution mode. Default: false (optional)"
     echo ""
     exit 1
 }
@@ -429,6 +429,7 @@ configure_seclog() {
     --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
     --accounts $SECLOG_ACCOUNT_ID \
     --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
+    --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $seclogprofile
 
