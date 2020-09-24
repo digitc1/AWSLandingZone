@@ -165,7 +165,6 @@ update_client() {
     aws cloudformation update-stack \
     --stack-name 'SECLZ-Guardduty-detector' \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
-    --enable-termination-protection \
     --profile $clientaccprofile
 
     sleep 5
@@ -219,7 +218,7 @@ update_client() {
 # ---------------------------------------------
 
 # Simple check if two arguments are provided
-if [ -z "$clientaccprofile" ] || [ -z "$seclogprofile" ] ; then
+if [ -z "$clientaccprofile" ] ; then
     display_help
     exit 0
 fi
