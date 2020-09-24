@@ -86,20 +86,37 @@ Resources:
               Statement:
                 - Effect: Allow
                   Action:
-                    - 'logs:CreateLogGroup'
                     - 'logs:CreateLogStream'
                     - 'logs:DescribeLogStreams'
+                  Resource: 
+                    Fn::Join:
+                      - ""
+                      - - "arn:aws:logs:*:"
+                        - Ref: AWS::AccountId
+                        - ":log-group:*"
+                - Effect: Allow
+                  Action:
                     - 'logs:PutLogEvents'
-                  Resource: 'arn:aws:logs:*:*:*'
+                  Resource: 
+                    Fn::Join:
+                      - ""
+                      - - "arn:aws:logs:*:"
+                        - Ref: AWS::AccountId
+                        - ":log-group:*:log-stream:*"
                 - Effect: Allow
                   Action:
                   - 's3:GetObject'
-                  Resource: 'arn:aws:s3:::*'
+                  Resource: 
+                    'arn:aws:s3:::*'
                 - Effect: Allow
                   Action:
-                  - 'kms:GetPublicKey'
                   - 'kms:Decrypt'
-                  Resource: 'arn:aws:kms:::*'
+                  Resource: 
+                    Fn::Join:
+                      - ""
+                      - - "arn:aws:kms:*:"
+                        - Ref: AWS::AccountId
+                        - ":key/*"
 
     #   -------------------
     #   CloudTrail Bucket
@@ -273,7 +290,10 @@ Resources:
                         logStreamName=logstreamname)
                       logger.info('Log stream created: ' + logstreamname)
                     else:
-                      nextToken = li[0]['uploadSequenceToken']
+                      logger.debug('Found logstream: ' + str(li))
+                      if 'uploadSequenceToken' in li[0]:
+                        nextToken = li[0]['uploadSequenceToken']
+                        logger.debug('uploadSequenceToken: ' + nextToken)
                     # get the object
                     obj = s3.get_object(Bucket=bucketname, Key=filename)
                     logger.debug('Retrieve S3 object')
@@ -506,7 +526,10 @@ Resources:
                         logStreamName=logstreamname)
                       logger.info('Log stream created: ' + logstreamname)
                     else:
-                      nextToken = li[0]['uploadSequenceToken']
+                      logger.debug('Found logstream: ' + str(li))
+                      if 'uploadSequenceToken' in li[0]:
+                        nextToken = li[0]['uploadSequenceToken']
+                        logger.debug('uploadSequenceToken: ' + nextToken)
                     # get the object
                     obj = s3.get_object(Bucket=bucketname, Key=filename)
                     logger.debug('Retrieve S3 object')

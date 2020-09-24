@@ -7,7 +7,7 @@
 #
 #			Usage
 #
-#			$ ./EC-Update-SecLog-Splunk.sh --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile] --logdestination [Log Destination DG name] --batch [true|false]
+#			$ ./EC-Update-SecLog-Splunk.sh [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile>  --notificationemail <Notification Email> --logdestination <Log Destination DG name>  [--batch <true|false>]
 #
 #			
 #
@@ -63,7 +63,7 @@ CFN_STACKSET_CONFIG_SECHUB_GLOBAL='CFN/EC-lz-Config-SecurityHub-all-regions.yml'
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile]  --notificationemail [Notification Email] --logdestination [Log Destination DG name]  --batch [true|false]" >&2
+    echo "Usage: $0 [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile>  --notificationemail <Notification Email> --logdestination <Log Destination DG name>  [--batch <true|false>]" >&2
     echo ""
     echo "   Provide "
     echo "   --organisation       : The orgnisation account as configured in your AWS profile (optional)"
@@ -71,7 +71,7 @@ display_help() {
     echo "   --splunkprofile      : The Splunk account profile as configured in your AWS profile"
     echo "   --notificationemail  : The notification email to where logs are to be sent"
     echo "   --logdestination     : The name of the DG of the firehose log destination"
-    echo "   --batch              : Flag to enable or disable batch execution mode. Default: false"
+    echo "   --batch              : Flag to enable or disable batch execution mode. Default: false (optional)"
     echo ""
     exit 1
 }
@@ -287,13 +287,13 @@ update_seclog() {
     --profile $seclogprofile
 
     # Create StackInstances (globally except Ireland)
-    aws cloudformation update-stack-instances \
-    --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
-    --accounts $SECLOG_ACCOUNT_ID \
-    --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
-    --regions $ALL_REGIONS_EXCEPT_IRELAND \
-    --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
-    --profile $seclogprofile
+    # aws cloudformation update-stack-instances \
+    # --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
+    # --accounts $SECLOG_ACCOUNT_ID \
+    # --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
+    # --regions $ALL_REGIONS_EXCEPT_IRELAND \
+    # --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
+    # --profile $seclogprofile
 }
 
 # ---------------------------------------------
