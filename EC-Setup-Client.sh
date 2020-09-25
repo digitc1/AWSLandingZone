@@ -14,7 +14,7 @@
 #       - We are assuming that the account has already a CloudBrokerAccountAccess role created
 #
 #       Usage:
-#       $ ./EC-Setup-Client.sh  --organisation [Org. Acc. Profile] --clientaccprofile [Client Acc. Profile] --seclogprofile [Seclog. Acc. Profile]
+#       $ ./EC-Setup-Client.sh  --organisation [--organisation <Org. Acc. Profile>] --clientaccprofile <Client Acc. Profile> --seclogprofile <Seclog. Acc. Profile>  [--batch <true|false>]
 #
 #
 #   Version History
@@ -35,6 +35,7 @@
 organisation=${organisation:-}
 seclogprofile=${seclogprofile:-}
 clientaccprofile=${clientaccprofile:-}
+batch=${batch:-false}
 
 
 while [ $# -gt 0 ]; do
@@ -71,21 +72,25 @@ intro() {
         echo "     1. This first script is part of an AWS Secure Landing Zone Solution process"
         echo "     2. You need to know that this end-to-end process will start by disabling multiple AWS services (Config, GuardDuty, Security Hub)"
         echo "   ----------------------------------------------------"
-        printf "\n\n\tIf you are entirely sure that you want to do it, press enter to continue"
-        read -p " or CTRL-C to break"
+        
+        if [ "$batch" == "false" ] ; then
+            echo "   If this is correct press enter to continue"
+            read -p "  or CTRL-C to break"
+        fi
 }
 
 #   ---------------------
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 --organisation [Org. Acc. Profile] --clientaccprofile [Client Acc. Profile] --seclogprofile [Seclog. Acc. Profile]" >&2
-    echo
+    echo "Usage: $0 [--organisation <Org. Acc. Profile>] --clientaccprofile <Client Acc. Profile> --seclogprofile <Seclog. Acc. Profile>  [--batch <true|false>]" >&2
+    echo ""
     echo "   Provide "
-    echo "     - the organization profile"
-    echo "     - the client account profile"
-    echo "     - the SecLog account profile"
-    echo
+    echo "   --organisation      : The orgnisation account as configured in your AWS profile (optional)"
+    echo "   --clientaccprofile  : The client account as configured in your AWS profile"
+    echo "   --seclogprofile     : The account profile of the central SecLog account as configured in your AWS profile"
+    echo "   --batch             : Flag to enable or disable batch execution mode. Default: false (optional)"
+    echo ""
     exit 1
 }
 
@@ -121,7 +126,7 @@ configure_client(){
         #   Send invitations (Config, GuardDuty, Security Hub) from the SecLog account
         #   -----------------------------------------------------------------------------
 
-        sh ./SH/EC-Invite-from-SecLog-Account.sh $organisation $clientaccprofile $seclogprofile
+        sh ./SH/EC-Invite-from-SecLog-Account.sh $clientaccprofile $seclogprofile $organisation 
         #   -----------------------------------------------------------------------------
         #   Accept invitations (Config, GuardDuty, Security Hub) from the Client account
         #   -----------------------------------------------------------------------------
@@ -141,7 +146,7 @@ configure_client(){
 # ---------------------------------------------
 
 # Simple check if 3 arguments are provided
-if [ -z "$clientaccprofile" ] || [ -z "$seclogprofile" ] || [ -z "$organisation" ] ; then
+if [ -z "$clientaccprofile" ] || [ -z "$seclogprofile" ] ; then
     display_help
     exit 0
 fi

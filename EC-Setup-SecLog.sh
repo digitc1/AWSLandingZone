@@ -13,7 +13,7 @@
 #       - Sets the Firehose subscription log destination
 #
 #       Usage
-#       $  ./EC-Configure-SecLog-Account.sh --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile] --notificationemail [Notification Email] --logdestination [Log Destination DG name] --cloudtrailintegration [true|false] --guarddutyintegration [true|false] --securityhubintegration [true|false]
+#       $  ./EC-Configure-SecLog-Account.sh [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile> --notificationemail <Notification Email> --logdestination <Log Destination DG name> [--cloudtrailintegration <true|false] --guarddutyintegration [true|false>] [--securityhubintegration <true|false>] [--batch <true|false>]
 #
 #   Version History
 #
@@ -21,6 +21,7 @@
 #   v1.0.1    L. Leonard        Version dedicated to EC-BROKER-IAM
 #   v1.0.2    J. Silva          Add Cloudwatch Event Rules to Cloudwatch logs for Security Hub 
 #   v1.0.3    J. Silva          Add Splunk log destinations for Cloudwatch logs
+#   v1.1.0    J. Silva          Made log integration with Splunk optional.
 #   v1.1.0    J. Silva          Made log integration with Splunk optional.
 #   --------------------------------------------------------
 
@@ -36,6 +37,7 @@ logdestination=${logdestination:-}
 cloudtrailintegration=${cloudtrailintegration:-true}
 guarddutyintegration=${guarddutyintegration:-true}
 securityhubintegration=${securityhubintegration:-true}
+batch=${batch:-false}
 
 while [ $# -gt 0 ]; do
 
@@ -56,7 +58,7 @@ export i=1
 export sp="/-\|"
 
 AWS_REGION='eu-west-1'
-ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
+ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
 
 # parameters for scripts
 CFN_BUCKETS_TEMPLATE='CFN/EC-lz-s3-buckets.yml'
@@ -79,17 +81,19 @@ CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile] --notificationemail [Notification Email] --logdestination [Log Destination DG name]--cloudtrailintegration [true|false] --guarddutyintegration [true|false] --securityhubintegration [true|false]
-#" >&2
+
+    echo "Usage: $0 [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile> --notificationemail <Notification Email> --logdestination <Log Destination DG name> [--cloudtrailintegration <true|false] --guarddutyintegration [true|false>] [--securityhubintegration <true|false>] [--batch <true|false>]"
     echo ""
-    echo "   Provide the name of the main account associated with the SecLog account"
-    echo "   the account name of the SecLog account to configure"
-    echo "   the C2 Splunk account profile to be used for log shipping"
-    echo "   an e-mail address for the security notifications and the"
-    echo "   DG Name for the destination log to Splunk."
-    echo "   Flag to enable or disable CloudTrail seclog integration. Default: true"
-    echo "   Flag to enable or disable GuardDuty seclog integration. Default: true"
-    echo "   Flag to enable or disable SeucurityHub seclog integration. Default: true"
+    echo "   Provide "
+    echo "   --organisation           : The orgnisation account as configured in your AWS profile (optional)"
+    echo "   --seclogprofile          : The account profile of the central SecLog account as configured in your AWS profile"
+    echo "   --splunkprofile          : The Splunk account profile as configured in your AWS profile"
+    echo "   --notificationemail      : The notification email to where logs are to be sent"
+    echo "   --logdestination         : The name of the DG of the firehose log destination"
+    echo "   --cloudtrailintegration  : Flag to enable or disable CloudTrail seclog integration. Default: true (optional)"
+    echo "   --guarddutyintegration   : Flag to enable or disable GuardDuty seclog integration. Default: true (optional)"
+    echo "   --securityhubintegration : Flag to enable or disable SecurityHub seclog integration. Default: true (optional)"
+    echo "   --batch                  : Flag to enable or disable batch execution mode. Default: false (optional)"
     echo ""
     exit 1
 }
@@ -98,12 +102,19 @@ display_help() {
 #   Configure Seclog Account
 #   ----------------------------
 configure_seclog() {
-    # Get organizations Identity
-    ORG_ACCOUNT_ID=`aws --profile $organisation sts get-caller-identity --query 'Account' --output text`
-
-    #getting organization ouId
-    ORG_OU_ID=`aws --profile $organisation organizations describe-organization --query '[Organization.Id]' --output text`
-
+    
+    ORG_ACCOUNT_ID=''
+    ORG_OU_ID=''
+    
+    if [ -z "$organisation" ] ; then
+        ORG_ACCOUNT_ID='246933597933'
+        ORG_OU_ID='o-jyyw8qs5c8'
+    else 
+        # Get organizations Identity
+        ORG_ACCOUNT_ID=`aws --profile $organisation sts get-caller-identity --query 'Account' --output text`
+        #getting organization ouId
+        ORG_OU_ID=`aws --profile $organisation organizations describe-organization --query '[Organization.Id]' --output text`
+    fi
     # Getting SecLog Account Id
     SECLOG_ACCOUNT_ID=`aws --profile $seclogprofile sts get-caller-identity --query 'Account' --output text`
 
@@ -137,9 +148,10 @@ configure_seclog() {
     echo "     in AWS Region:                       $AWS_REGION"
     echo "   ----------------------------------------------------"
     echo ""
-    echo "   If this is correct press enter to continue"
-    read -p "  or CTRL-C to break"
-
+    if [ "$batch" == "false" ] ; then
+        echo "   If this is correct press enter to continue"
+        read -p "  or CTRL-C to break"
+    fi
     #   ------------------------------------
     # Store notification-E-mail, OrgID, SecAccountID in SSM parameters
     #   ------------------------------------
@@ -417,6 +429,7 @@ configure_seclog() {
     --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
     --accounts $SECLOG_ACCOUNT_ID \
     --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
+    --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $seclogprofile
 
@@ -429,7 +442,7 @@ configure_seclog() {
 # ---------------------------------------------
 
 # Check to validate number of parameters entered
-if [ -z "$organisation" ] || [ -z "$seclogprofile" ] || [ -z "$notificationemail" ] ; then
+if  [ -z "$seclogprofile" ] || [ -z "$notificationemail" ] ; then
     display_help
     exit 0
 fi

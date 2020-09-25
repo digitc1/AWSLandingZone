@@ -114,6 +114,7 @@ Resources:
   # GuardDuty CloudWatch Event - For GuardDuty
   GuardDutyEvents: 
     Type: AWS::Events::Rule
+    DependsOn: AwsConfigLogGroup
     Condition: IsSecLogMasterAccount
     Properties: 
       Name: SECLZ-GuardDuty-Event
@@ -127,6 +128,6 @@ Resources:
           Arn: !Ref SNSNotificationTopic
           Id: "GuardDutySNSTopic-SecLog"
         -
-          Arn: !GetAtt AwsConfigLogGroup.Arn
+          Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${AwsConfigLogGroup}"
           Id: "AwsConfigCloudWatch-Seclog"
   

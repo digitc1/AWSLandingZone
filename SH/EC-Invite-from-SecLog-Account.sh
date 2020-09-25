@@ -24,21 +24,22 @@
 # --------------------
 #       Parameters
 #       --------------------
-ORG_PROFILE=$1
-CLIENT_PROFILE=$2
-SECLOG_PROFILE=$3
-ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
+
+CLIENT_PROFILE=$1
+SECLOG_PROFILE=$2
+ORG_PROFILE=$3
+ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
 
 #   ---------------------
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 ORG_PROFILE CLIENT_PROFILE SECLOG_PROFILE" >&2
+    echo "Usage: $0 CLIENT_PROFILE SECLOG_PROFILE ORG_PROFILE" >&2
     echo
     echo "   Provide"
-    echo "     - organization profile"
     echo "     - client account profile"
     echo "     - SecLog account profile"
+    echo "     - organization profile"
     echo
     exit 1
 }
@@ -74,7 +75,12 @@ invite_client() {
   
   CLIENT_ID=`aws --profile $CLIENT_PROFILE sts get-caller-identity --query 'Account' --output text`
   
-  EMAIL=`aws organizations --profile $ORG_PROFILE list-accounts --query 'Accounts[*].[Id, Name, Email]' --output text | grep $CLIENT_ID | awk '{print $NF}'`
+  EMAIL=''
+  if [ -z "$ORG_PROFILE"] ; then
+    EMAIL="digit-cloud-tech-account-a127@ec.europa.eu"
+  else 
+    EMAIL=`aws organizations --profile $ORG_PROFILE list-accounts --query 'Accounts[*].[Id, Name, Email]' --output text | grep $CLIENT_ID | awk '{print $NF}'`
+  fi
 
   if [ -z "$AGGREGATOR_NAME" ]
   then

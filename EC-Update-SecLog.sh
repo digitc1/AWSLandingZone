@@ -7,7 +7,7 @@
 #
 #			Usage
 #
-#			$ ./EC-Update-SecLog-Splunk.sh --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile] --logdestination [Log Destination DG name]
+#			$ ./EC-Update-SecLog-Splunk.sh [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile>  --notificationemail <Notification Email> --logdestination <Log Destination DG name>  [--batch <true|false>]
 #
 #			
 #
@@ -28,7 +28,7 @@ organisation=${organisation:-}
 seclogprofile=${seclogprofile:-}
 splunkprofile=${splunkprofile:-}
 logdestination=${logdestination:-}
-
+batch=${batch:-false}
 
 while [ $# -gt 0 ]; do
 
@@ -47,7 +47,7 @@ export i=1
 export sp="/-\|"
 
 AWS_REGION='eu-west-1'
-ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
+ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
 
 # parameters for scripts
 
@@ -57,26 +57,40 @@ CFN_LOG_TEMPLATE='CFN/EC-lz-config-cloudtrail-logging.yml'
 CFN_GUARDDUTY_DETECTOR_TEMPLATE='CFN/EC-lz-guardDuty-detector.yml'
 CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
 CFN_NOTIFICATIONS_CT_TEMPLATE='CFN/EC-lz-notifications.yml'
-
+CFN_STACKSET_CONFIG_SECHUB_GLOBAL='CFN/EC-lz-Config-SecurityHub-all-regions.yml'
 
 #   ---------------------
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 --organisation [Org Account Profile] --seclogprofile [Seclog Acc Profile] --splunkprofile [Splunk Acc Profile]  --notificationemail [Notification Email] --logdestination [Log Destination DG name]" >&2
-    echo
-    echo "   Provide the Org. account name to configure, account name of the central SecLog account as configured in your AWS profile,"
-    echo "   account name for the Splunk as in your AWS profile, notification email and the name of the DG of the firehose log destination"
+    echo "Usage: $0 [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile>  --notificationemail <Notification Email> --logdestination <Log Destination DG name>  [--batch <true|false>]" >&2
+    echo ""
+    echo "   Provide "
+    echo "   --organisation       : The orgnisation account as configured in your AWS profile (optional)"
+    echo "   --seclogprofile      : The account profile of the central SecLog account as configured in your AWS profile"
+    echo "   --splunkprofile      : The Splunk account profile as configured in your AWS profile"
+    echo "   --notificationemail  : The notification email to where logs are to be sent"
+    echo "   --logdestination     : The name of the DG of the firehose log destination"
+    echo "   --batch              : Flag to enable or disable batch execution mode. Default: false (optional)"
+    echo ""
     exit 1
 }
 
 update_seclog() {
 
-    # Get organizations Identity
-    ORG_ACCOUNT_ID=`aws --profile $organisation sts get-caller-identity --query 'Account' --output text`
-
-    #getting organization ouId
-    ORG_OU_ID=`aws --profile $organisation organizations describe-organization --query '[Organization.Id]' --output text`
+    ORG_ACCOUNT_ID=''
+    ORG_OU_ID=''
+    
+    if [ -z "$organisation" ] ; then
+        ORG_ACCOUNT_ID='246933597933'
+        ORG_OU_ID='o-jyyw8qs5c8'
+    else 
+        # Get organizations Identity
+        ORG_ACCOUNT_ID=`aws --profile $organisation sts get-caller-identity --query 'Account' --output text`
+        #getting organization ouId
+        ORG_OU_ID=`aws --profile $organisation organizations describe-organization --query '[Organization.Id]' --output text`
+    fi
+   
 
     # Getting SecLog Account Id
     SECLOG_ACCOUNT_ID=`aws --profile $seclogprofile sts get-caller-identity --query 'Account' --output text`
@@ -104,8 +118,11 @@ update_seclog() {
     echo "     in AWS Region:                    $AWS_REGION"
     echo "   ----------------------------------------------------"
     echo ""
-    echo "   If this is correct press enter to continue"
-    read -p "  or CTRL-C to break"
+    
+    if [ "$batch" == "false" ] ; then
+        echo "   If this is correct press enter to continue"
+        read -p "  or CTRL-C to break"
+    fi
 
     #   ------------------------------------
     # Store notification-E-mail, OrgID, SecAccountID in SSM parameters
@@ -196,17 +213,16 @@ update_seclog() {
 	echo "---------------------------------------"
 	echo ""
 
-	aws cloudformation create-stack \
+	aws cloudformation update-stack \
 	--stack-name 'SECLZ-CloudwatchLogs-SecurityHub' \
 	--template-body file://$CFN_SECURITYHUB_LOG_TEMPLATE \
-	--enable-termination-protection \
     --capabilities CAPABILITY_IAM \
 	--profile $seclogprofile \
     --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN 
 
 	StackName="SECLZ-CloudwatchLogs-SecurityHub"
 	aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-	while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` = "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+	while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` = "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
 	aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     sleep 5
@@ -255,6 +271,29 @@ update_seclog() {
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     sleep 5
+
+
+
+    #   ------------------------------------
+    #   Enable Config and SecurityHub globally using stacksets
+    #   ------------------------------------
+
+    # Create StackSet (Enable Config and SecurityHub globally)
+    aws cloudformation update-stack-set \
+    --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
+    --template-body file://$CFN_STACKSET_CONFIG_SECHUB_GLOBAL \
+    --parameters ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
+    --capabilities CAPABILITY_IAM \
+    --profile $seclogprofile
+
+    # Create StackInstances (globally except Ireland)
+    # aws cloudformation update-stack-instances \
+    # --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
+    # --accounts $SECLOG_ACCOUNT_ID \
+    # --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
+    # --regions $ALL_REGIONS_EXCEPT_IRELAND \
+    # --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
+    # --profile $seclogprofile
 }
 
 # ---------------------------------------------
@@ -263,7 +302,7 @@ update_seclog() {
 # ---------------------------------------------
 
 # Simple check if two arguments are provided
-if [ -z "$organisation" ] || [ -z "$seclogprofile" ] || [ -z "$splunkprofile" ]  || [ -z "$logdestination" ] || [ -z "$notificationemail" ]; then
+if [ -z "$seclogprofile" ] || [ -z "$splunkprofile" ]  || [ -z "$logdestination" ] || [ -z "$notificationemail" ]; then
     display_help
     exit 0
 fi

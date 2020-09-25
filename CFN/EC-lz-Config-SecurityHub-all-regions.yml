@@ -45,7 +45,7 @@ Parameters:
 
   IncludeGlobalResourceTypes:
     Type: String
-    Default: False
+    Default: True
     Description: Indicates whether AWS Config records all supported global resource types.
     AllowedValues:
       - True
