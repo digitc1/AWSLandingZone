@@ -12,7 +12,7 @@ Detailed instruction on how to setup a Secure Landing Zone solution can be found
 ```
 $ aws organizations list-accounts
 ```
-- Execute the script from the folder "EC-landingzone-v2"
+- Execute the script from the folder "AWSLandingZone"
 ```
 $ cd AWSLandingZone
 ```
@@ -31,29 +31,51 @@ $ ./EC-Create-Account.sh D3_seclog D3_seclog@ec.europa.eu
 
 ### Configure the SecLog account
 
-To configure the SecLog account that you just created, we'll need to run the "EC-Configure-SecLog-Account.sh" script by adding two parameters:
-- The name of the **SecLog account** as used in the profile in ".aws/config" (for example 'D3_seclog')
-- The name of the **organisation account** as used in the profile in ".aws/config" (for example 'D3_Acc1')
-- The name of the **C2 Splunk account** as used in the profile in ".aws/config" (for example 'EC_DIGIT_C2-SPLUNK')
-- The **email address** used for security notifications (for example 'D3-SecNotif@ec.europa.eu')
-- **Log destination name** It should be the name of the DG of the firehose log destination (i.e. 'dgtest'). Note that this value requires resource provisioning for Splunk so please take into account that C2 may need to be contacted to check if the log destination needs to be created.
+To configure the SecLog account that you just created, we'll need to run the "EC-Setup-SecLog.sh" script by adding two parameters:
+Provide 
+* --organisation           : The orgnisation account as configured in your AWS profile (optional)
+* --seclogprofile          : The account profile of the central SecLog account as configured in your AWS profile
+* --splunkprofile          : The Splunk account profile as configured in your AWS profile
+* --notificationemail      : The notification email to where logs are to be sent
+* --logdestination         : The name of the DG of the firehose log destination
+* --cloudtrailintegration  : Flag to enable or disable CloudTrail seclog integration. Default: true (optional)
+* --guarddutyintegration   : Flag to enable or disable GuardDuty seclog integration. Default: true (optional)
+* --securityhubintegration : Flag to enable or disable SecurityHub seclog integration. Default: true (optional)
+* --batch                  : Flag to enable or disable batch execution mode. Default: false (optional)
 
 Run the script
 ```
-$ ./EC-Configure-SecLog-Account.sh --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest 
+$ ./EC-Setup-SecLog.sh  --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest 
 ```
 If you wish to disable any of the default SOC log integrations, use the appropriate flags (can be combined on a single script call)
 **Disable CloudTrail integration**
 ```
-$ ./EC-Configure-SecLog-Account.sh --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest --cloudtrailintegration false
+$ ./EC-Setup-SecLog.sh  --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest --cloudtrailintegration false
 ```
 **Disable GuardDuty integration**
 ```
-$ ./EC-Configure-SecLog-Account.sh --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest --guarddutyintegration false
+$ ./EC-Setup-SecLog.sh  --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest --guarddutyintegration false
 ```
 **Disable SecurityHub integration**
 ```
-$ ./EC-Configure-SecLog-Account.sh --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest --securityhubintegration false
+$ ./EC-Setup-SecLog.sh  --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest --securityhubintegration false
+```
+**Run script in batch mode - no confirmation asked from user**
+```
+$ ./EC-Setup-SecLog.sh--seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest --batch true
+```
+
+### Update SECLOG account 
+
+This script will update the current secure landing zone environment to the latest version. 
+
+Run the script
+```
+$ ./EC-Update-SecLog.sh --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2  --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest
+```
+**Run script in batch mode - no confirmation asked from user**
+```
+$ ./EC-Update-SecLog.sh --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2  --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest --batch true
 ```
 
 ### Create a client account (only for new account)
@@ -69,7 +91,6 @@ $ ./EC-Create-Account.sh D3_Acc1 D3_Acc1@ec.europa.eu
 
 Run this script for every new project accounts you wish to create.
 
-
 ### Configure the client account (run this script on a new or existing account you whish to add)
 
 This script will add a new (or existing) client account to the secure landing zone environment.
@@ -83,20 +104,22 @@ Run the script
 ```
 $ ./EC-Setup-Client.sh  --oganisation DIGIT_ORG_ACC --clientaccprofile D3_Acc1 --seclogprofile D3_seclog
 ```
+**Run script in batch mode - no confirmation asked from user**
+```
+$ ./EC-Setup-Client.sh  --clientaccprofile D3_Acc1 --seclogprofile D3_seclog --batch true
+```
 
-### Update SECLOG account to include SOC integration
+### Update  client account  
 
-This script will update the current secure landing zone environment to include SOC integration. 
-Only run this script if the current SECLOG account has been installed with the LZ 1.0.0
-
-This script will:
-- set the Firehose subscription log destination
-- Update log groups to push to a log destination for Cloudtrail, cloudwatch and config logs
-- Update to S3 bucket policies - Added SSL Secure Transport Only policy on all buckets
+This script will update the current secure landing zone on the client account to the latest version. 
 
 Run the script
 ```
-$ ./EC-Update-SecLog-Splunk.sh --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2  --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest
+$ ./EC-Update-Client.sh  --oganisation DIGIT_ORG_ACC --clientaccprofile D3_Acc1 
+```
+**Run script in batch mode - no confirmation asked from user**
+```
+$ ./EC-Update-Client.sh  --clientaccprofile D3_Acc1  --batch true
 ```
 
 ### Downgrade Secure Landing zone - disable SECLOG to SOC integration
