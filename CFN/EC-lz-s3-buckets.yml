@@ -108,7 +108,16 @@ Resources:
                   Action:
                   - 's3:GetObject'
                   Resource: 
-                    'arn:aws:s3:::*'
+                  - Fn::Join:
+                    - ""
+                    - - "arn:aws:s3:::cloudtrail-logs-"
+                      - Ref: AWS::AccountId
+                      - "-do-not-delete/*"
+                  - Fn::Join:
+                    - ""
+                    - - "arn:aws:s3:::config-logs-"
+                      - Ref: AWS::AccountId
+                      - "-do-not-delete/*"
                 - Effect: Allow
                   Action:
                   - 'kms:Decrypt'
