@@ -82,6 +82,7 @@ Resources:
   # SecurityHub CloudWatch Events to Cloudwatch LogGroup
   SecurityHubEvent:
     Type: AWS::Events::Rule
+    DependsOn: SecurityHubLogGroup
     Condition: IsSecLogMasterAccount
     Properties:
       Name: SECLZ-SecurityHub
@@ -92,5 +93,9 @@ Resources:
       State: ENABLED
       Targets:
         -
-          Arn: !GetAtt SecurityHubLogGroup.Arn
+          Arn: 
+            Fn::Join: 
+              - ""
+              - 
+                - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${SecurityHubLogGroup}"
           Id: "SecurityHubCloudWatch-Seclog"
