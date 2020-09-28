@@ -50,8 +50,7 @@ accept_seclog_invitation() {
   echo "   Following account: $CLIENT"
   echo "   Will now accept invitations from this SecLog account: $SECLOG"
   echo ""
-  echo "   If this is correct press enter to continue"
-  read -p "       or CTRL-C to break"
+
 
   #   ------------------------------------
   #   Accept Config aggregator invitation
