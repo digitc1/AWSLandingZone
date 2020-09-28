@@ -14,7 +14,7 @@
 #       - We are assuming that the account has already a CloudBrokerAccountAccess role created
 #
 #       Usage:
-#       $ ./EC-Setup-Client.sh  --organisation [--organisation <Org. Acc. Profile>] --clientaccprofile <Client Acc. Profile> --seclogprofile <Seclog. Acc. Profile>  [--batch <true|false>]
+#       $ ./EC-Setup-Client.sh  --organisation [--organisation <Org. Acc. Profile>] --clientaccprofile <Client Acc. Profile> --seclogprofile <Seclog. Acc. Profile>  [--clientaccountemail <root account email>] [--batch <true|false>]
 #
 #
 #   Version History
@@ -35,6 +35,7 @@
 organisation=${organisation:-}
 seclogprofile=${seclogprofile:-}
 clientaccprofile=${clientaccprofile:-}
+clientaccountemail=${clientaccountemail:-}
 batch=${batch:-false}
 
 
@@ -83,13 +84,14 @@ intro() {
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 [--organisation <Org. Acc. Profile>] --clientaccprofile <Client Acc. Profile> --seclogprofile <Seclog. Acc. Profile>  [--batch <true|false>]" >&2
+    echo "Usage: $0 [--organisation <Org. Acc. Profile>] --clientaccprofile <Client Acc. Profile> --seclogprofile <Seclog. Acc. Profile>  [--clientaccountemail <root account email>] [--batch <true|false>]" >&2
     echo ""
     echo "   Provide "
-    echo "   --organisation      : The orgnisation account as configured in your AWS profile (optional)"
-    echo "   --clientaccprofile  : The client account as configured in your AWS profile"
-    echo "   --seclogprofile     : The account profile of the central SecLog account as configured in your AWS profile"
-    echo "   --batch             : Flag to enable or disable batch execution mode. Default: false (optional)"
+    echo "   --organisation       : The orgnisation account as configured in your AWS profile (optional)"
+    echo "   --clientaccprofile   : The client account as configured in your AWS profile"
+    echo "   --seclogprofile      : The account profile of the central SecLog account as configured in your AWS profile"
+    echo "   --clientaccountemail : The root email address used to create the client account (optional, only required if organisation is not provided)"
+    echo "   --batch              : Flag to enable or disable batch execution mode. Default: false (optional)"
     echo ""
     exit 1
 }
@@ -125,8 +127,13 @@ configure_client(){
         #   -----------------------------------------------------------------------------
         #   Send invitations (Config, GuardDuty, Security Hub) from the SecLog account
         #   -----------------------------------------------------------------------------
+       
+        if [ !-z "$organisation"] ; then
+          clientid=`aws --profile $clientaccprofile sts get-caller-identity --query 'Account' --output text`
+          clientaccountemail=`aws organizations --profile $organisation list-accounts --query 'Accounts[*].[Id, Name, Email]' --output text | grep $clientid | awk '{print $NF}'`
+        fi
 
-        sh ./SH/EC-Invite-from-SecLog-Account.sh $clientaccprofile $seclogprofile $organisation 
+        sh ./SH/EC-Invite-from-SecLog-Account.sh $clientaccprofile $seclogprofile $clientaccountemail 
         #   -----------------------------------------------------------------------------
         #   Accept invitations (Config, GuardDuty, Security Hub) from the Client account
         #   -----------------------------------------------------------------------------

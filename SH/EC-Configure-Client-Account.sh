@@ -85,8 +85,7 @@ configure_client() {
     echo "     Primary AWS Region:               $AWS_REGION"
     echo "   ----------------------------------------------------"
     echo ""
-    echo "   If this is correct press enter to continue"
-    read -p "  or CTRL-C to break"
+    
 
     # Store notification-E-mail, OrgID, SecAccountID in SSM parameters
     # -----------------------
