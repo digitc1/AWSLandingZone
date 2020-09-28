@@ -50,8 +50,7 @@ config_all_regions() {
     echo "     SecLog name:                     $SECLOG"
     echo "     SecLog ID:                       $SECLOG_ID"
     echo "   ----------------------------------------------------"
-    printf "\n\n\tIf this is correct press enter to continue"
-    read -p "  or CTRL-C to break"
+    
 
     for region in $(aws ec2 describe-regions --output text --query 'Regions[*].[RegionName]'); do
         echo "put-aggregation-authorization for region $region ..."
