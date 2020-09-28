@@ -168,6 +168,7 @@ invite_client() {
   aws cloudformation create-stack-instances \
   --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
   --accounts $CLIENT_ID \
+  --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
   --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ID \
   --regions $ALL_REGIONS_EXCEPT_IRELAND \
   --profile $SECLOG_PROFILE
