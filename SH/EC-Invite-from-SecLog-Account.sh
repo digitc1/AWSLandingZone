@@ -57,8 +57,6 @@ invite_client() {
   echo "   Following account: $CLIENT_PROFILE"
   echo "   Will be invited to this SecLog account: $SECLOG_PROFILE"
   
-  echo "  If this is correct press enter to continue"
-  read -p "  or CTRL-C to break"
 
   #   ----------------------
   #   Adding to Config aggregator

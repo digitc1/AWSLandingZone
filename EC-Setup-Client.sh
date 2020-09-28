@@ -35,7 +35,7 @@
 organisation=${organisation:-}
 seclogprofile=${seclogprofile:-}
 clientaccprofile=${clientaccprofile:-}
-clientaccountemail=${clientaccprofile:-}
+clientaccountemail=${clientaccountemail:-}
 batch=${batch:-false}
 
 
@@ -128,7 +128,7 @@ configure_client(){
         #   Send invitations (Config, GuardDuty, Security Hub) from the SecLog account
         #   -----------------------------------------------------------------------------
        
-        if [ -n "$organisation"] ; then
+        if [ !-z "$organisation"] ; then
           clientid=`aws --profile $clientaccprofile sts get-caller-identity --query 'Account' --output text`
           clientaccountemail=`aws organizations --profile $organisation list-accounts --query 'Accounts[*].[Id, Name, Email]' --output text | grep $clientid | awk '{print $NF}'`
         fi
