@@ -412,6 +412,21 @@ configure_seclog() {
 
     sleep 5
 
+    echo ""
+    echo "- Enable securityhub controls for all regions"
+    echo "-------------------------------------"
+    echo ""
+
+
+    for region in $(aws --profile $seclogprofile ec2 describe-regions --output text --query 'Regions[*].[RegionName]'); do
+        echo "auto-enable-controls for securityhub for region $region ..."
+        aws --profile $seclogprofile --region $region securityhub batch-enable-standards --standards-subscription-requests StandardsArn="arn:aws:securityhub:::ruleset/cis-aws-foundations-benchmark/v/1.2.0"
+        aws --profile $seclogprofile --region $region securityhub batch-enable-standards --standards-subscription-requests StandardsArn="arn:aws:securityhub:$region::standards/aws-foundational-security-best-practices/v/1.0.0"
+        aws --profile $seclogprofile --region $region securityhub update-security-hub-configuration --auto-enable-controls
+    done
+
+    sleep 5
+
     #   ------------------------------------
     #   Enable Config and SecurityHub globally using stacksets
     #   ------------------------------------
