@@ -34,8 +34,7 @@ intro() {
 	echo "     and use a lambda function to fwd messages"
 	echo "     to the central SNS topics in seclog account"
 	echo "   ----------------------------------------------------"
-	echo " If you are entirely sure that you want to do it, press enter to continue"
-	read -p " or CTRL-C to break"
+
 }
 
 #   ---------------------
