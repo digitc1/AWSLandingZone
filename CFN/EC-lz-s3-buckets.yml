@@ -264,6 +264,7 @@ Resources:
             import re
             import json
             import os
+            import re
             import logging
             from io import BytesIO
             from datetime import datetime
@@ -281,7 +282,9 @@ Resources:
                   # get the file key from the S3 event
                   filename = record['s3']['object']['key']
                   logger.info('S3 object detected: ' + filename)
-                  if not account['Account'] in filename: 
+                  pattern = 'AWSLogs/\d+/CloudTrail/'
+                  result = re.match(pattern, filename)
+                  if not account['Account'] in filename and result: 
                     # retrieve bucket name and file_key from the S3 event
                     bucketname = record['s3']['bucket']['name']
                     logger.debug('S3 bucket: ' + bucketname)
@@ -316,30 +319,33 @@ Resources:
                       if 'uploadSequenceToken' in li[0]:
                         nextToken = li[0]['uploadSequenceToken']
                         logger.debug('uploadSequenceToken: ' + nextToken)
-                    if not nextToken:
-                      cloudwatch.put_log_events(
-                        logGroupName='/aws/cloudtrail',
-                        logStreamName=logstreamname,
-                        logEvents=[
-                          {
-                            'timestamp': ts,
-                            'message': content.decode('utf-8')
-                          },
-                        ]
-                      )
-                    else:
-                      cloudwatch.put_log_events(
-                        logGroupName='/aws/cloudtrail',
-                        logStreamName=logstreamname,
-                        logEvents=[
-                          {
-                            'timestamp': ts,
-                            'message': content.decode('utf-8')
-                          },
-                        ],
-                        sequenceToken=nextToken
-                      )
-                    logger.info('Log entry from S3 created')
+                    json_content = json.loads(content.decode('utf-8'))     
+                    for record in json_content['Records']:
+                      if not nextToken:
+                        result = cloudwatch.put_log_events(
+                          logGroupName='/aws/cloudtrail',
+                          logStreamName=logstreamname,
+                          logEvents=[
+                            {
+                              'timestamp': ts,
+                              'message': str(record)
+                            },
+                          ]
+                        )
+                      else:
+                        result = cloudwatch.put_log_events(
+                          logGroupName='/aws/cloudtrail',
+                          logStreamName=logstreamname,
+                          logEvents=[
+                            {
+                              'timestamp': ts,
+                              'message': str(record)
+                            },
+                          ],
+                          sequenceToken=nextToken
+                        )
+                      nextToken = result['nextSequenceToken']
+                      logger.info('Log entry from S3 file created')
                 except Exception as e:
                   logger.error('Log entry failed: ' + str(e))
                   raise e 
@@ -384,7 +390,6 @@ Resources:
             NotificationConfiguration:
               LambdaConfigurations:
                 - Event: s3:ObjectCreated:*
-                  Function: !GetAtt ConfigLogShipperFunction.Arn
             LifecycleConfiguration:
                 Rules:
                  - 
@@ -501,6 +506,7 @@ Resources:
             import re
             import json
             import os
+            import re
             import logging
             from io import BytesIO
             from datetime import datetime
@@ -518,7 +524,9 @@ Resources:
                   # get the file key from the S3 event
                   filename = record['s3']['object']['key']
                   logger.info('S3 object detected: ' + filename)
-                  if not account['Account'] in filename: 
+                  pattern = 'AWSLogs/\d+/Config/'
+                  result = re.match(pattern, filename)
+                  if not account['Account'] in filename and result: 
                     # retrieve bucket name and file_key from the S3 event
                     bucketname = record['s3']['bucket']['name']
                     logger.debug('S3 bucket: ' + bucketname)
@@ -553,30 +561,33 @@ Resources:
                       if 'uploadSequenceToken' in li[0]:
                         nextToken = li[0]['uploadSequenceToken']
                         logger.debug('uploadSequenceToken: ' + nextToken)
-                    if not nextToken:
-                      cloudwatch.put_log_events(
-                        logGroupName='/aws/events/config',
-                        logStreamName=logstreamname,
-                        logEvents=[
-                          {
-                            'timestamp': ts,
-                            'message': content.decode('utf-8')
-                          },
-                        ]
-                      )
-                    else:
-                      cloudwatch.put_log_events(
-                        logGroupName='/aws/events/config',
-                        logStreamName=logstreamname,
-                        logEvents=[
-                          {
-                            'timestamp': ts,
-                            'message': content.decode('utf-8')
-                          },
-                        ],
-                        sequenceToken=nextToken
-                      )
-                    logger.info('Log entry from S3 created')
+                    json_content = json.loads(content.decode('utf-8'))
+                    for record in json_content['ConfigurationItems']:
+                      if not nextToken:
+                        cloudwatch.put_log_events(
+                          logGroupName='/aws/events/config',
+                          logStreamName=logstreamname,
+                          logEvents=[
+                            {
+                              'timestamp': ts,
+                              'message': str(record)
+                            },
+                          ]
+                        )
+                      else:
+                        cloudwatch.put_log_events(
+                          logGroupName='/aws/events/config',
+                          logStreamName=logstreamname,
+                          logEvents=[
+                            {
+                              'timestamp': ts,
+                              'message': str(record)
+                            },
+                          ],
+                          sequenceToken=nextToken
+                        )
+                      nextToken = result['nextSequenceToken']
+                      logger.info('Log entry from S3 created')
                 except Exception as e:
                   logger.error('Log entry failed: ' + str(e))
                   raise e 
