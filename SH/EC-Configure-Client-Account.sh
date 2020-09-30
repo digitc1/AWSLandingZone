@@ -149,7 +149,7 @@ configure_client() {
 
 
     # To allow to send to central EventBus
-    aws --profile $SECLOG events put-permission --action events:PutEvents --principal $accountId --statement-id $CLIENT
+    #aws --profile $SECLOG events put-permission --action events:PutEvents --principal $accountId --statement-id $CLIENT
 
 
     StackName=SECLZ-config-cloudtrail-SNS

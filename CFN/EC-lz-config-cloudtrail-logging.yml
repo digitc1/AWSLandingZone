@@ -353,6 +353,10 @@ Resources:
         Action: "events:PutEvents"
         Principal: "*"
         StatementId: "MyStatement1"
+        Condition: 
+          Type: "StringEquals"
+          Key: "aws:PrincipalOrgID"
+          Value: !Ref OrganizationOuId
 
   AWSEventsInvokeEventBusSecLogRole:
     Type: AWS::IAM::Role
