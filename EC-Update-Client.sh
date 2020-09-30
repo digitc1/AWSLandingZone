@@ -210,6 +210,21 @@ update_client() {
     while [ `aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
+    sleep 5
+
+    echo ""
+    echo "- Enable securityhub controls for all regions"
+    echo "-------------------------------------"
+    echo ""
+
+
+    for region in $(aws --profile $clientaccprofile ec2 describe-regions --output text --query 'Regions[*].[RegionName]'); do
+        echo "auto-enable-controls for securityhub for region $region ..."
+        aws --profile $clientaccprofile --region $region securityhub batch-enable-standards --standards-subscription-requests StandardsArn="arn:aws:securityhub:::ruleset/cis-aws-foundations-benchmark/v/1.2.0"
+        aws --profile $clientaccprofile --region $region securityhub batch-enable-standards --standards-subscription-requests StandardsArn="arn:aws:securityhub:$region::standards/aws-foundational-security-best-practices/v/1.0.0"
+        aws --profile $clientaccprofile --region $region securityhub update-security-hub-configuration --auto-enable-controls
+    done
+
 }
 
 # ---------------------------------------------

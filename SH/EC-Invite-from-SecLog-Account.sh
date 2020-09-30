@@ -145,16 +145,12 @@ invite_client() {
   #   Granting the client to use Event-Bus in SecLog
   #   ----------------------------------------------
 
-  echo ""
-  echo "Granting new account access to EventBus"
-  echo "--------------"
-  echo ""
+  #echo ""
+  #echo "Granting new account access to EventBus"
+  #echo "--------------"
+  #echo ""
 
-  aws events put-permission \
-    --action events:PutEvents \
-    --principal $CLIENT_ID \
-    --statement-id CLIENT \
-    --profile $SECLOG_PROFILE
+  #aws events put-permission --action events:PutEvents --principal $CLIENT_ID --statement-id CLIENT --profile $SECLOG_PROFILE
 
   #   -------------------------------------------------------------------------
   #   Enabling config and security Hub globally in all regions (except Ireland)
