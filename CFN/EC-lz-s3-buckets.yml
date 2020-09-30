@@ -390,6 +390,7 @@ Resources:
             NotificationConfiguration:
               LambdaConfigurations:
                 - Event: s3:ObjectCreated:*
+                  Function: !GetAtt ConfigLogShipperFunction.Arn
             LifecycleConfiguration:
                 Rules:
                  - 
