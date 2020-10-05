@@ -310,16 +310,19 @@ Resources:
                       logGroupName='/aws/cloudtrail')
                     li = list(filter(lambda ls: ls['logStreamName'] == logstreamname, dict['logStreams']))
                     if li is None or len(li) == 0:
-                      cloudwatch.create_log_stream(
-                        logGroupName='/aws/cloudtrail',
-                        logStreamName=logstreamname)
-                      logger.info('Log stream created: ' + logstreamname)
+                      try:
+                        cloudwatch.create_log_stream(
+                          logGroupName='/aws/events/cloudtrail',
+                          logStreamName=logstreamname)
+                        logger.info('Log stream created: ' + logstreamname)
+                      except ResourceAlreadyExistsException as e:
+                        logger.error('Creating log stream error: ' + str(e))
                     else:
                       logger.debug('Found logstream: ' + str(li))
                       if 'uploadSequenceToken' in li[0]:
                         nextToken = li[0]['uploadSequenceToken']
                         logger.debug('uploadSequenceToken: ' + nextToken)
-                    json_content = json.loads(content.decode('utf-8'))     
+                    json_content = json.loads(content.decode('utf-8'))
                     for record in json_content['Records']:
                       if not nextToken:
                         result = cloudwatch.put_log_events(
@@ -345,7 +348,7 @@ Resources:
                           sequenceToken=nextToken
                         )
                       nextToken = result['nextSequenceToken']
-                      logger.info('Log entry from S3 file created')
+                      logger.info('Log entry from S3 file created')                      
                 except Exception as e:
                   logger.error('Log entry failed: ' + str(e))
                   raise e 
@@ -361,7 +364,7 @@ Resources:
               elif a == 'DEBUG':
                 return 10
               else:
-                return 0
+                return 0          
         Handler: 'index.lambda_handler'
         MemorySize: 128
         ReservedConcurrentExecutions: 1
@@ -553,17 +556,24 @@ Resources:
                       logGroupName='/aws/events/config')
                     li = list(filter(lambda ls: ls['logStreamName'] == logstreamname, dict['logStreams']))
                     if li is None or len(li) == 0:
-                      cloudwatch.create_log_stream(
-                        logGroupName='/aws/events/config',
-                        logStreamName=logstreamname)
-                      logger.info('Log stream created: ' + logstreamname)
+                      try:
+                        cloudwatch.create_log_stream(
+                          logGroupName='/aws/events/config',
+                          logStreamName=logstreamname)
+                        logger.info('Log stream created: ' + logstreamname)
+                      except ResourceAlreadyExistsException as e:
+                        logger.error('Creating log stream error: ' + str(e))
                     else:
                       logger.debug('Found logstream: ' + str(li))
                       if 'uploadSequenceToken' in li[0]:
                         nextToken = li[0]['uploadSequenceToken']
                         logger.debug('uploadSequenceToken: ' + nextToken)
                     json_content = json.loads(content.decode('utf-8'))
-                    for record in json_content['ConfigurationItems']:
+                    for record in json_content['ConfigurationItems']:              
+                      if throttle % 5 == 0:
+                        time.sleep(1)
+                        logger.debug('throttling... ')
+                      throttle +=1
                       if not nextToken:
                         cloudwatch.put_log_events(
                           logGroupName='/aws/events/config',
