@@ -47,7 +47,6 @@ export i=1
 export sp="/-\|"
 
 AWS_REGION='eu-west-1'
-ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
 
 # parameters for scripts
 
@@ -57,7 +56,6 @@ CFN_LOG_TEMPLATE='CFN/EC-lz-config-cloudtrail-logging.yml'
 CFN_GUARDDUTY_DETECTOR_TEMPLATE='CFN/EC-lz-guardDuty-detector.yml'
 CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
 CFN_NOTIFICATIONS_CT_TEMPLATE='CFN/EC-lz-notifications.yml'
-CFN_STACKSET_CONFIG_SECHUB_GLOBAL='CFN/EC-lz-Config-SecurityHub-all-regions.yml'
 
 #   ---------------------
 #   The command line help
@@ -270,45 +268,11 @@ update_seclog() {
     while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
-    sleep 5
-
-    echo ""
-    echo "- Enable securityhub controls for all regions"
-    echo "-------------------------------------"
-    echo ""
-
-
-    for region in $(aws --profile $seclogprofile ec2 describe-regions --output text --query 'Regions[*].[RegionName]'); do
-        echo "auto-enable-controls for securityhub for region $region ..."
-        aws --profile $seclogprofile --region $region securityhub batch-enable-standards --standards-subscription-requests StandardsArn="arn:aws:securityhub:::ruleset/cis-aws-foundations-benchmark/v/1.2.0"
-        aws --profile $seclogprofile --region $region securityhub batch-enable-standards --standards-subscription-requests StandardsArn="arn:aws:securityhub:$region::standards/aws-foundational-security-best-practices/v/1.0.0"
-        aws --profile $seclogprofile --region $region securityhub update-security-hub-configuration --auto-enable-controls
-    done
 
     sleep 5
 
 
 
-    #   ------------------------------------
-    #   Enable Config and SecurityHub globally using stacksets
-    #   ------------------------------------
-
-    # Create StackSet (Enable Config and SecurityHub globally)
-    aws cloudformation update-stack-set \
-    --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
-    --template-body file://$CFN_STACKSET_CONFIG_SECHUB_GLOBAL \
-    --parameters ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
-    --capabilities CAPABILITY_IAM \
-    --profile $seclogprofile
-
-    # Create StackInstances (globally except Ireland)
-    # aws cloudformation update-stack-instances \
-    # --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
-    # --accounts $SECLOG_ACCOUNT_ID \
-    # --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
-    # --regions $ALL_REGIONS_EXCEPT_IRELAND \
-    # --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
-    # --profile $seclogprofile
 }
 
 # ---------------------------------------------
