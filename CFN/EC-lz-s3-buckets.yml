@@ -308,7 +308,8 @@ Resources:
                     # check and create logstream
                     nextToken = '' 
                     dict = cloudwatch.describe_log_streams(
-                      logGroupName='/aws/cloudtrail')
+                      logGroupName='/aws/cloudtrail',
+                      logStreamNamePrefix=logstreamname)
                     li = list(filter(lambda ls: ls['logStreamName'] == logstreamname, dict['logStreams']))
                     if li is None or len(li) == 0:
                       try:
@@ -316,8 +317,9 @@ Resources:
                           logGroupName='/aws/cloudtrail',
                           logStreamName=logstreamname)
                         logger.info('Log stream created: ' + logstreamname)
-                      except ResourceAlreadyExistsException as e:
-                        logger.error('Creating log stream error: ' + str(e))
+                      except Exception as e:
+                        logger.error('Logstream already exists ' + logstreamname)
+                        raise e
                     else:
                       logger.debug('Found logstream: ' + str(li))
                       if 'uploadSequenceToken' in li[0]:
@@ -329,7 +331,6 @@ Resources:
                       if throttle % 5 == 0:
                         time.sleep(1)
                         logger.debug('throttling... ')
-                      throttle +=1
                       if not nextToken:
                         result = cloudwatch.put_log_events(
                           logGroupName='/aws/cloudtrail',
@@ -354,7 +355,8 @@ Resources:
                           sequenceToken=nextToken
                         )
                       nextToken = result['nextSequenceToken']
-                      logger.info('Log entry from S3 file created')                      
+                      throttle +=1
+                    logger.info(str(throttle) + ' log entries from S3 object created')
                 except Exception as e:
                   logger.error('Log entry failed: ' + str(e))
                   raise e 
@@ -518,6 +520,7 @@ Resources:
             import os
             import re
             import logging
+            import time
             from io import BytesIO
             from datetime import datetime
             def lambda_handler(event, context):
@@ -536,7 +539,7 @@ Resources:
                   logger.info('S3 object detected: ' + filename)
                   pattern = 'AWSLogs/\d+/Config/'
                   result = re.match(pattern, filename)
-                  if not account['Account'] in filename and result: 
+                  if not account['Account'] in filename and result and 'ConfigWritabilityCheckFile' not in filename: 
                     # retrieve bucket name and file_key from the S3 event
                     bucketname = record['s3']['bucket']['name']
                     logger.debug('S3 bucket: ' + bucketname)
@@ -559,7 +562,8 @@ Resources:
                     # check and create logstream
                     nextToken = '' 
                     dict = cloudwatch.describe_log_streams(
-                      logGroupName='/aws/events/config')
+                      logGroupName='/aws/events/config',
+                      logStreamNamePrefix=logstreamname)
                     li = list(filter(lambda ls: ls['logStreamName'] == logstreamname, dict['logStreams']))
                     if li is None or len(li) == 0:
                       try:
@@ -567,8 +571,9 @@ Resources:
                           logGroupName='/aws/events/config',
                           logStreamName=logstreamname)
                         logger.info('Log stream created: ' + logstreamname)
-                      except ResourceAlreadyExistsException as e:
-                        logger.error('Creating log stream error: ' + str(e))
+                      except Exception as e:
+                        logger.error('Logstream already exists ' + logstreamname)
+                        raise e  
                     else:
                       logger.debug('Found logstream: ' + str(li))
                       if 'uploadSequenceToken' in li[0]:
@@ -605,7 +610,7 @@ Resources:
                           sequenceToken=nextToken
                         )
                       nextToken = result['nextSequenceToken']
-                      logger.info('Log entry from S3 created')
+                    logger.info(str(throttle) + ' log entries from S3 object created')
                 except Exception as e:
                   logger.error('Log entry failed: ' + str(e))
                   raise e 
