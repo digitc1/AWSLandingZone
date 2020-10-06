@@ -311,30 +311,20 @@ Resources:
                       logGroupName='/aws/cloudtrail')
                     li = list(filter(lambda ls: ls['logStreamName'] == logstreamname, dict['logStreams']))
                     if li is None or len(li) == 0:
-<<<<<<< HEAD
-                      cloudwatch.create_log_stream(
-                        logGroupName='/aws/events/cloudtrail',
-                        logStreamName=logstreamname)
-                      logger.info('Log stream created: ' + logstreamname)
-=======
                       try:
                         cloudwatch.create_log_stream(
-                          logGroupName='/aws/events/cloudtrail',
+                          logGroupName='/aws/cloudtrail',
                           logStreamName=logstreamname)
                         logger.info('Log stream created: ' + logstreamname)
                       except ResourceAlreadyExistsException as e:
                         logger.error('Creating log stream error: ' + str(e))
->>>>>>> hotfix/issue65
                     else:
                       logger.debug('Found logstream: ' + str(li))
                       if 'uploadSequenceToken' in li[0]:
                         nextToken = li[0]['uploadSequenceToken']
                         logger.debug('uploadSequenceToken: ' + nextToken)
                     json_content = json.loads(content.decode('utf-8'))
-<<<<<<< HEAD
                     throttle = 0
-=======
->>>>>>> hotfix/issue65
                     for record in json_content['Records']:
                       if throttle % 5 == 0:
                         time.sleep(1)
@@ -572,12 +562,6 @@ Resources:
                       logGroupName='/aws/events/config')
                     li = list(filter(lambda ls: ls['logStreamName'] == logstreamname, dict['logStreams']))
                     if li is None or len(li) == 0:
-<<<<<<< HEAD
-                      cloudwatch.create_log_stream(
-                        logGroupName='/aws/events/config',
-                        logStreamName=logstreamname)
-                      logger.info('Log stream created: ' + logstreamname)                    
-=======
                       try:
                         cloudwatch.create_log_stream(
                           logGroupName='/aws/events/config',
@@ -585,24 +569,20 @@ Resources:
                         logger.info('Log stream created: ' + logstreamname)
                       except ResourceAlreadyExistsException as e:
                         logger.error('Creating log stream error: ' + str(e))
->>>>>>> hotfix/issue65
                     else:
                       logger.debug('Found logstream: ' + str(li))
                       if 'uploadSequenceToken' in li[0]:
                         nextToken = li[0]['uploadSequenceToken']
                         logger.debug('uploadSequenceToken: ' + nextToken)
                     json_content = json.loads(content.decode('utf-8'))
-<<<<<<< HEAD
                     throttle = 0
-=======
->>>>>>> hotfix/issue65
-                    for record in json_content['ConfigurationItems']:              
+                    for record in json_content['configurationItems']:              
                       if throttle % 5 == 0:
                         time.sleep(1)
                         logger.debug('throttling... ')
                       throttle +=1
                       if not nextToken:
-                        cloudwatch.put_log_events(
+                        result = cloudwatch.put_log_events(
                           logGroupName='/aws/events/config',
                           logStreamName=logstreamname,
                           logEvents=[
@@ -613,7 +593,7 @@ Resources:
                           ]
                         )
                       else:
-                        cloudwatch.put_log_events(
+                        result = cloudwatch.put_log_events(
                           logGroupName='/aws/events/config',
                           logStreamName=logstreamname,
                           logEvents=[
