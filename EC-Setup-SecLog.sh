@@ -433,7 +433,6 @@ configure_seclog() {
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $seclogprofile
 
-
 }
 
 # ---------------------------------------------

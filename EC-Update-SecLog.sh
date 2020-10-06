@@ -275,34 +275,6 @@ update_seclog() {
 
 
 
-    #   ------------------------------------
-    #   Enable Config and SecurityHub globally using stacksets
-    #   ------------------------------------
-
-    # Create StackSet (Enable Config and SecurityHub globally)
-    aws cloudformation update-stack-set \
-    --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
-    --template-body file://$CFN_STACKSET_CONFIG_SECHUB_GLOBAL \
-    --parameters ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
-    --capabilities CAPABILITY_IAM \
-    --profile $seclogprofile
-
-     # Create StackInstances (globally except Ireland)
-    aws cloudformation create-stack-instances \
-    --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
-    --accounts $SECLOG_ACCOUNT_ID \
-    --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
-    --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
-    --regions $ALL_REGIONS_EXCEPT_IRELAND \
-    --profile $seclogprofile
-
-    
-    #   -----------------------------
-    #   Enable SecurityHub on all Regions
-    #   -----------------------------
-
-    sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh $seclogprofile
-
 }
 
 # ---------------------------------------------

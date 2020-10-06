@@ -378,7 +378,7 @@ Resources:
         ReservedConcurrentExecutions: 1
         Role: !GetAtt LogShipperLambdaExecutionRole.Arn
         Runtime: python3.6
-        Timeout: 60
+        Timeout: 300
         Environment:
           Variables:
             LOG_LEVEL: !Ref lambdaLogLevel
@@ -632,7 +632,7 @@ Resources:
         ReservedConcurrentExecutions: 1
         Role: !GetAtt LogShipperLambdaExecutionRole.Arn
         Runtime: python3.6
-        Timeout: 60
+        Timeout: 300
         Environment:
           Variables:
             LOG_LEVEL: !Ref lambdaLogLevel 
