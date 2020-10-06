@@ -301,14 +301,22 @@ update_seclog() {
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile
 
-    # Create StackInstances (globally except Ireland)
-    # aws cloudformation update-stack-instances \
-    # --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
-    # --accounts $SECLOG_ACCOUNT_ID \
-    # --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
-    # --regions $ALL_REGIONS_EXCEPT_IRELAND \
-    # --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
-    # --profile $seclogprofile
+     # Create StackInstances (globally except Ireland)
+    aws cloudformation create-stack-instances \
+    --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
+    --accounts $SECLOG_ACCOUNT_ID \
+    --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
+    --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
+    --regions $ALL_REGIONS_EXCEPT_IRELAND \
+    --profile $seclogprofile
+
+    
+    #   -----------------------------
+    #   Enable SecurityHub on all Regions
+    #   -----------------------------
+
+    sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh $seclogprofile
+
 }
 
 # ---------------------------------------------
