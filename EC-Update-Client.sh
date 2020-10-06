@@ -212,18 +212,11 @@ update_client() {
 
     sleep 5
 
-    echo ""
-    echo "- Enable securityhub controls for all regions"
-    echo "-------------------------------------"
-    echo ""
+    #   -----------------------------
+    #   Enable SecurityHub on all Regions
+    #   -----------------------------
 
-
-    for region in $(aws --profile $clientaccprofile ec2 describe-regions --output text --query 'Regions[*].[RegionName]'); do
-        echo "auto-enable-controls for securityhub for region $region ..."
-        aws --profile $clientaccprofile --region $region securityhub batch-enable-standards --standards-subscription-requests StandardsArn="arn:aws:securityhub:::ruleset/cis-aws-foundations-benchmark/v/1.2.0"
-        aws --profile $clientaccprofile --region $region securityhub batch-enable-standards --standards-subscription-requests StandardsArn="arn:aws:securityhub:$region::standards/aws-foundational-security-best-practices/v/1.0.0"
-        aws --profile $clientaccprofile --region $region securityhub update-security-hub-configuration --auto-enable-controls
-    done
+    sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh $clientaccprofile
 
 }
 
