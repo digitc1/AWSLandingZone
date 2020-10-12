@@ -141,12 +141,6 @@ configure_client(){
         sh ./SH/EC-Accept-from-Client-Account.sh $clientaccprofile $seclogprofile
         
         #   -----------------------------
-        #   Enable SecurityHub on all Regions
-        #   -----------------------------
-
-        sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh $clientaccprofile
-        
-        #   -----------------------------
         #   Validate the Client account
         #   -----------------------------
 
