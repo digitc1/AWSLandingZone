@@ -6,7 +6,7 @@
 #
 #
 #       Usage
-#       $ ./EC-Enable-SecurityHub-Controls-All-Regions.sh CUSTOMER_Account_Name CUSTOMER_SecLog_Account_Name
+#       $ ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh PROFILE
 #
 #   Version History
 #
