@@ -212,11 +212,6 @@ update_client() {
 
     sleep 5
 
-    #   -----------------------------
-    #   Enable SecurityHub on all Regions
-    #   -----------------------------
-
-    sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh $clientaccprofile
 
 }
 
