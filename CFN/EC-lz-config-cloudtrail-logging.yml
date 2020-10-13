@@ -251,6 +251,12 @@ Resources:
                 aws:PrincipalOrgID : 
                 - 'o-jyyw8qs5c8'
                 - 'o-xj5nzaqffn'
+          - Sid: TrustCWEToPublishEventsToMyTopic
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: SNS:Publish
+            Resource: !Ref SNSNotificationTopic
 
   ECLandingZoneSecLogSNSTopicParameter:
     DependsOn:
