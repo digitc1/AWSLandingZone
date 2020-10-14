@@ -96,6 +96,10 @@ Parameters:
     Type: String
     Default: ""
     Description: The ARN of the firehose stream aggregating the logs in the DIGIT C2 Log Aggregation Central Account
+  DeliveryChannelName:
+    Type: String
+    Default: ""
+    Description: The name of the delivery channel.
 #  AccountIdList:
 #    Type: AWS::SSM::Parameter::Value<CommaDelimitedList>
 #    Default: /org/member/ClientAccountIds
@@ -115,6 +119,9 @@ Conditions:
   EnableSecLogForCloudTrail: !Equals
   - !Ref EnableSecLogForCloudTrailParam
   - 'true'
+  IsGeneratedDeliveryChannelName: !Equals
+  - !Ref DeliveryChannelName
+  - ""
   IsSecLogMasterAccountWithSOCIntegration: !And
   - !Equals
     - !Ref AWS::AccountId
@@ -236,7 +243,10 @@ Resources:
   DeliveryChannel:
     Type: 'AWS::Config::DeliveryChannel'
     Properties:
-      Name: 'lz-config-logging-channel'
+      Name: !If
+        - IsGeneratedDeliveryChannelName
+        - !Ref AWS::NoValue
+        - !Ref DeliveryChannelName
       S3BucketName: !Sub "config-logs-${SecLogMasterAccountId}-do-not-delete"
       ConfigSnapshotDeliveryProperties:
         DeliveryFrequency: !Ref ConfigDeliverySnapshotFrequency
