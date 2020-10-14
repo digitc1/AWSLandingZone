@@ -59,11 +59,11 @@ export sp="/-\|"
 
 AWS_REGION='eu-west-1'
 ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
-ALL_REGIONS='["eu-west-1","ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
 
 # parameters for scripts
 CFN_BUCKETS_TEMPLATE='CFN/EC-lz-s3-buckets.yml'
-CFN_LOG_TEMPLATE_GLOBAL='CFN/EC-lz-config-cloudtrail-logging.yml'
+CFN_LOG_TEMPLATE_GLOBAL='CFN/EC-lz-config-cloudtrail-all-regions.yml'
+CFN_LOG_TEMPLATE='CFN/EC-lz-config-cloudtrail-logging.yml'
 CFN_GUARDDUTY_DETECTOR_TEMPLATE='CFN/EC-lz-guardDuty-detector.yml'
 CFN_SECURITYHUB_TEMPLATE='CFN/EC-lz-securityHub.yml'
 CFN_NOTIFICATIONS_CT_TEMPLATE='CFN/EC-lz-notifications.yml'
@@ -293,7 +293,36 @@ configure_seclog() {
 
     sleep 5
 
-    
+        #   ------------------------------------
+    #   Creating config, cloudtrail, SNS notifications
+    #   ------------------------------------
+
+
+    echo ""
+    echo "- Creating config, cloudtrail, SNS notifications"
+    echo "--------------------------------------------------"
+    echo ""
+
+    cloudtrailparams="ParameterKey=EnableSecLogForCloudTrailParam,ParameterValue=$cloudtrailintegration"
+    if [ "$cloudtrailintegration" == "true" ]; then
+        cloudtrailparams="ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN"
+    fi
+
+
+    aws cloudformation create-stack \
+    --stack-name 'SECLZ-config-cloudtrail-SNS' \
+    --template-body file://$CFN_LOG_TEMPLATE \
+    --enable-termination-protection \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --profile $seclogprofile \
+    --parameters $cloudtrailparams
+
+    StackName="SECLZ-config-cloudtrail-SNS"
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+    sleep 5
 
     #   ------------------------------------
     #   Enable guardduty and securityhub in seclog master account
@@ -435,7 +464,7 @@ configure_seclog() {
     --accounts $SECLOG_ACCOUNT_ID \
     --parameter-overrides $cloudtrailparams \
     --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
-    --regions $ALL_REGIONS \
+    --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $seclogprofile
 }
 

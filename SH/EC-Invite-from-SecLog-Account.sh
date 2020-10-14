@@ -184,7 +184,7 @@ invite_client() {
     --stack-set-name 'SECLZ-config-cloudtrail-SNS-Globally' \
     --accounts $CLIENT_ID \
     --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
-    --regions $ALL_REGIONS \
+    --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $SECLOG_PROFILE
 
 }
