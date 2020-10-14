@@ -45,6 +45,10 @@ Parameters:
     Description: 'SecLogMaster account ID'
     Type: AWS::SSM::Parameter::Value<String>
     Default: "/org/member/SecLogMasterAccountId"
+  SecLogMasterAccountRegion:
+    Description: 'SecLogMaster account Region'
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "eu-west-1"
   OrganizationOuId:
     Description: 'Organizational OU Id'
     Type: AWS::SSM::Parameter::Value<String>
@@ -251,7 +255,32 @@ Resources:
       ConfigSnapshotDeliveryProperties:
         DeliveryFrequency: !Ref ConfigDeliverySnapshotFrequency
 
-
+  AWSEventsInvokeEventBusSecLogRole:
+    Type: AWS::IAM::Role
+    Condition: IsNotSecLogMasterAccount
+    Properties: 
+      Description: "Service Linked role to send messages to event bus of seclog account"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: AWSEventsInvokeEventBusSecLog
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: "events:PutEvents"
+                Resource: !Join 
+                  - ''
+                  - - 'arn:aws:events:'
+                    - !Sub "${SecLogMasterAccountRegion}:${SecLogMasterAccountId}:"
+                    - 'event-bus/default'
 
   # Enable notifications for AWS Config Rule compliance changes in client account to event bus
   ConfigRuleComplianceChangeEvent:
@@ -277,6 +306,6 @@ Resources:
       State: ENABLED
       Targets:
       - Id: "CrossAccountTargetId"
-        Arn: !Sub "arn:aws:events:${AWS::Region}:${SecLogMasterAccountId}:event-bus/default"
+        Arn: !Sub "arn:aws:events:${SecLogMasterAccountRegion}:${SecLogMasterAccountId}:event-bus/default"
 
 Outputs: {}
