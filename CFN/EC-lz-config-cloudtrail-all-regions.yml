@@ -44,12 +44,11 @@ Parameters:
 
   SecLogMasterAccountRegion:
     Description: 'SecLogMaster account Region'
-    Type: AWS::SSM::Parameter::Value<String>
+    Type: String
     Default: "eu-west-1"
   CloudtrailKMSarn:
-    Type: AWS::SSM::Parameter::Value<String>
+    Type: String
     Description: arn for KMS key to encrypt cloudtrail
-    Default: "/org/member/KMSCloudtrailKey_arn"
 
   EnableSecLogForCloudTrailParam:
     Type: String
