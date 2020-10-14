@@ -17,9 +17,6 @@ Description: >-
   Prerequisites: 
     - SecLogMaster account exists with central S3-buckets for cloudtrail and config
 
-  Mandatory Input:
-    - SecLogMasterAccountId: SecLogMaster account ID
-    - NotifyEmail: Email for the security notifications if executed in SecLog account
 
   Execution:
     - Run in all accounts part of the project
@@ -42,40 +39,18 @@ Metadata:
 
 Parameters:
   SecLogMasterAccountId:
-    Description: 'SecLogMaster account ID'
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: "/org/member/SecLogMasterAccountId"
+    Type: String
+    Description: Seclog master account ID
+
   SecLogMasterAccountRegion:
     Description: 'SecLogMaster account Region'
     Type: AWS::SSM::Parameter::Value<String>
     Default: "eu-west-1"
-  OrganizationOuId:
-    Description: 'Organizational OU Id'
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: "/org/member/SecLogOU"
-  NotifyEmail:
-    Type: AWS::SSM::Parameter::Value<String>
-    Description: Email for the security notifications
-    Default: "/org/member/SecLog_notification-mail"
   CloudtrailKMSarn:
     Type: AWS::SSM::Parameter::Value<String>
     Description: arn for KMS key to encrypt cloudtrail
     Default: "/org/member/KMSCloudtrailKey_arn"
-  NotifyDisplayName:
-    Type: 'String'
-    Default: EC-LZ-Notify
-    Description: SNS display name for security administrator(s)
-  NotifyTopicName:
-    Type: 'String'
-    Default: EC-Landing-Zone-Security-Notification
-    Description: SNS topic name for security notification
-  EnableConfigRuleComplianceChangeAlarm:
-    Type: String
-    Description: "Enable notifications for AWS Config rule compliance status changes?"
-    Default: true
-    AllowedValues:
-    - true
-    - false
+
   EnableSecLogForCloudTrailParam:
     Type: String
     Description: "Enable SecLog integration for CloudTrail?"
@@ -83,10 +58,7 @@ Parameters:
     AllowedValues:
     - true
     - false
-  ConfigDeliverySnapshotFrequency:
-    Type: String
-    Description: "Frequency of config snapshots being delivered to SecLog account"
-    Default: Six_Hours
+  
   CloudWatchLogsGroupName:
     Type: String
     Default: '/aws/cloudtrail'
@@ -110,9 +82,7 @@ Parameters:
 #    Description: "List of client account IDs"
 
 Conditions:
-  EnableConfigRuleChangeNotification: !Equals
-    - !Ref EnableConfigRuleComplianceChangeAlarm
-    - 'true'
+
   IsSecLogMasterAccount: !Equals
     - !Ref AWS::AccountId
     - !Ref SecLogMasterAccountId
@@ -123,9 +93,7 @@ Conditions:
   EnableSecLogForCloudTrail: !Equals
   - !Ref EnableSecLogForCloudTrailParam
   - 'true'
-  IsGeneratedDeliveryChannelName: !Equals
-  - !Ref DeliveryChannelName
-  - ""
+
   IsSecLogMasterAccountWithSOCIntegration: !And
   - !Equals
     - !Ref AWS::AccountId
@@ -190,122 +158,5 @@ Resources:
             Action: logs:PutLogEvents
             Resource: !GetAtt TrailLogGroup.Arn
 
-  #   -------------------
-  #   Enable Config
-  #   -------------------
-
-  ConfigRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - config.amazonaws.com
-            Action:
-              - 'sts:AssumeRole'
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSConfigRole'
-      Policies:
-        - PolicyName: root
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action: 's3:GetBucketAcl'
-                Resource: !Join 
-                  - ''
-                  - - 'arn:aws:s3:::'
-                    - !Sub "config-logs-${SecLogMasterAccountId}-do-not-delete"
-              - Effect: Allow
-                Action: 's3:PutObject'
-                Resource: !Join 
-                  - ''
-                  - - 'arn:aws:s3:::'
-                    - !Sub "config-logs-${SecLogMasterAccountId}-do-not-delete"
-                    - /AWSLogs/*
-                Condition:
-                  StringEquals:
-                    's3:x-amz-acl': bucket-owner-full-control
-              - Effect: Allow
-                Action: 'config:Put*'
-                Resource: '*'
-
-  ConfigRecorder:
-    Type: 'AWS::Config::ConfigurationRecorder'
-    Properties:
-      Name: 'lz-config-logging-recorder'
-      RecordingGroup:
-        IncludeGlobalResourceTypes: True
-        AllSupported: True
-      RoleARN: !GetAtt 
-      - ConfigRole
-      - Arn
-  
-  DeliveryChannel:
-    Type: 'AWS::Config::DeliveryChannel'
-    Properties:
-      Name: !If
-        - IsGeneratedDeliveryChannelName
-        - !Ref AWS::NoValue
-        - !Ref DeliveryChannelName
-      S3BucketName: !Sub "config-logs-${SecLogMasterAccountId}-do-not-delete"
-      ConfigSnapshotDeliveryProperties:
-        DeliveryFrequency: !Ref ConfigDeliverySnapshotFrequency
-
-  AWSEventsInvokeEventBusSecLogRole:
-    Type: AWS::IAM::Role
-    Condition: IsNotSecLogMasterAccount
-    Properties: 
-      Description: "Service Linked role to send messages to event bus of seclog account"
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - events.amazonaws.com
-            Action:
-              - 'sts:AssumeRole'
-      Policies:
-        - PolicyName: AWSEventsInvokeEventBusSecLog
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action: "events:PutEvents"
-                Resource: !Join 
-                  - ''
-                  - - 'arn:aws:events:'
-                    - !Sub "${SecLogMasterAccountRegion}:${SecLogMasterAccountId}:"
-                    - 'event-bus/default'
-
-  # Enable notifications for AWS Config Rule compliance changes in client account to event bus
-  ConfigRuleComplianceChangeEvent:
-    Type: AWS::Events::Rule
-    Condition: IsNotSecLogMasterAccount
-    DependsOn: AWSEventsInvokeEventBusSecLogRole
-    Properties:
-      Name: SECLZ-Config-Rule-Compliance-Change-CloudWatch-Rule-To-SecLog
-      Description: 'Landing Zone rule to send notification on Config Rule compliance changes to SecLog eventbus.'
-      RoleArn: 
-        Fn::GetAtt: 
-        - "AWSEventsInvokeEventBusSecLogRole"
-        - "Arn"
-      EventPattern:
-        {
-          "source": [
-            "aws.config"
-          ],
-          "detail-type": [
-            "Config Rules Compliance Change"
-          ]
-        }
-      State: ENABLED
-      Targets:
-      - Id: "CrossAccountTargetId"
-        Arn: !Sub "arn:aws:events:${SecLogMasterAccountRegion}:${SecLogMasterAccountId}:event-bus/default"
 
 Outputs: {}

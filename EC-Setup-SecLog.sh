@@ -436,23 +436,22 @@ configure_seclog() {
 
 
     #   ------------------------------------
-    #   Creating config, cloudtrail, SNS notifications globally using stacksets
+    #    Enable cloudtrail globally using stacksets
     #   ------------------------------------
 
 
     echo ""
-    echo "- Creating config, cloudtrail, SNS notifications"
+    echo "-  Enable cloudtrail globally"
     echo "--------------------------------------------------"
     echo ""
 
-    cloudtrailparams="ParameterKey=EnableSecLogForCloudTrailParam,ParameterValue=$cloudtrailintegration"
-    if [ "$cloudtrailintegration" == "true" ]; then
-        cloudtrailparams="ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN"
-    fi
+    KMSCloudtrailKey =  `aws --profile EC_DIGIT_C1-LZ-SECLOG ssm get-parameter --name /org/member/KMSCloudtrailKey_arn --query 'Parameter.Value' --output text`
+    cloudtrailparams="ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID,ParameterKey=CloudtrailKMSarn,ParameterValue=$KMSCloudtrailKey"
+    
 
     # Create StackSet (Enable Cloudtrail globally)
     aws cloudformation create-stack-set \
-    --stack-set-name 'SECLZ-config-cloudtrail-SNS-Globally' \
+    --stack-set-name 'SECLZ-Enable-Cloudtrail-Globally' \
     --template-body file://$CFN_LOG_TEMPLATE_GLOBAL \
     --parameters $cloudtrailparams \
     --capabilities CAPABILITY_IAM \
@@ -460,7 +459,7 @@ configure_seclog() {
 
     # Create StackInstances (globally including Ireland)
     aws cloudformation create-stack-instances \
-    --stack-set-name 'SECLZ-config-cloudtrail-SNS-Globally' \
+    --stack-set-name 'SECLZ-Enable-Cloudtrail-Globally' \
     --accounts $SECLOG_ACCOUNT_ID \
     --parameter-overrides $cloudtrailparams \
     --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
