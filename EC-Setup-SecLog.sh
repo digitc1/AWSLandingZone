@@ -448,7 +448,7 @@ configure_seclog() {
     # Getting KMS key encryption arn
     SECLOG_SNS_ARN=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_sns_arn" --output text --query 'Parameter.Value'`
 
-    cloudtrailparams="ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN ParameterKey=SNSNotificationTopic,ParameterValue=$SECLOG_SNS_ARN ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID"
+    cloudtrailparams="ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration ParameterKey=SNSNotificationTopic,ParameterValue=$SECLOG_SNS_ARN ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID"
     
     
     

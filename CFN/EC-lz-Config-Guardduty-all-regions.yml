@@ -29,10 +29,6 @@ Parameters:
     Type: String
     Default: /aws/events/config
     Description: CloudWatch LogGroup name for AWS config cloudwatch events
-  FirehoseDestinationArn:
-    Type: String
-    Default: ""
-    Description: The ARN of the firehose stream aggregating the logs in the DIGIT C2 Log Aggregation Central Account
   SNSNotificationTopic:
     Type: String
     Default: ""
@@ -41,6 +37,10 @@ Parameters:
     Type: String
     Default: ""
     Description: "Contains account id of SecLogMaster"
+  SecLogMasterAccountRegion:
+    Type: String
+    Default: "eu-west-1"
+    Description: "Contains account region of SecLogMaster"
   EnableSecLogIntegrationFoGuardDutyParam:
     Type: String
     Description: "Enable SecLog integration for GuardDuty?"
@@ -50,34 +50,14 @@ Parameters:
     - 'false'
 
 Conditions:
-  IsSecLogMasterAccount: !Equals
-    - !Ref AWS::AccountId
-    - !Ref SecLogMasterAccountId
 
   IsSecLogMasterAccountWithSOCIntegration: !And
-  - !Equals
-    - !Ref AWS::AccountId
-    - !Ref SecLogMasterAccountId
   - !Equals
     - !Ref EnableSecLogIntegrationFoGuardDutyParam
     - 'true'
 
 Resources:
-  AwsConfigLogGroup:
-    Type: AWS::Logs::LogGroup
-    Condition: IsSecLogMasterAccount
-    Properties:
-      LogGroupName: !Ref AwsConfigLogsGroupName
-      RetentionInDays: !Ref LogsRetentionInDays
-
-  AwsConfigSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsSecLogMasterAccountWithSOCIntegration
-    Properties:
-      DestinationArn: !Ref 'FirehoseDestinationArn'
-      FilterPattern: ''
-      LogGroupName: !Ref 'AwsConfigLogGroup'
-
+ 
   GuardDutyDetector:
     Type: AWS::GuardDuty::Detector
     Properties:
@@ -90,7 +70,7 @@ Resources:
   GuardDutyEvents: 
     Type: AWS::Events::Rule
     DependsOn: AwsConfigLogGroup
-    Condition: IsSecLogMasterAccount
+    Condition: IsSecLogMasterAccountWithSOCIntegration
     Properties: 
       Name: SECLZ-GuardDuty-Event
       Description: "GuardDuty Event Handler"
@@ -103,6 +83,6 @@ Resources:
           Arn: !Ref SNSNotificationTopic
           Id: "GuardDutySNSTopic-SecLog"
         -
-          Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${AwsConfigLogGroup}"
+          Arn: !Sub "arn:aws:logs:${SecLogMasterAccountRegion}:${SecLogMasterAccountId}:log-group:${AwsConfigLogsGroupName}:*"
           Id: "AwsConfigCloudWatch-Seclog"
   
