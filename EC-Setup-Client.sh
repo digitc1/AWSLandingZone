@@ -133,18 +133,37 @@ configure_client(){
           clientaccountemail=`aws organizations --profile $organisation list-accounts --query 'Accounts[*].[Id, Name, Email]' --output text | grep $clientid | awk '{print $NF}'`
         fi
 
+        echo ""
+        echo "   ---------------------------------------------------------"
+        echo "   Inviting client from seclog account... "
+        echo "     Client Profile:                       $clientaccprofile"
+        echo "     Seclog Profile:                       $accountId"
+        echo "     Client account root email:            $clientaccountemail"
+        echo "   ---------------------------------------------------------"
+        
+        echo ""
+         if [ "$batch" == "false" ] ; then
+            echo "   If this is correct press enter to continue"
+            read -p "  or CTRL-C to break"
+        fi
+
         sh ./SH/EC-Invite-from-SecLog-Account.sh $clientaccprofile $seclogprofile $clientaccountemail 
         #   -----------------------------------------------------------------------------
         #   Accept invitations (Config, GuardDuty, Security Hub) from the Client account
         #   -----------------------------------------------------------------------------
 
+        echo ""
+        echo "   ---------------------------------------------------------"
+        echo "   Accepting invitation on client... "
+        echo "   ---------------------------------------------------------"
+        echo ""
+         if [ "$batch" == "false" ] ; then
+            echo "   If this is correct press enter to continue"
+            read -p "  or CTRL-C to break"
+        fi
+
         sh ./SH/EC-Accept-from-Client-Account.sh $clientaccprofile $seclogprofile
         
-        #   -----------------------------
-        #   Enable SecurityHub on all Regions
-        #   -----------------------------
-
-        sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh $clientaccprofile
         
         #   -----------------------------
         #   Validate the Client account
