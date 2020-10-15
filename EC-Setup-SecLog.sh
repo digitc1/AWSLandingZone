@@ -62,7 +62,7 @@ ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-
 
 # parameters for scripts
 CFN_BUCKETS_TEMPLATE='CFN/EC-lz-s3-buckets.yml'
-CFN_LOG_TEMPLATE_GLOBAL='CFN/EC-lz-config-cloudtrail-all-regions.yml'
+CFN_GUARDDUTY_TEMPLATE_GLOBAL='CFN/EC-lz-config-cloudtrail-all-regions.yml'
 CFN_LOG_TEMPLATE='CFN/EC-lz-config-cloudtrail-logging.yml'
 CFN_GUARDDUTY_DETECTOR_TEMPLATE='CFN/EC-lz-guardDuty-detector.yml'
 CFN_SECURITYHUB_TEMPLATE='CFN/EC-lz-securityHub.yml'
@@ -444,26 +444,26 @@ configure_seclog() {
     echo "-  Enable cloudtrail globally"
     echo "--------------------------------------------------"
     echo ""
-    KMSCloudtrailKey =  `aws --profile $seclogprofile ssm get-parameter --name /org/member/KMSCloudtrailKey_arn --query 'Parameter.Value' --output text`
 
-    cloudtrailparams="ParameterKey=EnableSecLogForCloudTrailParam,ParameterValue=$cloudtrailintegration ParameterKey=CloudtrailKMSarn,ParameterValue=$KMSCloudtrailKey"
-    if [ "$cloudtrailintegration" == "true" ]; then
-        cloudtrailparams="ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN ParameterKey=CloudtrailKMSarn,ParameterValue=$KMSCloudtrailKey"
-    fi
+    # Getting KMS key encryption arn
+    SECLOG_SNS_ARN=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_sns_arn" --output text --query 'Parameter.Value'`
+
+    cloudtrailparams="ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN ParameterKey=SNSNotificationTopic,ParameterValue=$SECLOG_SNS_ARN ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID"
     
     
+    
 
-    # Create StackSet (Enable Cloudtrail globally)
+    # Create StackSet (Enable Guardduty globally)
     aws cloudformation create-stack-set \
-    --stack-set-name 'SECLZ-Enable-Cloudtrail-Globally' \
-    --template-body file://$CFN_LOG_TEMPLATE_GLOBAL \
+    --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
+    --template-body file://$CFN_GUARDDUTY_TEMPLATE_GLOBAL \
     --parameters $cloudtrailparams \
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile
 
-    # Create StackInstances (globally including Ireland)
+    # Create StackInstances (globally excluding Ireland)
     aws cloudformation create-stack-instances \
-    --stack-set-name 'SECLZ-Enable-Cloudtrail-Globally' \
+    --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
     --accounts $SECLOG_ACCOUNT_ID \
     --parameter-overrides $cloudtrailparams \
     --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
