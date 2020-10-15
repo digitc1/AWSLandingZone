@@ -444,20 +444,12 @@ configure_seclog() {
     echo "-  Enable cloudtrail globally"
     echo "--------------------------------------------------"
     echo ""
-
-    # Getting KMS key encryption arn
-    SECLOG_SNS_ARN=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_sns_arn" --output text --query 'Parameter.Value'`
-
-    cloudtrailparams="ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration ParameterKey=SNSNotificationTopic,ParameterValue=$SECLOG_SNS_ARN ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID"
-    
-    
-    
+ 
 
     # Create StackSet (Enable Guardduty globally)
     aws cloudformation create-stack-set \
     --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
     --template-body file://$CFN_GUARDDUTY_TEMPLATE_GLOBAL \
-    --parameters $cloudtrailparams \
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile
 
@@ -465,7 +457,6 @@ configure_seclog() {
     aws cloudformation create-stack-instances \
     --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
     --accounts $SECLOG_ACCOUNT_ID \
-    --parameter-overrides $cloudtrailparams \
     --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $seclogprofile
