@@ -444,9 +444,13 @@ configure_seclog() {
     echo "-  Enable cloudtrail globally"
     echo "--------------------------------------------------"
     echo ""
+    KMSCloudtrailKey =  `aws --profile $seclogprofile ssm get-parameter --name /org/member/KMSCloudtrailKey_arn --query 'Parameter.Value' --output text`
 
-    KMSCloudtrailKey =  `aws --profile EC_DIGIT_C1-LZ-SECLOG ssm get-parameter --name /org/member/KMSCloudtrailKey_arn --query 'Parameter.Value' --output text`
-    cloudtrailparams="ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID,ParameterKey=CloudtrailKMSarn,ParameterValue=$KMSCloudtrailKey"
+    cloudtrailparams="ParameterKey=EnableSecLogForCloudTrailParam,ParameterValue=$cloudtrailintegration ParameterKey=CloudtrailKMSarn,ParameterValue=$KMSCloudtrailKey"
+    if [ "$cloudtrailintegration" == "true" ]; then
+        cloudtrailparams="ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN ParameterKey=CloudtrailKMSarn,ParameterValue=$KMSCloudtrailKey"
+    fi
+    
     
 
     # Create StackSet (Enable Cloudtrail globally)
@@ -465,6 +469,7 @@ configure_seclog() {
     --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $seclogprofile
+}
 }
 
 # ---------------------------------------------
