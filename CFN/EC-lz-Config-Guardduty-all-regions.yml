@@ -24,10 +24,10 @@ Parameters:
     Type: String
     Default: 
     Description: "Region of the Landing Zone Account"
-    SecLogMasterAccountId:
-    Type: String
-    Default: 
-    Description: "ID of thee Landing Zone Account"
+  SecLogMasterAccountId:
+  Type: String
+  Default: 
+  Description: "ID of thee Landing Zone Account"
 
 Resources:
  
