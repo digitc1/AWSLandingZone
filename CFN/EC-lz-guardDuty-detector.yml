@@ -53,7 +53,10 @@ Conditions:
   IsSecLogMasterAccount: !Equals
     - !Ref AWS::AccountId
     - !Ref SecLogMasterAccountId
-
+  IsNotSecLogMasterAccount: !Not 
+    - !Equals 
+      - !Ref AWS::AccountId
+      - !Ref SecLogMasterAccountId
   IsSecLogMasterAccountWithSOCIntegration: !And
   - !Equals
     - !Ref AWS::AccountId
@@ -78,11 +81,62 @@ Resources:
       FilterPattern: ''
       LogGroupName: !Ref 'AwsConfigLogGroup'
 
+
+  AWSEventsInvokeEventBusSecLogRole:
+    Type: AWS::IAM::Role
+    Condition: IsNotSecLogMasterAccount
+    Properties: 
+      Description: "Service Linked role to send messages to event bus of seclog account"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: AWSEventsInvokeEventBusSecLog
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: "events:PutEvents"
+                Resource: !Join 
+                  - ''
+                  - - 'arn:aws:events:'
+                    - !Sub "${AWS::Region}:${SecLogMasterAccountId}:"
+                    - 'event-bus/default'
+
   GuardDutyDetector:
     Type: AWS::GuardDuty::Detector
     Properties:
         Enable: true
         FindingPublishingFrequency: FIFTEEN_MINUTES
+  
+  # Enable notifications for AWS Config Rule compliance changes in client account to event bus
+  ConfigRuleComplianceChangeEvent:
+    Type: AWS::Events::Rule
+    Condition: IsNotSecLogMasterAccount
+    DependsOn: AWSEventsInvokeEventBusSecLogRole
+    Properties:
+      Name: SECLZ-GuardDuty-Events-CloudWatch-Rule-To-SecLog
+      Description: 'Landing Zone rule to send notification on GuardDuty Events to SecLog eventbus.'
+      RoleArn: 
+        Fn::GetAtt: 
+        - "AWSEventsInvokeEventBusSecLogRole"
+        - "Arn"
+      EventPattern:
+        {
+          "source": [
+            "aws.guardduty"
+          ]
+        }
+      State: ENABLED
+      Targets:
+      - Id: "CrossAccountTargetId"
+        Arn: !Sub "arn:aws:events:${AWS::Region}:${SecLogMasterAccountId}:event-bus/default"
 
   CloudWatchEventsLogGroupRole:
     Type: AWS::IAM::Role

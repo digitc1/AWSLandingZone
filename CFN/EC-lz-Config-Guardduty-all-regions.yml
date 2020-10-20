@@ -20,11 +20,10 @@ Metadata:
           - GuardDutyMasterId
 
 Parameters:
-  LogsRetentionInDays:
-    Description: 'Specifies the number of days you want to retain CloudTrail log events in the CloudWatch Logs.'
-    Type: Number
-    Default: 90
-    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  SNSNotificationTopic:
+    Type: String
+    Default: 
+    Description: "Local Admin SNS Topic for Landing Zone"
 
 Resources:
  
@@ -33,3 +32,22 @@ Resources:
     Properties:
         Enable: true
         FindingPublishingFrequency: FIFTEEN_MINUTES
+
+  GuardDutyEvents: 
+    Type: AWS::Events::Rule
+    DependsOn: AwsConfigLogGroup
+    Condition: IsSecLogMasterAccount
+    Properties: 
+      Name: SECLZ-GuardDuty-Event
+      Description: "GuardDuty Event Handler"
+      EventPattern: 
+        source:
+        - aws.guardduty
+      State: ENABLED
+      Targets:
+        - 
+          Arn: !Ref SNSNotificationTopic
+          Id: "GuardDutySNSTopic-SecLog"
+        -
+          Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${AwsConfigLogGroup}"
+          Id: "AwsConfigCloudWatch-Seclog"

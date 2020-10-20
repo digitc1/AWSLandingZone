@@ -29,7 +29,6 @@ CLIENT_PROFILE=$1
 SECLOG_PROFILE=$2
 CLIENT_ACCOUNT_EMAIL=$3
 ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
-ALL_REGIONS='["eu-west-1","ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
 
 #   ---------------------
 #   The command line help
@@ -142,17 +141,6 @@ invite_client() {
     --profile $SECLOG_PROFILE
 
 
-  #   ----------------------------------------------
-  #   Granting the client to use Event-Bus in SecLog
-  #   ----------------------------------------------
-
-  #echo ""
-  #echo "Granting new account access to EventBus"
-  #echo "--------------"
-  #echo ""
-
-  #aws events put-permission --action events:PutEvents --principal $CLIENT_ID --statement-id CLIENT --profile $SECLOG_PROFILE
-
   #   -------------------------------------------------------------------------
   #   Enabling config and security Hub globally in all regions (except Ireland)
   #   -------------------------------------------------------------------------
@@ -181,7 +169,7 @@ invite_client() {
 
    # Create StackInstances (globally including Ireland)
     aws cloudformation create-stack-instances \
-    --stack-set-name 'SECLZ-Config-Guardduty-Globally' \
+    --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
     --accounts $CLIENT_ID \
     --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \

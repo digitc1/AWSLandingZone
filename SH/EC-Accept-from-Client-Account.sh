@@ -96,7 +96,7 @@ accept_seclog_invitation() {
   echo ""
   echo " SecurityHub"
   echo "------------"
-  echo ""
+  echo ""#
 
   InvitationId=`aws --profile $CLIENT securityhub list-invitations --query 'Invitations[*].InvitationId' --output text`
 

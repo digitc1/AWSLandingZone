@@ -139,6 +139,19 @@ configure_client() {
     #--profile $CLIENT
 
 
+    #   ----------------------------------------------
+    #   Granting the client to use Event-Bus in SecLog
+    #   ----------------------------------------------
+
+    echo ""
+    echo "Granting new account access to EventBus"
+    echo "--------------"
+    echo ""
+    # To allow to send to central EventBus
+    aws --profile $SECLOG events put-permission --action events:PutEvents --principal $accountId --statement-id $CLIENT
+
+
+
     #	Create Cfn Stacks
     #	-------------------
 
@@ -147,9 +160,6 @@ configure_client() {
     echo "------------------------------------------------"
     echo ""
 
-
-    # To allow to send to central EventBus
-    aws --profile $SECLOG events put-permission --action events:PutEvents --principal $accountId --statement-id $CLIENT
 
 
     StackName=SECLZ-config-cloudtrail-SNS

@@ -137,7 +137,7 @@ configure_client(){
         echo "   ---------------------------------------------------------"
         echo "   Inviting client from seclog account... "
         echo "     Client Profile:                       $clientaccprofile"
-        echo "     Seclog Profile:                       $accountId"
+        echo "     Seclog Profile:                       $seclogprofile"
         echo "     Client account root email:            $clientaccountemail"
         echo "   ---------------------------------------------------------"
         
