@@ -165,6 +165,7 @@ update_client() {
     aws cloudformation update-stack \
     --stack-name 'SECLZ-Guardduty-detector' \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
+    --capabilities CAPABILITY_IAM \
     --profile $clientaccprofile
 
     sleep 5
