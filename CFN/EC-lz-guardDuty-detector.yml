@@ -116,27 +116,27 @@ Resources:
         FindingPublishingFrequency: FIFTEEN_MINUTES
   
   # Enable notifications for AWS GuardDuty Rule compliance changes in client account to event bus
-  GuardDutyRuleComplianceChangeEvent:
-    Type: AWS::Events::Rule
-    Condition: IsNotSecLogMasterAccount
-    DependsOn: AWSEventsInvokeEventBusSecLogRole
-    Properties:
-      Name: SECLZ-GuardDuty-Events-CloudWatch-Rule-To-SecLog
-      Description: 'Landing Zone rule to send notification on GuardDuty Events to SecLog eventbus.'
-      RoleArn: 
-        Fn::GetAtt: 
-        - "AWSEventsInvokeEventBusSecLogRole"
-        - "Arn"
-      EventPattern:
-        {
-          "source": [
-            "aws.guardduty"
-          ]
-        }
-      State: ENABLED
-      Targets:
-      - Id: "CrossAccountTargetId"
-        Arn: !Sub "arn:aws:events:${AWS::Region}:${SecLogMasterAccountId}:event-bus/default"
+  #GuardDutyRuleComplianceChangeEvent:
+  #  Type: AWS::Events::Rule
+  #  Condition: IsNotSecLogMasterAccount
+  #  DependsOn: AWSEventsInvokeEventBusSecLogRole
+  #  Properties:
+  #    Name: SECLZ-GuardDuty-Events-CloudWatch-Rule-To-SecLog
+  #    Description: 'Landing Zone rule to send notification on GuardDuty Events to SecLog eventbus.'
+  #    RoleArn: 
+  #      Fn::GetAtt: 
+  #      - "AWSEventsInvokeEventBusSecLogRole"
+  #      - "Arn"
+  #    EventPattern:
+  #      {
+  #        "source": [
+  #          "aws.guardduty"
+  #        ]
+  #      }
+  #    State: ENABLED
+  #    Targets:
+  #    - Id: "CrossAccountTargetId"
+  #      Arn: !Sub "arn:aws:events:${AWS::Region}:${SecLogMasterAccountId}:event-bus/default"
 
   CloudWatchEventsLogGroupRole:
     Type: AWS::IAM::Role
@@ -169,7 +169,7 @@ Resources:
   # GuardDuty CloudWatch Event - For GuardDuty
   GuardDutyEvents: 
     Type: AWS::Events::Rule
-    DependsOn: AwsGuardDutyLogGroup
+    DependsOn: GuardDutyLogGroup
     Condition: IsSecLogMasterAccount
     Properties: 
       Name: SECLZ-GuardDuty-Event
@@ -183,6 +183,6 @@ Resources:
           Arn: !Ref SNSNotificationTopic
           Id: "GuardDutySNSTopic-SecLog"
         -
-          Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${AwsGuardDutyLogGroup}"
+          Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${GuardDutyLogGroup}"
           Id: "AwsGuardDutyCloudWatch-Seclog"
  
