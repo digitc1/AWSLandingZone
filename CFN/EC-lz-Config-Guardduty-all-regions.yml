@@ -22,18 +22,15 @@ Metadata:
 Parameters:
   SecLogMasterAccountRegion:
     Type: String
-    Default: 
     Description: "Region of the Landing Zone Account"
   SecLogMasterAccountId:
-  Type: String
-  Default: 
-  Description: "ID of thee Landing Zone Account"
+    Type: String
+    Description: "ID of thee Landing Zone Account"
 
 Resources:
  
   AWSEventsInvokeEventBusSecLogRole:
     Type: AWS::IAM::Role
-    Condition: IsNotSecLogMasterAccount
     Properties: 
       Description: "Service Linked role to send messages to event bus of seclog account"
       AssumeRolePolicyDocument:
@@ -67,7 +64,6 @@ Resources:
   # Enable notifications for AWS Config Rule compliance changes in client account to event bus
   ConfigRuleComplianceChangeEvent:
     Type: AWS::Events::Rule
-    Condition: IsNotSecLogMasterAccount
     DependsOn: AWSEventsInvokeEventBusSecLogRole
     Properties:
       Name: SECLZ-GuardDuty-Events-CloudWatch-Rule-To-SecLog
