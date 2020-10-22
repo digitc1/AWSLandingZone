@@ -87,7 +87,7 @@ Parameters:
     Type: String
     Default: '/aws/cloudtrail'
     Description: CloudWatchLogs Group name.
-    AwsConfigLogsGroupName:
+  AwsConfigLogsGroupName:
     Type: String
     Default: /aws/events/config
     Description: CloudWatch LogGroup name for AWS config cloudwatch events
@@ -331,7 +331,9 @@ Resources:
       Targets:
       - Id: "AWS-Landing-Zone-Compliance-Change-Topic"
         Arn: !Ref SNSNotificationTopic
-
+      - Id: "AwsConfigCloudWatch-Seclog"
+        Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${AwsConfigLogGroup}"
+         
 
   ConfigRole:
     Type: 'AWS::IAM::Role'

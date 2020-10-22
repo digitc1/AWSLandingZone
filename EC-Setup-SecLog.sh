@@ -417,6 +417,12 @@ configure_seclog() {
     #   Enable Config and SecurityHub globally using stacksets
     #   ------------------------------------
 
+
+    echo ""
+    echo "-  Enable SecurityHub globally"
+    echo "--------------------------------------------------"
+    echo ""
+
     # Create StackSet (Enable Config and SecurityHub globally)
     aws cloudformation create-stack-set \
     --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
@@ -464,17 +470,17 @@ configure_seclog() {
     --profile $seclogprofile
 
 
-    echo ""
-    echo "-  ATTENTION PLEASE: "
-    echo "--------------------------------------------------"
-    echo ""
-    echo "-  Please check the installation of the stackset instances from the AWS console for the SECLOG account "
-    echo "-  The moment all instances are deployed, please execute the 2nd stage of the LZ installation with the "
-    echo "-  following command: "
-    echo ""
-    echo "-  sh ./SH/Enable-SecurityHub-Controls-All-Regions.sh $seclogprofile"
-    echo ""
-    echo "--------------------------------------------------"
+    echo "---------------------------------------------------------------------------------------------------------"
+    echo "|                                         ATTENTION PLEASE:                                             |"
+    echo "---------------------------------------------------------------------------------------------------------"
+    echo "|                                                                                                       |"
+    echo "|  Please check the installation of the stackset instances from the AWS console for the SECLOG account  |"
+    echo "|  The moment all instances are deployed, please execute the 2nd stage of the LZ installation with the  |"
+    echo "|  following command:                                                                                   |"
+    echo "|                                                                                                       |"
+    echo "|               sh ./SH/Enable-SecurityHub-Controls-All-Regions.sh $seclogprofile                       |"
+    echo "|                                                                                                       |"
+    echo "---------------------------------------------------------------------------------------------------------"
 
 }
 
