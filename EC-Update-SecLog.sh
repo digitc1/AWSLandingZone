@@ -142,19 +142,42 @@ update_seclog() {
     #	 Updates the policy that defines write access to the log destination on the C2 SPLUNK account
     #	------------------------------------
 
+    #echo ""
+    #echo "- Updates the policy that defines write access to the log destination"
+    #echo "--------------------------------------------------"
+    #echo ""
+
+    #echo $FIREHOSE_ACCESS_POLICY | jq '.Statement[0].Principal.AWS = (.Statement[0].Principal.AWS | if type == "array" then . += ["'$SECLOG_ACCOUNT_ID'", "'$ORG_ACCOUNT_ID'"] else [.,"'$SECLOG_ACCOUNT_ID'", "'$ORG_ACCOUNT_ID'"] end)' > ./SecLogAccessPolicy.json  
+
+    #aws logs put-destination-policy \
+    #--destination-name $FIREHOSE_DESTINATION_NAME \
+    #--profile $splunkprofile \
+    #--access-policy file://./SecLogAccessPolicy.json
+
+    #rm -f ./SecLogAccessPolicy.json
+
+    #sleep 5
+    
+    #   ------------------------------------
+    #   Cloudtrail bucket / Config bucket / Access_log bucket ...
+    #   ------------------------------------
+
     echo ""
-    echo "- Updates the policy that defines write access to the log destination"
-    echo "--------------------------------------------------"
+    echo "- Cloudtrail bucket / Config bucket / Access_log bucket ... "
+    echo "-----------------------------------------------------------"
     echo ""
 
-    echo $FIREHOSE_ACCESS_POLICY | jq '.Statement[0].Principal.AWS = (.Statement[0].Principal.AWS | if type == "array" then . += ["'$SECLOG_ACCOUNT_ID'", "'$ORG_ACCOUNT_ID'"] else [.,"'$SECLOG_ACCOUNT_ID'", "'$ORG_ACCOUNT_ID'"] end)' > ./SecLogAccessPolicy.json  
+    aws cloudformation update-stack \
+    --stack-name 'SECLZ-Central-Buckets' \
+    --template-body file://$CFN_BUCKETS_TEMPLATE \
+    --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --profile $seclogprofile
 
-    aws logs put-destination-policy \
-    --destination-name $FIREHOSE_DESTINATION_NAME \
-    --profile $splunkprofile \
-    --access-policy file://./SecLogAccessPolicy.json
-
-    rm -f ./SecLogAccessPolicy.json
+    StackName=SECLZ-Central-Buckets
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     sleep 5
 
