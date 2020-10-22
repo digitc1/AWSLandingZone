@@ -462,8 +462,22 @@ configure_seclog() {
     --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $seclogprofile
+
+
+    echo ""
+    echo "-  ATTENTION PLEASE: "
+    echo "--------------------------------------------------"
+    echo ""
+    echo "-  Please check the installation of the stackset instances from the AWS console for the SECLOG account "
+    echo "-  The moment all instances are deployed, please execute the 2nd stage of the LZ installation with the "
+    echo "-  following command: "
+    echo ""
+    echo "-  sh ./SH/Enable-SecurityHub-Controls-All-Regions.sh $seclogprofile"
+    echo ""
+    echo "--------------------------------------------------"
+
 }
-}
+
 
 # ---------------------------------------------
 # Check if correct options are given
