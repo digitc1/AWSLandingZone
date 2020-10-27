@@ -160,17 +160,18 @@ invite_client() {
 
 
   #   -------------------------------------------------------------------------
-  #   Enabling cloudtrail globally in all regions (except Ireland)
+  #   Enabling guardduty globally in all regions (except Ireland)
   #   -------------------------------------------------------------------------
 
   echo "Enabling guardduty globally in all regions"
   echo "--------------"
   echo ""
 
-   # Create StackInstances (globally including Ireland)
+   # Create StackInstances (globally excluding Ireland)
     aws cloudformation create-stack-instances \
     --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
     --accounts $CLIENT_ID \
+    --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ID \
     --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $SECLOG_PROFILE

@@ -690,86 +690,6 @@ Resources:
                     Bool:
                       "aws:SecureTransport": "false"
 
-    #   -------------------
-    #   GuardDuty Bucket
-    #   -------------------
-
-    GuardDutyBucket:
-        Type: AWS::S3::Bucket
-        Properties:
-          BucketName:
-            Fn::Join:
-            - ""
-            - - "guardduty-logs-"
-              - Ref: AWS::AccountId
-              - "-do-not-delete"
-          AccessControl: LogDeliveryWrite
-          Tags:
-          - Key: owner
-            Value: !Ref owner
-          - Key: environment
-            Value: !Ref environment
-          - Key: criticity
-            Value: !Ref criticity
-          - Key: project
-            Value: !Ref project
-          - Key: data-classification
-            Value: !Ref dataClassification
-          PublicAccessBlockConfiguration: 
-            BlockPublicAcls: true
-            BlockPublicPolicy: true
-            IgnorePublicAcls: true
-            RestrictPublicBuckets: true
-
-    GuardDutyPolicy:
-        Type: AWS::S3::BucketPolicy
-        Properties:
-            Bucket:
-                Ref: GuardDutyBucket
-            PolicyDocument:
-                Statement: 
-                 - 
-                   Sid: "GuardDutyBucketPolicyDelivery1"
-                   Effect: "Allow"
-                   Principal:
-                    Service:
-                     - "guardduty.amazonaws.com"
-                   Action:
-                    - "s3:GetBucketAcl"
-                   Resource: !GetAtt GuardDutyBucket.Arn
-
-                 - 
-                   Sid: "GuardDutyBucketPolicyDelivery2"
-                   Effect: "Allow"
-                   Principal:
-                    Service:
-                     - "guardduty.amazonaws.com"
-                   Action:
-                    - "s3:PutObject"
-                   Resource: 
-                     Fn::Join: 
-                       - ""
-                       - 
-                         - !GetAtt GuardDutyBucket.Arn
-                         - "/*"
-                   Condition:
-                    StringEquals:
-                        "s3:x-amz-acl": "bucket-owner-full-control"                 
-                 -
-                   Sid: "AWSGuardDutyBucketSSL"
-                   Action: "s3:*"
-                   Effect: Deny
-                   Principal:
-                    Service: guardduty.amazonaws.com
-                   Resource: 
-                     Fn::Join: 
-                       - ""
-                       - 
-                         - !GetAtt GuardDutyBucket.Arn
-                         - "/*"
-                   Condition:
-                    Bool:
-                      "aws:SecureTransport": "false"
 
 Outputs:
   ConfigBucket:
@@ -789,11 +709,5 @@ Outputs:
     Value: !Ref AccessLogsBucket
     Export:
       Name: !Sub "${AWS::StackName}-AccessLogsBucket"
-
-  GuardDutysBucket:
-    Description: Bucket for storing guardduty-logs
-    Value: !Ref GuardDutyBucket
-    Export:
-      Name: !Sub "${AWS::StackName}-GuardDutyBucket"
 
 
