@@ -204,6 +204,7 @@ configure_client() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Guardduty-detector' \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
+    --capabilities CAPABILITY_IAM \
     --enable-termination-protection \
     --profile $CLIENT
 

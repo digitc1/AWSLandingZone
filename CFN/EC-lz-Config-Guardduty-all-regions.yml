@@ -41,6 +41,10 @@ Parameters:
     AllowedValues:
     - 'true'
     - 'false'
+  OrganizationOuId:
+    Description: 'Organizational OU Id'
+    Type: String
+    Default: "o-jyyw8qs5c8"
 
 Conditions:
   IsSecLogMasterAccount: !Equals
@@ -66,7 +70,17 @@ Resources:
       LogGroupName: !Ref AwsGuardDutyGroupName
       RetentionInDays: !Ref LogsRetentionInDays
 
-  
+  SecLogEventBusPolicy: 
+    Type: AWS::Events::EventBusPolicy
+    Condition: IsSecLogMasterAccount
+    Properties: 
+        Action: "events:PutEvents"
+        Principal: "*"
+        StatementId: "MyStatement1"
+        Condition: 
+          Type: "StringEquals"
+          Key: "aws:PrincipalOrgID"
+          Value: !Ref OrganizationOuId
 
 
   AWSEventsInvokeEventBusSecLogRole:

@@ -423,17 +423,12 @@ configure_seclog() {
     echo "--------------------------------------------------"
     echo ""
 
-    $SNSNotificationTopic = `aws --profile $seclogprofile ssm get-parameter --name /org/member/SecLog_sns_arn --query "Parameter.Value" --output text`
-    guarddutyparams="ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration ParameterKey=SNSNotificationTopic,ParameterValue=$SNSNotificationTopic"
-    if [ "$guarddutyintegration" == "true" ]; then
-        guarddutyparams="ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN ParameterKey=SNSNotificationTopic,ParameterValue=$SNSNotificationTopic"
-    fi
 
     # Create StackSet (Enable Config and SecurityHub globally)
     aws cloudformation create-stack-set \
     --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
     --template-body file://$CFN_STACKSET_CONFIG_SECHUB_GLOBAL \
-    --parameters guarddutyparams \
+    --parameters ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile
 
@@ -441,7 +436,7 @@ configure_seclog() {
     aws cloudformation create-stack-instances \
     --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
     --accounts $SECLOG_ACCOUNT_ID \
-    --parameter-overrides guarddutyparams \
+    --parameter-overrides  ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
     --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $seclogprofile
@@ -456,12 +451,11 @@ configure_seclog() {
     echo "-  Enable cloudtrail globally"
     echo "--------------------------------------------------"
     echo ""
- 
 
     # Create StackSet (Enable Guardduty globally)
     aws cloudformation create-stack-set \
     --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
-    --parameters ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID ParameterKey=SecLogMasterAccountRegion,ParameterValue=$AWS_REGION \
+    --parameters ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration \
     --template-body file://$CFN_GUARDDUTY_TEMPLATE_GLOBAL \
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile
@@ -470,7 +464,7 @@ configure_seclog() {
     aws cloudformation create-stack-instances \
     --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
     --accounts $SECLOG_ACCOUNT_ID \
-    --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID ParameterKey=SecLogMasterAccountRegion,ParameterValue=$AWS_REGION \
+    --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration \
     --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $seclogprofile
