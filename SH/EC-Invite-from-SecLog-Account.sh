@@ -85,7 +85,9 @@ invite_client() {
     export delimiter='","'
     for i in `aws --profile $SECLOG_PROFILE configservice describe-configuration-aggregators --output text --query 'ConfigurationAggregators[*].AccountAggregationSources[*].AccountIds'`
       do
-        ListAccountIds="${ListAccountIds}$i$delimiter"
+        if [ $i != $CLIENT_ID ] ; then
+          ListAccountIds="${ListAccountIds}$i$delimiter"
+        fi
       done
     ListAccountIds=`echo $ListAccountIds | sed s/\"\.\"$//g`
 
@@ -157,6 +159,22 @@ invite_client() {
   --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ID \
   --regions $ALL_REGIONS_EXCEPT_IRELAND \
   --profile $SECLOG_PROFILE
+
+
+    #   --------------------------------------------------------------
+    #   Granting the client to use Event-Bus in SecLog for all regions
+    #   --------------------------------------------------------------
+
+    echo ""
+    echo "Granting new account access to EventBus on all regions"
+    echo "--------------"
+    echo ""
+
+    ALL_REGIONS_EXCEPT_IRELAND_ARRAY=`echo $ALL_REGIONS_EXCEPT_IRELAND | sed -e 's/\[//g;s/\]//g;s/,/ /g;s/\"//g'`
+	  for i in ${ALL_REGIONS_EXCEPT_IRELAND_ARRAY[@]}; 
+      do
+        aws --profile $SECLOG_PROFILE --region $i events put-permission --action events:PutEvents --principal $CLIENT_ID --statement-id $CLIENT_PROFILE
+      done
 
 
   #   -------------------------------------------------------------------------
