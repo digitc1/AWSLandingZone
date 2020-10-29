@@ -155,6 +155,8 @@ configure_client(){
         echo ""
         echo "   ---------------------------------------------------------"
         echo "   Accepting invitation on client... "
+        echo "     Client Profile:                       $clientaccprofile"
+        echo "     Seclog Profile:                       $seclogprofile"
         echo "   ---------------------------------------------------------"
         echo ""
          if [ "$batch" == "false" ] ; then
@@ -180,7 +182,7 @@ configure_client(){
         echo "|  The moment all instances are deployed, please execute the 2nd stage of the LZ installation with the  |"
         echo "|  following command:                                                                                   |"
         echo "|                                                                                                       |"
-        echo "|               sh ./SH/Enable-SecurityHub-Controls-All-Regions.sh $clientaccprofile                    |"
+        echo "|               sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh $clientaccprofile                 |"
         echo "|                                                                                                       |"
         echo "---------------------------------------------------------------------------------------------------------"
 }

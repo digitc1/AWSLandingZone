@@ -83,7 +83,7 @@ CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
 #   ---------------------
 display_help() {
 
-    echo "Usage: $0 [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile> --notificationemail <Notification Email> --logdestination <Log Destination DG name> [--cloudtrailintegration <true|false] --guarddutyintegration [true|false>] [--securityhubintegration <true|false>] [--batch <true|false>]"
+    echo "Usage: $0 [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile> --notificationemail <Notification Email> --logdestination <Log Destination DG name> [--cloudtrailintegration <true|false] [--guarddutyintegration <true|false>] [--securityhubintegration <true|false>] [--batch <true|false>]"
     echo ""
     echo "   Provide "
     echo "   --organisation           : The orgnisation account as configured in your AWS profile (optional)"
@@ -478,7 +478,7 @@ configure_seclog() {
     echo "|  The moment all instances are deployed, please execute the 2nd stage of the LZ installation with the  |"
     echo "|  following command:                                                                                   |"
     echo "|                                                                                                       |"
-    echo "|               sh ./SH/Enable-SecurityHub-Controls-All-Regions.sh $seclogprofile                       |"
+    echo "|               sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh $seclogprofile                    |"
     echo "|                                                                                                       |"
     echo "---------------------------------------------------------------------------------------------------------"
 
