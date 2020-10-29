@@ -31,7 +31,7 @@ $ ./EC-Create-Account.sh D3_seclog D3_seclog@ec.europa.eu
 
 ### Configure the SecLog account
 
-To configure the SecLog account that you just created, we'll need to run the "EC-Setup-SecLog.sh" script by adding following parameters:
+To configure the SecLog account that you just created, we'll need to run the *EC-Setup-SecLog.sh* script by adding following parameters:
 
 * --organisation           : The orgnisation account as configured in your AWS profile (optional)
 * --seclogprofile          : The account profile of the central SecLog account as configured in your AWS profile
@@ -48,7 +48,7 @@ Run the script
 $ ./EC-Setup-SecLog.sh  --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest 
 ```
 Wait for the execution of the installation script to finish. When done, the user will see a message with the following instructions:
-
+```
 ---------------------------------------------------------------------------------------------------------
 |                                         ATTENTION PLEASE:                                             |
 ---------------------------------------------------------------------------------------------------------
@@ -60,11 +60,13 @@ Wait for the execution of the installation script to finish. When done, the user
 |               sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh {seclogprofile}                   |
 |                                                                                                       |
 ---------------------------------------------------------------------------------------------------------
+```
+Check in the SECLOG account if all stackset instances have been deployed, and when all is done, copy and paste the command as shown to execute it.
 
-Check in the SECLOG account if all stackset instances have been deployed, and when all is done, execute the command as shown.
-
+#### Disable SOC integration
 
 If you wish to disable any of the default SOC log integrations, use the appropriate flags (can be combined on a single script call)
+
 **Disable CloudTrail integration**
 ```
 $ ./EC-Setup-SecLog.sh  --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest --cloudtrailintegration false
@@ -125,7 +127,7 @@ This script will:
 - setup the client account
 - invite the account from master and accept the invitations from the client
 
-To configure the Client  account that you just created, we'll need to run the "EC-Setup-Client.sh" script by adding the following parameters:
+To configure the Client  account that you just created, we'll need to run the *EC-Setup-Client.sh* script by adding the following parameters:
 
 * --organisation       : The orgnisation account as configured in your AWS profile (optional)
 * --clientaccprofile   : The client account as configured in your AWS profile
@@ -139,7 +141,7 @@ $ ./EC-Setup-Client.sh  --oganisation DIGIT_ORG_ACC --clientaccprofile D3_Acc1 -
 ```
 
 Wait for the execution of the installation script to finish. When done, the user will see a message with the following instructions:
-
+```
 ---------------------------------------------------------------------------------------------------------
 |                                         ATTENTION PLEASE:                                             |
 ---------------------------------------------------------------------------------------------------------
@@ -151,16 +153,15 @@ Wait for the execution of the installation script to finish. When done, the user
 |               sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh {clientaccprofile}                |
 |                                                                                                       |
 ---------------------------------------------------------------------------------------------------------
-
-Check in the SECLOG account if all stackset instances have been deployed, and when all is done, execute the command as shown.
-
+```
+Check in the SECLOG account if all stackset instances have been deployed, and when all is done, copy and paste the command as shown to execute it.
 
 **Run script in batch mode - no confirmation asked from user**
 ```
 $ ./EC-Setup-Client.sh  --clientaccprofile D3_Acc1 --seclogprofile D3_seclog --batch true
 ```
 
-### Update  client account  
+### Update client account  
 
 This script will update the existing stacks (where applicable) of secure landing zone on the client account to the latest version. 
 
