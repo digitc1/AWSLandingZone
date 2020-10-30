@@ -63,12 +63,12 @@ update_seclog() {
     SECLOG_ACCOUNT_ID=`aws --profile $seclogprofile sts get-caller-identity --query 'Account' --output text`
     
     #   ------------------------------------
-    #    Enable cloudtrail globally using stacksets
+    #    Enable Guardduty globally using stacksets
     #   ------------------------------------
 
 
     echo ""
-    echo "-  Enable cloudtrail globally"
+    echo "-  Enable Guardduty globally"
     echo "--------------------------------------------------"
     echo ""
 

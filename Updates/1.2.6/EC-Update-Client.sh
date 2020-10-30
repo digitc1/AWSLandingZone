@@ -92,12 +92,12 @@ update_client() {
       done
 
     #   ------------------------------------
-    #    Enable cloudtrail globally using stacksets
+    #    Enable gaurdduty udtrail globally using stacksets
     #   ------------------------------------
 
 
     echo ""
-    echo "-  Enable cloudtrail globally"
+    echo "-  Enable gaurdduty globally"
     echo "--------------------------------------------------"
     echo ""
 
