@@ -181,6 +181,27 @@ update_seclog() {
 
     sleep 5
 
+
+    #   ------------------------------------
+    #   Enable guardduty and securityhub in seclog master account
+    #   ------------------------------------
+
+
+    echo "" 
+    echo "- Enable guardduty in seclog master account"
+    echo "--------------------"
+    echo ""
+
+    aws cloudformation update-stack \
+    --stack-name 'SECLZ-Guardduty-detector' \
+    --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
+    --capabilities CAPABILITY_IAM \
+    --profile $seclogprofile \
+    --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN
+
+    sleep 5
+
+
     #   ------------------------------------
     #   Creating config, cloudtrail, SNS notifications
     #   ------------------------------------
@@ -202,25 +223,6 @@ update_seclog() {
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
     while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-
-    sleep 5
-
-    #   ------------------------------------
-    #   Enable guardduty and securityhub in seclog master account
-    #   ------------------------------------
-
-
-    echo "" 
-    echo "- Enable guardduty in seclog master account"
-    echo "--------------------"
-    echo ""
-
-    aws cloudformation update-stack \
-    --stack-name 'SECLZ-Guardduty-detector' \
-    --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
-    --capabilities CAPABILITY_IAM \
-    --profile $seclogprofile \
-    --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN
 
     sleep 5
 
@@ -269,28 +271,7 @@ update_seclog() {
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     sleep 5
-    
-    #   ------------------------------------
-    #   Cloudtrail bucket / Config bucket / Access_log bucket ...
-    #   ------------------------------------
-
-    echo ""
-    echo "- Cloudtrail bucket / Config bucket / Access_log bucket ... "
-    echo "-----------------------------------------------------------"
-    echo ""
-
-    aws cloudformation update-stack \
-    --stack-name 'SECLZ-Central-Buckets' \
-    --template-body file://$CFN_BUCKETS_TEMPLATE \
-    --parameters file://$CFN_TAGS_PARAMS_FILE \
-    --capabilities CAPABILITY_NAMED_IAM \
-    --profile $seclogprofile
-
-    StackName=SECLZ-Central-Buckets
-    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
-    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-
+   
 
     sleep 5
 

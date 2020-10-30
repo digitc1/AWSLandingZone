@@ -293,7 +293,7 @@ configure_seclog() {
 
     sleep 5
 
-        #   ------------------------------------
+    #   ------------------------------------
     #   Creating config, cloudtrail, SNS notifications
     #   ------------------------------------
 

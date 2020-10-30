@@ -111,6 +111,24 @@ update_client() {
     --profile $clientaccprofile
 
   
+    sleep 5
+
+    echo ""
+    echo "- Enable guardduty in new client account"
+    echo "----------------------------------------"
+    echo ""
+
+    StackName=SECLZ-Guardduty-detector
+    aws cloudformation update-stack \
+    --stack-name $StackName \
+    --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
+    --capabilities CAPABILITY_IAM \
+    --profile $clientaccprofile
+
+    aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
 
     #	Update Cfn Stacks
     #	-------------------
@@ -155,18 +173,6 @@ update_client() {
     while [ `aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
-    sleep 5
-
-    echo ""
-    echo "- Enable guardduty in new client account"
-    echo "----------------------------------------"
-    echo ""
-
-    aws cloudformation update-stack \
-    --stack-name 'SECLZ-Guardduty-detector' \
-    --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
-    --capabilities CAPABILITY_IAM \
-    --profile $clientaccprofile
 
     sleep 5
 
