@@ -187,7 +187,6 @@ Resources:
           Arn: !Ref SNSNotificationTopic         
           Id: "GuardDutySNSTopic-SecLog"
         -
-          #Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${GuardDutyLogGroup}"
-          Arn: !GetAtt GuardDutyLogGroup.Arn
+          Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${GuardDutyLogGroup}"
           Id: "AwsGuardDutyCloudWatch-Seclog"
  
