@@ -11,7 +11,7 @@
 #   --------------------
 
 seclogprofile=${seclogprofile:-}
-guarddutyintegration=${guarddutyintegration:-}
+guarddutyintegration=${guarddutyintegration:-true}
 
 while [ $# -gt 0 ]; do
 
@@ -98,7 +98,7 @@ update_seclog() {
 # ---------------------------------------------
 
 # Check to validate number of parameters entered
-if  [ -z "$seclogprofile" ] || [ -z "$guarddutyintegration" ] ; then
+if  [ -z "$seclogprofile" ] ; then
     display_help
     exit 0
 fi

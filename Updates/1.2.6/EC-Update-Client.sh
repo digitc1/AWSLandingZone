@@ -26,7 +26,7 @@
 
 clientaccprofile=${clientaccprofile:-}
 seclogprofile=${seclogprofile:-}
-guarddutyintegration=${guarddutyintegration:-}
+guarddutyintegration=${guarddutyintegration:-true}
 
 
 while [ $# -gt 0 ]; do
@@ -119,7 +119,7 @@ update_client() {
 # ---------------------------------------------
 
 # Simple check if two arguments are provided
-if [ -z "$clientaccprofile" ] [ -z "$seclogprofile" ] || [ -z "$guarddutyintegration" ] ; then
+if [ -z "$clientaccprofile" ] || [ -z "$seclogprofile" ] ; then
     display_help
     exit 0
 fi
