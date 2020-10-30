@@ -270,10 +270,16 @@ update_seclog() {
     while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
-    sleep 5
-   
-
-    sleep 5
+    echo "---------------------------------------------------------------------------------------------------------"
+    echo "|                                         ATTENTION PLEASE:                                             |"
+    echo "---------------------------------------------------------------------------------------------------------"
+    echo "|                                                                                                       |"
+    echo "|  Please check the is there's a second upgrade stage for the current version of the LZ.                |"
+    echo "|  For instance, if you're upgrading the LZ to 1.2.6, look into the ./Upgrade/1.2.6 folder and check    |"
+    echo "|  if there is an EC-Upgrade-SecLog.sh script. If it does exist, execute it, making sure the required   |"
+    echo "|  parameters are passed.                                                                                |"
+    echo "|                                                                                                       |"
+    echo "---------------------------------------------------------------------------------------------------------"
 
 
 
