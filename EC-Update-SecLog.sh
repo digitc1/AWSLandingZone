@@ -142,21 +142,65 @@ update_seclog() {
     #	 Updates the policy that defines write access to the log destination on the C2 SPLUNK account
     #	------------------------------------
 
+    #echo ""
+    #echo "- Updates the policy that defines write access to the log destination"
+    #echo "--------------------------------------------------"
+    #echo ""
+
+    #echo $FIREHOSE_ACCESS_POLICY | jq '.Statement[0].Principal.AWS = (.Statement[0].Principal.AWS | if type == "array" then . += ["'$SECLOG_ACCOUNT_ID'", "'$ORG_ACCOUNT_ID'"] else [.,"'$SECLOG_ACCOUNT_ID'", "'$ORG_ACCOUNT_ID'"] end)' > ./SecLogAccessPolicy.json  
+
+    #aws logs put-destination-policy \
+    #--destination-name $FIREHOSE_DESTINATION_NAME \
+    #--profile $splunkprofile \
+    #--access-policy file://./SecLogAccessPolicy.json
+
+    #rm -f ./SecLogAccessPolicy.json
+
+    #sleep 5
+    
+    #   ------------------------------------
+    #   Cloudtrail bucket / Config bucket / Access_log bucket ...
+    #   ------------------------------------
+
     echo ""
-    echo "- Updates the policy that defines write access to the log destination"
-    echo "--------------------------------------------------"
+    echo "- Cloudtrail bucket / Config bucket / Access_log bucket ... "
+    echo "-----------------------------------------------------------"
     echo ""
 
-    echo $FIREHOSE_ACCESS_POLICY | jq '.Statement[0].Principal.AWS = (.Statement[0].Principal.AWS | if type == "array" then . += ["'$SECLOG_ACCOUNT_ID'", "'$ORG_ACCOUNT_ID'"] else [.,"'$SECLOG_ACCOUNT_ID'", "'$ORG_ACCOUNT_ID'"] end)' > ./SecLogAccessPolicy.json  
+    aws cloudformation update-stack \
+    --stack-name 'SECLZ-Central-Buckets' \
+    --template-body file://$CFN_BUCKETS_TEMPLATE \
+    --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --profile $seclogprofile
 
-    aws logs put-destination-policy \
-    --destination-name $FIREHOSE_DESTINATION_NAME \
-    --profile $splunkprofile \
-    --access-policy file://./SecLogAccessPolicy.json
-
-    rm -f ./SecLogAccessPolicy.json
+    StackName=SECLZ-Central-Buckets
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     sleep 5
+
+
+    #   ------------------------------------
+    #   Enable guardduty and securityhub in seclog master account
+    #   ------------------------------------
+
+
+    echo "" 
+    echo "- Enable guardduty in seclog master account"
+    echo "--------------------"
+    echo ""
+
+    aws cloudformation update-stack \
+    --stack-name 'SECLZ-Guardduty-detector' \
+    --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
+    --capabilities CAPABILITY_IAM \
+    --profile $seclogprofile \
+    --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN
+
+    sleep 5
+
 
     #   ------------------------------------
     #   Creating config, cloudtrail, SNS notifications
@@ -179,25 +223,6 @@ update_seclog() {
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
     while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-
-    sleep 5
-
-    #   ------------------------------------
-    #   Enable guardduty and securityhub in seclog master account
-    #   ------------------------------------
-
-
-    echo "" 
-    echo "- Enable guardduty in seclog master account"
-    echo "--------------------"
-    echo ""
-
-    aws cloudformation update-stack \
-    --stack-name 'SECLZ-Guardduty-detector' \
-    --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
-    --capabilities CAPABILITY_IAM \
-    --profile $seclogprofile \
-    --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN
 
     sleep 5
 
@@ -245,31 +270,16 @@ update_seclog() {
     while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
-    sleep 5
-    
-    #   ------------------------------------
-    #   Cloudtrail bucket / Config bucket / Access_log bucket ...
-    #   ------------------------------------
-
-    echo ""
-    echo "- Cloudtrail bucket / Config bucket / Access_log bucket ... "
-    echo "-----------------------------------------------------------"
-    echo ""
-
-    aws cloudformation update-stack \
-    --stack-name 'SECLZ-Central-Buckets' \
-    --template-body file://$CFN_BUCKETS_TEMPLATE \
-    --parameters file://$CFN_TAGS_PARAMS_FILE \
-    --capabilities CAPABILITY_NAMED_IAM \
-    --profile $seclogprofile
-
-    StackName=SECLZ-Central-Buckets
-    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
-    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-
-
-    sleep 5
+    echo "---------------------------------------------------------------------------------------------------------"
+    echo "|                                         ATTENTION PLEASE:                                             |"
+    echo "---------------------------------------------------------------------------------------------------------"
+    echo "|                                                                                                       |"
+    echo "|  Please check the is there's a second upgrade stage for the current version of the LZ.                |"
+    echo "|  For instance, if you're upgrading the LZ to 1.2.6, look into the ./Upgrade/1.2.6 folder and check    |"
+    echo "|  if there is an EC-Upgrade-SecLog.sh script. If it does exist, execute it, making sure the required   |"
+    echo "|  parameters are passed.                                                                                |"
+    echo "|                                                                                                       |"
+    echo "---------------------------------------------------------------------------------------------------------"
 
 
 

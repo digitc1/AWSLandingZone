@@ -85,7 +85,9 @@ invite_client() {
     export delimiter='","'
     for i in `aws --profile $SECLOG_PROFILE configservice describe-configuration-aggregators --output text --query 'ConfigurationAggregators[*].AccountAggregationSources[*].AccountIds'`
       do
-        ListAccountIds="${ListAccountIds}$i$delimiter"
+        if [ $i != $CLIENT_ID ] ; then
+          ListAccountIds="${ListAccountIds}$i$delimiter"
+        fi
       done
     ListAccountIds=`echo $ListAccountIds | sed s/\"\.\"$//g`
 
@@ -141,17 +143,6 @@ invite_client() {
     --profile $SECLOG_PROFILE
 
 
-  #   ----------------------------------------------
-  #   Granting the client to use Event-Bus in SecLog
-  #   ----------------------------------------------
-
-  #echo ""
-  #echo "Granting new account access to EventBus"
-  #echo "--------------"
-  #echo ""
-
-  #aws events put-permission --action events:PutEvents --principal $CLIENT_ID --statement-id CLIENT --profile $SECLOG_PROFILE
-
   #   -------------------------------------------------------------------------
   #   Enabling config and security Hub globally in all regions (except Ireland)
   #   -------------------------------------------------------------------------
@@ -168,6 +159,40 @@ invite_client() {
   --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ID \
   --regions $ALL_REGIONS_EXCEPT_IRELAND \
   --profile $SECLOG_PROFILE
+
+
+    #   --------------------------------------------------------------
+    #   Granting the client to use Event-Bus in SecLog for all regions
+    #   --------------------------------------------------------------
+
+    echo ""
+    echo "Granting new account access to EventBus on all regions"
+    echo "--------------"
+    echo ""
+
+    ALL_REGIONS_EXCEPT_IRELAND_ARRAY=`echo $ALL_REGIONS_EXCEPT_IRELAND | sed -e 's/\[//g;s/\]//g;s/,/ /g;s/\"//g'`
+	  for i in ${ALL_REGIONS_EXCEPT_IRELAND_ARRAY[@]}; 
+      do
+        aws --profile $SECLOG_PROFILE --region $i events put-permission --action events:PutEvents --principal $CLIENT_ID --statement-id $CLIENT_PROFILE
+      done
+
+
+  #   -------------------------------------------------------------------------
+  #   Enabling guardduty globally in all regions (except Ireland)
+  #   -------------------------------------------------------------------------
+
+  echo "Enabling guardduty globally in all regions"
+  echo "--------------"
+  echo ""
+
+   # Create StackInstances (globally excluding Ireland)
+    aws cloudformation create-stack-instances \
+    --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
+    --accounts $CLIENT_ID \
+    --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ID \
+    --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
+    --regions $ALL_REGIONS_EXCEPT_IRELAND \
+    --profile $SECLOG_PROFILE
 
 }
 

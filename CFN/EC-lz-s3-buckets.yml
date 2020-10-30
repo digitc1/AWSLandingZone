@@ -690,6 +690,7 @@ Resources:
                     Bool:
                       "aws:SecureTransport": "false"
 
+
 Outputs:
   ConfigBucket:
     Description: Bucket for storing config-logs

@@ -87,6 +87,10 @@ Parameters:
     Type: String
     Default: '/aws/cloudtrail'
     Description: CloudWatchLogs Group name.
+  AwsConfigLogsGroupName:
+    Type: String
+    Default: /aws/events/config
+    Description: CloudWatch LogGroup name for AWS config cloudwatch events
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain CloudTrail log events in the CloudWatch Logs.'
     Type: Number
@@ -183,6 +187,22 @@ Resources:
   #   Enable Config
   #   -------------------
 
+  
+  AwsConfigLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsSecLogMasterAccount
+    Properties:
+      LogGroupName: !Ref AwsConfigLogsGroupName
+      RetentionInDays: !Ref LogsRetentionInDays
+
+  AwsConfigSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: IsSecLogMasterAccountWithSOCIntegration
+    Properties:
+      DestinationArn: !Ref 'FirehoseDestinationArn'
+      FilterPattern: ''
+      LogGroupName: !Ref 'AwsConfigLogGroup'
+
   ConfigRecorder:
     Type: 'AWS::Config::ConfigurationRecorder'
     Properties:
@@ -251,6 +271,12 @@ Resources:
                 aws:PrincipalOrgID : 
                 - 'o-jyyw8qs5c8'
                 - 'o-xj5nzaqffn'
+          - Sid: TrustCWEToPublishEventsToMyTopic
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: SNS:Publish
+            Resource: !Ref SNSNotificationTopic
 
   ECLandingZoneSecLogSNSTopicParameter:
     DependsOn:
@@ -305,7 +331,9 @@ Resources:
       Targets:
       - Id: "AWS-Landing-Zone-Compliance-Change-Topic"
         Arn: !Ref SNSNotificationTopic
-
+      - Id: "AwsConfigCloudWatch-Seclog"
+        Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${AwsConfigLogGroup}"
+         
 
   ConfigRole:
     Type: 'AWS::IAM::Role'
@@ -385,6 +413,7 @@ Resources:
                     - !Sub "${AWS::Region}:${SecLogMasterAccountId}:"
                     - 'event-bus/default'
 
+  
   # Enable notifications for AWS Config Rule compliance changes in client account to event bus
   ConfigRuleComplianceChangeEvent:
     Type: AWS::Events::Rule

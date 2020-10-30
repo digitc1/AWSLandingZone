@@ -133,24 +133,58 @@ configure_client(){
           clientaccountemail=`aws organizations --profile $organisation list-accounts --query 'Accounts[*].[Id, Name, Email]' --output text | grep $clientid | awk '{print $NF}'`
         fi
 
+        echo ""
+        echo "   ---------------------------------------------------------"
+        echo "   Inviting client from seclog account... "
+        echo "     Client Profile:                       $clientaccprofile"
+        echo "     Seclog Profile:                       $seclogprofile"
+        echo "     Client account root email:            $clientaccountemail"
+        echo "   ---------------------------------------------------------"
+        
+        echo ""
+         if [ "$batch" == "false" ] ; then
+            echo "   If this is correct press enter to continue"
+            read -p "  or CTRL-C to break"
+        fi
+
         sh ./SH/EC-Invite-from-SecLog-Account.sh $clientaccprofile $seclogprofile $clientaccountemail 
         #   -----------------------------------------------------------------------------
         #   Accept invitations (Config, GuardDuty, Security Hub) from the Client account
         #   -----------------------------------------------------------------------------
 
+        echo ""
+        echo "   ---------------------------------------------------------"
+        echo "   Accepting invitation on client... "
+        echo "     Client Profile:                       $clientaccprofile"
+        echo "     Seclog Profile:                       $seclogprofile"
+        echo "   ---------------------------------------------------------"
+        echo ""
+         if [ "$batch" == "false" ] ; then
+            echo "   If this is correct press enter to continue"
+            read -p "  or CTRL-C to break"
+        fi
+
         sh ./SH/EC-Accept-from-Client-Account.sh $clientaccprofile $seclogprofile
         
-        #   -----------------------------
-        #   Enable SecurityHub on all Regions
-        #   -----------------------------
-
-        sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh $clientaccprofile
         
         #   -----------------------------
         #   Validate the Client account
         #   -----------------------------
 
         sh ./SH/EC-Validate-Client-Account.sh $clientaccprofile $seclogprofile
+
+
+        echo "---------------------------------------------------------------------------------------------------------"
+        echo "|                                         ATTENTION PLEASE:                                             |"
+        echo "---------------------------------------------------------------------------------------------------------"
+        echo "|                                                                                                       |"
+        echo "|  Please check the installation of the stackset instances from the AWS console for the SECLOG account  |"
+        echo "|  The moment all instances are deployed, please execute the 2nd stage of the LZ installation with the  |"
+        echo "|  following command:                                                                                   |"
+        echo "|                                                                                                       |"
+        echo "|               sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh $clientaccprofile                 |"
+        echo "|                                                                                                       |"
+        echo "---------------------------------------------------------------------------------------------------------"
 }
 
 # ---------------------------------------------

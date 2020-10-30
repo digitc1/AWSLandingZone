@@ -62,6 +62,7 @@ ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-
 
 # parameters for scripts
 CFN_BUCKETS_TEMPLATE='CFN/EC-lz-s3-buckets.yml'
+CFN_GUARDDUTY_TEMPLATE_GLOBAL='CFN/EC-lz-Config-Guardduty-all-regions.yml'
 CFN_LOG_TEMPLATE='CFN/EC-lz-config-cloudtrail-logging.yml'
 CFN_GUARDDUTY_DETECTOR_TEMPLATE='CFN/EC-lz-guardDuty-detector.yml'
 CFN_SECURITYHUB_TEMPLATE='CFN/EC-lz-securityHub.yml'
@@ -82,7 +83,7 @@ CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
 #   ---------------------
 display_help() {
 
-    echo "Usage: $0 [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile> --notificationemail <Notification Email> --logdestination <Log Destination DG name> [--cloudtrailintegration <true|false] --guarddutyintegration [true|false>] [--securityhubintegration <true|false>] [--batch <true|false>]"
+    echo "Usage: $0 [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile> --notificationemail <Notification Email> --logdestination <Log Destination DG name> [--cloudtrailintegration <true|false] [--guarddutyintegration <true|false>] [--securityhubintegration <true|false>] [--batch <true|false>]"
     echo ""
     echo "   Provide "
     echo "   --organisation           : The orgnisation account as configured in your AWS profile (optional)"
@@ -416,6 +417,13 @@ configure_seclog() {
     #   Enable Config and SecurityHub globally using stacksets
     #   ------------------------------------
 
+
+    echo ""
+    echo "-  Enable SecurityHub globally"
+    echo "--------------------------------------------------"
+    echo ""
+
+
     # Create StackSet (Enable Config and SecurityHub globally)
     aws cloudformation create-stack-set \
     --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
@@ -428,12 +436,54 @@ configure_seclog() {
     aws cloudformation create-stack-instances \
     --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
     --accounts $SECLOG_ACCOUNT_ID \
-    --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
+    --parameter-overrides  ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
     --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $seclogprofile
 
+
+    #   ------------------------------------
+    #    Enable cloudtrail globally using stacksets
+    #   ------------------------------------
+
+
+    echo ""
+    echo "-  Enable cloudtrail globally"
+    echo "--------------------------------------------------"
+    echo ""
+
+    # Create StackSet (Enable Guardduty globally)
+    aws cloudformation create-stack-set \
+    --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
+    --parameters ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration \
+    --template-body file://$CFN_GUARDDUTY_TEMPLATE_GLOBAL \
+    --capabilities CAPABILITY_IAM \
+    --profile $seclogprofile
+
+    # Create StackInstances (globally excluding Ireland)
+    aws cloudformation create-stack-instances \
+    --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
+    --accounts $SECLOG_ACCOUNT_ID \
+    --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration \
+    --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
+    --regions $ALL_REGIONS_EXCEPT_IRELAND \
+    --profile $seclogprofile
+
+
+    echo "---------------------------------------------------------------------------------------------------------"
+    echo "|                                         ATTENTION PLEASE:                                             |"
+    echo "---------------------------------------------------------------------------------------------------------"
+    echo "|                                                                                                       |"
+    echo "|  Please check the installation of the stackset instances from the AWS console for the SECLOG account  |"
+    echo "|  The moment all instances are deployed, please execute the 2nd stage of the LZ installation with the  |"
+    echo "|  following command:                                                                                   |"
+    echo "|                                                                                                       |"
+    echo "|               sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh $seclogprofile                    |"
+    echo "|                                                                                                       |"
+    echo "---------------------------------------------------------------------------------------------------------"
+
 }
+
 
 # ---------------------------------------------
 # Check if correct options are given

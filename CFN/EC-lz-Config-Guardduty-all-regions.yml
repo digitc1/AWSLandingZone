@@ -29,17 +29,10 @@ Parameters:
     Type: String
     Default: /aws/events/guardduty
     Description: CloudWatch LogGroup name for AWS GuardDuty cloudwatch events
-  FirehoseDestinationArn:
-    Type: String
-    Default: ""
-    Description: The ARN of the firehose stream aggregating the logs in the DIGIT C2 Log Aggregation Central Account
-  SNSNotificationTopic:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /org/member/SecLog_sns_arn
-    Description: "Local Admin SNS Topic for Landing Zone"
+
+  
   SecLogMasterAccountId:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /org/member/SecLogMasterAccountId
+    Type: String
     Description: "Contains account id of SecLogMaster"
   EnableSecLogIntegrationFoGuardDutyParam:
     Type: String
@@ -48,6 +41,10 @@ Parameters:
     AllowedValues:
     - 'true'
     - 'false'
+  OrganizationOuId:
+    Description: 'Organizational OU Id'
+    Type: String
+    Default: "o-jyyw8qs5c8"
 
 Conditions:
   IsSecLogMasterAccount: !Equals
@@ -73,13 +70,17 @@ Resources:
       LogGroupName: !Ref AwsGuardDutyGroupName
       RetentionInDays: !Ref LogsRetentionInDays
 
-  AwsGuardDutySubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsSecLogMasterAccountWithSOCIntegration
-    Properties:
-      DestinationArn: !Ref 'FirehoseDestinationArn'
-      FilterPattern: ''
-      LogGroupName: !Ref 'GuardDutyLogGroup'
+  SecLogEventBusPolicy: 
+    Type: AWS::Events::EventBusPolicy
+    Condition: IsSecLogMasterAccount
+    Properties: 
+        Action: "events:PutEvents"
+        Principal: "*"
+        StatementId: "MyStatement1"
+        Condition: 
+          Type: "StringEquals"
+          Key: "aws:PrincipalOrgID"
+          Value: !Ref OrganizationOuId
 
 
   AWSEventsInvokeEventBusSecLogRole:
@@ -179,9 +180,6 @@ Resources:
         - aws.guardduty
       State: ENABLED
       Targets:
-        - 
-          Arn: !Ref SNSNotificationTopic
-          Id: "GuardDutySNSTopic-SecLog"
         -
           Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${GuardDutyLogGroup}"
           Id: "AwsGuardDutyCloudWatch-Seclog"

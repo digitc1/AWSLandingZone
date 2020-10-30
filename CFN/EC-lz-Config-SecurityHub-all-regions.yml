@@ -58,7 +58,7 @@ Parameters:
 
   DeliveryChannelName:
     Type: String
-    Default: lz-config-logging-channel
+    Default: ""
     Description: The name of the delivery channel.
 
   Frequency:
