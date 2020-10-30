@@ -173,6 +173,10 @@ Resources:
     Condition: IsSecLogMasterAccount
     Properties: 
       Name: SECLZ-GuardDuty-Event
+      RoleArn: 
+        Fn::GetAtt: 
+        - "CloudWatchEventsLogGroupRole"
+        - "Arn"
       Description: "GuardDuty Event Handler"
       EventPattern: 
         source:
@@ -180,9 +184,10 @@ Resources:
       State: ENABLED
       Targets:
         - 
-          Arn: !Ref SNSNotificationTopic
+          Arn: !Ref SNSNotificationTopic         
           Id: "GuardDutySNSTopic-SecLog"
         -
-          Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${GuardDutyLogGroup}"
+          #Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${GuardDutyLogGroup}"
+          Arn: !GetAtt GuardDutyLogGroup.Arn
           Id: "AwsGuardDutyCloudWatch-Seclog"
  
