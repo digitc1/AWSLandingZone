@@ -86,6 +86,10 @@ Resources:
     Condition: IsSecLogMasterAccount
     Properties:
       Name: SECLZ-SecurityHub
+      RoleArn: 
+        Fn::GetAtt: 
+        - "CloudWatchEventsLogGroupRole"
+        - "Arn"
       Description: "SecurityHub Event Handler"
       EventPattern:
         source:
