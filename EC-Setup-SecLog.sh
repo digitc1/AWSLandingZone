@@ -325,6 +325,18 @@ configure_seclog() {
     sleep 5
 
     #   ------------------------------------
+    #   Enable cloudtrail insights in seclog master account
+    #   ------------------------------------
+
+    echo ""
+    echo "-  Enable cloudtrail insights in seclog master account"
+    echo "--------------------------------------------------"
+    echo ""
+
+    aws --profile $seclogprofile cloudtrail put-insight-selectors --trail-name lz-cloudtrail-logging --insight-selectors '[{"InsightType": "ApiCallRateInsight"}]'
+
+
+    #   ------------------------------------
     #   Enable guardduty and securityhub in seclog master account
     #   ------------------------------------
 
@@ -414,20 +426,9 @@ configure_seclog() {
     sleep 5
 
     #   ------------------------------------
-    #   Set Resource Policy to send Events to LogGroups
-    #   ------------------------------------
-
-    for region in $(echo $ALL_REGIONS_EXCEPT_IRELAND | sed -e "s/\"//g; s/\[//g; s/\]//g; s/,/ /g")
-    do
-        aws --profile $seclogprofile  \
-            logs put-resource-policy  \
-            --policy-name SLZ-EventsToLogGroup-Policy \
-            --policy-document '{ "Version": "2012-10-17", "Statement": [{ "Sid": "TrustEventsToStoreLogEvent", "Effect": "Allow", "Principal": { "Service": "events.amazonaws.com"}, "Action":[ "logs:PutLogEvents", "logs:CreateLogStream"],"Resource": "arn:aws:logs:$region:$SECLOG_ACCOUNT_ID:log-group:/aws/events/*:*"}]}'
-    done
-    sleep 5
-    #   ------------------------------------
     #   Enable Config and SecurityHub globally using stacksets
     #   ------------------------------------
+
 
     echo ""
     echo "-  Enable SecurityHub globally"

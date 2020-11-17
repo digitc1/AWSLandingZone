@@ -83,6 +83,10 @@ Parameters:
     Type: String
     Description: "Frequency of config snapshots being delivered to SecLog account"
     Default: Six_Hours
+  CloudTrailInsightsLogsGroupName:
+    Type: String
+    Default: '/aws/cloudtrail/insight'
+    Description: CloudTrail Insights Log Group name.
   CloudWatchLogsGroupName:
     Type: String
     Default: '/aws/cloudtrail'
@@ -146,11 +150,13 @@ Resources:
       EnableLogFileValidation: true
       CloudWatchLogsLogGroupArn: !GetAtt TrailLogGroup.Arn
       CloudWatchLogsRoleArn: !GetAtt TrailLogGroupRole.Arn
+
   TrailLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Ref CloudWatchLogsGroupName
       RetentionInDays: !Ref LogsRetentionInDays
+
   TrailSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsSecLogMasterAccountWithSOCIntegration
@@ -158,6 +164,7 @@ Resources:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
       LogGroupName: !Ref 'TrailLogGroup'
+
   TrailLogGroupRole:
     Type: AWS::IAM::Role
     Properties:
@@ -182,6 +189,70 @@ Resources:
             Effect: Allow
             Action: logs:PutLogEvents
             Resource: !GetAtt TrailLogGroup.Arn
+
+  #   -------------------
+  #   Trail Insights
+  #   -------------------
+  
+  TrailInsightsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Ref CloudTrailInsightsLogsGroupName
+      RetentionInDays: !Ref LogsRetentionInDays
+
+  TrailInsightsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: IsSecLogMasterAccountWithSOCIntegration
+    Properties:
+      DestinationArn: !Ref 'FirehoseDestinationArn'
+      FilterPattern: ''
+      LogGroupName: !Ref 'TrailInsightsLogGroup'
+
+  TrailInsightsLogGroupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AssumeRole1
+          Effect: Allow
+          Principal:
+            Service: cloudtrail.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName: CIS-cloudtrailinsights-policy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: AWSCloudTrailInsightsCreateLogStream
+            Effect: Allow
+            Action: logs:CreateLogStream
+            Resource: !GetAtt TrailInsightsLogGroup.Arn
+          - Sid: AWSCloudTrailInsightsPutLogEvents
+            Effect: Allow
+            Action: logs:PutLogEvents
+            Resource: !GetAtt TrailInsightsLogGroup.Arn
+
+  # Enable Trail Ingisght events to be sent to the corresponding loggroup
+  TrailInsightsEventSecLog:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: SECLZ-TrailInsights-Events
+      Description: 'Rule to send TrailInsights events to loggroup'
+      EventPattern:
+        {
+          "source": [
+            "aws.cloudtrail"
+          ],
+          "detail-type": [
+            "AWS Insight via CloudTrail"
+          ]
+        }
+      State: ENABLED
+      Targets:
+      - Id: "AwsTrailInsightsCloudWatch-Seclog"
+        Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${TrailInsightsLogGroup}"
+
 
   #   -------------------
   #   Enable Config
