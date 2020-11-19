@@ -64,6 +64,25 @@ update_seclog() {
     SECLOG_ACCOUNT_ID=`aws --profile $seclogprofile sts get-caller-identity --query 'Account' --output text`
 
 
+    echo ""
+    echo "- Cloudtrail bucket / Config bucket / Access_log bucket ... "
+    echo "-----------------------------------------------------------"
+    echo ""
+
+    aws cloudformation update-stack \
+    --stack-name 'SECLZ-Central-Buckets' \
+    --template-body file://$CFN_BUCKETS_TEMPLATE \
+    --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --profile $seclogprofile
+
+    StackName=SECLZ-Central-Buckets
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+    sleep 5
+
      #   ------------------------------------
     #   Creating config, cloudtrail, SNS notifications
     #   ------------------------------------
