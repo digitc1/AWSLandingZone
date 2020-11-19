@@ -35,6 +35,8 @@ ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-
 
 # parameters for scripts
 CFN_LOG_TEMPLATE='../../CFN/EC-lz-config-cloudtrail-logging.yml'
+CFN_BUCKETS_TEMPLATE='../../CFN/EC-lz-s3-buckets.yml'
+CFN_TAGS_PARAMS_FILE='../../CFN/EC-lz-TAGS-params.json'
 
 #   ---------------------
 #   The command line help
