@@ -281,23 +281,18 @@ Resources:
               account = sts.get_caller_identity()
               for record in event['Records']:
                 try:
-                  # get the file key from the S3 event
                   filename = record['s3']['object']['key']
                   logger.info('S3 object detected: ' + filename)
                   pattern = 'AWSLogs/\d+/CloudTrail/'
                   result = re.match(pattern, filename)
                   if not account['Account'] in filename and result: 
-                    # retrieve bucket name and file_key from the S3 event
                     bucketname = record['s3']['bucket']['name']
                     logger.debug('S3 bucket: ' + bucketname)
-                    # obtain logstream name
                     l = re.split(r'/',filename)
                     logstreamname = l[1] + '_CloudTrail_' + region
-                    logger.debug('Linked account: : ' + l[1])                    
-                    # get the object
+                    logger.debug('Linked account: : ' + l[1])
                     obj = s3.get_object(Bucket=bucketname, Key=filename)
                     logger.debug('Retrieve S3 object')
-                    # get the content as text
                     n = obj['Body'].read()
                     gzipfile = BytesIO(n)
                     gzipfile = gzip.GzipFile(fileobj=gzipfile)
@@ -306,7 +301,6 @@ Resources:
                     dt_obj = datetime.strptime(record['eventTime'],'%Y-%m-%dT%H:%M:%S.%fZ')
                     ts = int(float(dt_obj.timestamp()) * 1000)
                     logger.debug('Timestamp for this event: ' + str(ts))
-                    # check and create logstream
                     nextToken = '' 
                     dict = cloudwatch.describe_log_streams(
                       logGroupName='/aws/cloudtrail',
@@ -532,11 +526,9 @@ Resources:
               logger = logging.getLogger()
               logger.setLevel(getLoggingLevel(os.environ['LOG_LEVEL']))
               region = os.environ['AWS_REGION']
-              # get the seclog account id
               account = sts.get_caller_identity()
               for record in event['Records']:
                 try:
-                  # get the file key from the S3 event
                   filename = record['s3']['object']['key']
                   logger.info('S3 object detected: ' + filename)
                   pattern = 'AWSLogs/\d+/Config/'
@@ -545,7 +537,6 @@ Resources:
                     # retrieve bucket name and file_key from the S3 event
                     bucketname = record['s3']['bucket']['name']
                     logger.debug('S3 bucket: ' + bucketname)
-                    # obtain logstream name
                     l = re.split(r'/',filename)
                     logstreamname = l[1] + '_Config_' + region
                     logger.debug('Linked account: : ' + l[1])                    
@@ -561,7 +552,6 @@ Resources:
                     dt_obj = datetime.strptime(record['eventTime'],'%Y-%m-%dT%H:%M:%S.%fZ')
                     ts = int(float(dt_obj.timestamp()) * 1000)
                     logger.debug('Timestamp for this event: ' + str(ts))
-                    # check and create logstream
                     nextToken = '' 
                     dict = cloudwatch.describe_log_streams(
                       logGroupName='/aws/events/config',
