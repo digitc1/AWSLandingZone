@@ -165,6 +165,51 @@ Resources:
       FilterPattern: ''
       LogGroupName: !Ref 'TrailLogGroup'
 
+
+  #   -------------------
+  #   Trail Insights
+  #   -------------------
+  
+  TrailInsightsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Ref CloudTrailInsightsLogsGroupName
+      RetentionInDays: !Ref LogsRetentionInDays
+
+  TrailInsightsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: IsSecLogMasterAccountWithSOCIntegration
+    Properties:
+      DestinationArn: !Ref 'FirehoseDestinationArn'
+      FilterPattern: ''
+      LogGroupName: !Ref 'TrailInsightsLogGroup'
+
+
+  # Enable Trail Ingisght events to be sent to the corresponding loggroup
+  TrailInsightsEventSecLog:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: SECLZ-TrailInsights-Events
+      Description: 'Rule to send TrailInsights events to loggroup'
+      EventPattern:
+        {
+          "source": [
+            "aws.cloudtrail"
+          ],
+          "detail-type": [
+            "AWS Insight via CloudTrail"
+          ]
+        }
+      State: ENABLED
+      Targets:
+      - Id: "AwsTrailInsightsCloudWatch-Seclog"
+        Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${TrailInsightsLogGroup}"
+
+
+  #   -------------------
+  #   Trail and TrailInsight LogGroup Role
+  #   -------------------
+        
   TrailLogGroupRole:
     Type: AWS::IAM::Role
     Properties:
@@ -189,41 +234,6 @@ Resources:
             Effect: Allow
             Action: logs:PutLogEvents
             Resource: !GetAtt TrailLogGroup.Arn
-
-  #   -------------------
-  #   Trail Insights
-  #   -------------------
-  
-  TrailInsightsLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Ref CloudTrailInsightsLogsGroupName
-      RetentionInDays: !Ref LogsRetentionInDays
-
-  TrailInsightsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsSecLogMasterAccountWithSOCIntegration
-    Properties:
-      DestinationArn: !Ref 'FirehoseDestinationArn'
-      FilterPattern: ''
-      LogGroupName: !Ref 'TrailInsightsLogGroup'
-
-  TrailInsightsLogGroupRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Sid: AssumeRole1
-          Effect: Allow
-          Principal:
-            Service: cloudtrail.amazonaws.com
-          Action: sts:AssumeRole
-      Policies:
-      - PolicyName: CIS-cloudtrailinsights-policy
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
           - Sid: AWSCloudTrailInsightsCreateLogStream
             Effect: Allow
             Action: logs:CreateLogStream
@@ -232,27 +242,6 @@ Resources:
             Effect: Allow
             Action: logs:PutLogEvents
             Resource: !GetAtt TrailInsightsLogGroup.Arn
-
-  # Enable Trail Ingisght events to be sent to the corresponding loggroup
-  TrailInsightsEventSecLog:
-    Type: AWS::Events::Rule
-    Properties:
-      Name: SECLZ-TrailInsights-Events
-      Description: 'Rule to send TrailInsights events to loggroup'
-      EventPattern:
-        {
-          "source": [
-            "aws.cloudtrail"
-          ],
-          "detail-type": [
-            "AWS Insight via CloudTrail"
-          ]
-        }
-      State: ENABLED
-      Targets:
-      - Id: "AwsTrailInsightsCloudWatch-Seclog"
-        Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${TrailInsightsLogGroup}"
-
 
   #   -------------------
   #   Enable Config
