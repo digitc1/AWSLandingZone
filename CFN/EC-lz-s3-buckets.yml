@@ -268,6 +268,7 @@ Resources:
             import logging
             import time
             from io import BytesIO
+            from json import dumps
             from datetime import datetime
             def lambda_handler(event, context):
               cloudwatch = boto3.client('logs')
@@ -339,7 +340,7 @@ Resources:
                           logEvents=[
                             {
                               'timestamp': ts,
-                              'message': str(record)
+                              'message': json.dumps(record)
                             },
                           ]
                         )
@@ -350,7 +351,7 @@ Resources:
                           logEvents=[
                             {
                               'timestamp': ts,
-                              'message': str(record)
+                              'message': json.dumps(record)
                             },
                           ],
                           sequenceToken=nextToken
@@ -522,6 +523,7 @@ Resources:
             import logging
             import time
             from io import BytesIO
+            from json import dumps
             from datetime import datetime
             def lambda_handler(event, context):
               cloudwatch = boto3.client('logs')
@@ -593,7 +595,7 @@ Resources:
                           logEvents=[
                             {
                               'timestamp': ts,
-                              'message': str(record)
+                              'message': json.dumps(record)
                             },
                           ]
                         )
@@ -604,7 +606,7 @@ Resources:
                           logEvents=[
                             {
                               'timestamp': ts,
-                              'message': str(record)
+                              'message': json.dumps(record)
                             },
                           ],
                           sequenceToken=nextToken
