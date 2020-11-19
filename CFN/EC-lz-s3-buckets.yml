@@ -147,8 +147,6 @@ Resources:
               LambdaConfigurations:
                 - Event: s3:ObjectCreated:*
                   Function: !GetAtt CloudTrailLogShipperFunction.Arn
-                - Event: s3:ObjectCreated:*
-                  Function: !GetAtt CloudTrailInsightLogShipperFunction.Arn
             PublicAccessBlockConfiguration: 
               BlockPublicAcls: true
               BlockPublicPolicy: true
