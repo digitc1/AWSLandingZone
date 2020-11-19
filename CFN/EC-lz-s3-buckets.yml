@@ -346,8 +346,6 @@ Resources:
                             {
                               'timestamp': ts,
                               'message': json.dumps(record)
-<<<<<<< HEAD
-=======
                             },
                           ],
                           sequenceToken=nextToken
@@ -489,7 +487,6 @@ Resources:
                             {
                               'timestamp': ts,
                               'message': json.dumps(record)
->>>>>>> feature/issue30
                             },
                           ],
                           sequenceToken=nextToken
