@@ -279,15 +279,19 @@ Resources:
               logger = logging.getLogger()
               logger.setLevel(getLoggingLevel(os.environ['LOG_LEVEL']))
               region = os.environ['AWS_REGION']
-              # get the seclog account id
+              loggroup = '/aws/cloudtrail'
               account = sts.get_caller_identity()
               for record in event['Records']:
                 try:
                   filename = record['s3']['object']['key']
                   logger.info('S3 object detected: ' + filename)
-                  pattern = 'AWSLogs/\d+/CloudTrail/'
-                  result = re.match(pattern, filename)
-                  if not account['Account'] in filename and result: 
+                  pattern1 = 'AWSLogs/\d+/CloudTrail/'
+                  pattern2 = 'AWSLogs/\d+/CloudTrail-Insight/'
+                  isCloudTrail = re.match(pattern, filename)
+                  isCloudTrailInsight = re.match(pattern, filename)
+                  if not account['Account'] in filename and (isCloudTrail or isCloudTrailInsight): 
+                    if isCloudTrailInsight:
+                      loggroup = '/aws/cloudtrail/insight'
                     bucketname = record['s3']['bucket']['name']
                     logger.debug('S3 bucket: ' + bucketname)
                     l = re.split(r'/',filename)
@@ -305,13 +309,13 @@ Resources:
                     logger.debug('Timestamp for this event: ' + str(ts))
                     nextToken = '' 
                     dict = cloudwatch.describe_log_streams(
-                      logGroupName='/aws/cloudtrail',
+                      logGroupName=loggroup,
                       logStreamNamePrefix=logstreamname)
                     li = list(filter(lambda ls: ls['logStreamName'] == logstreamname, dict['logStreams']))
                     if li is None or len(li) == 0:
                       try:
                         cloudwatch.create_log_stream(
-                          logGroupName='/aws/cloudtrail',
+                          logGroupName=loggroup,
                           logStreamName=logstreamname)
                         logger.info('Log stream created: ' + logstreamname)
                       except Exception as e:
@@ -331,7 +335,7 @@ Resources:
                       throttle +=1
                       if not nextToken:
                         result = cloudwatch.put_log_events(
-                          logGroupName='/aws/cloudtrail',
+                          logGroupName=loggroup,
                           logStreamName=logstreamname,
                           logEvents=[
                             {
@@ -342,148 +346,7 @@ Resources:
                         )
                       else:
                         result = cloudwatch.put_log_events(
-                          logGroupName='/aws/cloudtrail',
-                          logStreamName=logstreamname,
-                          logEvents=[
-                            {
-                              'timestamp': ts,
-                              'message': json.dumps(record)
-                            },
-                          ],
-                          sequenceToken=nextToken
-                        )
-                      nextToken = result['nextSequenceToken']
-                    logger.info(str(throttle) + ' log entries from S3 object created')
-                except Exception as e:
-                  logger.error('Log entry failed: ' + str(e))
-                  raise e 
-            def getLoggingLevel(a):
-              if a == 'CRITICAL':
-                return 50
-              elif a == 'ERROR':
-                return 40
-              elif a == 'WARNING':
-                return 30
-              elif a == 'INFO':
-                return 20
-              elif a == 'DEBUG':
-                return 10
-              else:
-                return 0          
-        Handler: 'index.lambda_handler'
-        MemorySize: 128
-        ReservedConcurrentExecutions: 1
-        Role: !GetAtt LogShipperLambdaExecutionRole.Arn
-        Runtime: python3.6
-        Timeout: 600
-        Environment:
-          Variables:
-            LOG_LEVEL: !Ref lambdaLogLevel
-
-    #   -------------------
-    #   CloudTrail Insight Lambda
-    #   -------------------
-
-    CloudTraiInsightLambdaPermission:
-      Type: AWS::Lambda::Permission
-      Properties:
-        Action: 'lambda:InvokeFunction'
-        FunctionName: !Ref CloudTrailInsightLogShipperFunction
-        Principal: s3.amazonaws.com
-        SourceArn:
-          Fn::Join:
-            - ""
-            - - "arn:aws:s3:::cloudtrail-logs-"
-              - Ref: AWS::AccountId
-              - "-do-not-delete"
-        SourceAccount: !Ref AWS::AccountId 
-
-    CloudTrailInsightLogShipperFunction:
-      Type: 'AWS::Lambda::Function'
-      Properties:
-        Code:
-          ZipFile: !Sub |
-            import boto3
-            import gzip
-            import re
-            import json
-            import os
-            import re
-            import logging
-            import time
-            from io import BytesIO
-            from json import dumps
-            from datetime import datetime
-            def lambda_handler(event, context):
-              cloudwatch = boto3.client('logs')
-              sts = boto3.client('sts')
-              s3= boto3.client('s3')
-              logger = logging.getLogger()
-              logger.setLevel(getLoggingLevel(os.environ['LOG_LEVEL']))
-              region = os.environ['AWS_REGION']
-              account = sts.get_caller_identity()
-              for record in event['Records']:
-                try:
-                  filename = record['s3']['object']['key']
-                  logger.info('S3 object detected: ' + filename)
-                  pattern = 'AWSLogs/\d+/CloudTrail-Insight/'
-                  result = re.match(pattern, filename)
-                  if not account['Account'] in filename and result: 
-                    bucketname = record['s3']['bucket']['name']
-                    logger.debug('S3 bucket: ' + bucketname)
-                    l = re.split(r'/',filename)
-                    logstreamname = l[1] + '_CloudTrail_' + region
-                    logger.debug('Linked account: : ' + l[1])
-                    obj = s3.get_object(Bucket=bucketname, Key=filename)
-                    logger.debug('Retrieve S3 object')
-                    n = obj['Body'].read()
-                    gzipfile = BytesIO(n)
-                    gzipfile = gzip.GzipFile(fileobj=gzipfile)
-                    content = gzipfile.read()
-                    logger.debug('S3 object size: ' + str(len(content)))
-                    dt_obj = datetime.strptime(record['eventTime'],'%Y-%m-%dT%H:%M:%S.%fZ')
-                    ts = int(float(dt_obj.timestamp()) * 1000)
-                    logger.debug('Timestamp for this event: ' + str(ts))
-                    nextToken = '' 
-                    dict = cloudwatch.describe_log_streams(
-                      logGroupName='/aws/cloudtrail/insight',
-                      logStreamNamePrefix=logstreamname)
-                    li = list(filter(lambda ls: ls['logStreamName'] == logstreamname, dict['logStreams']))
-                    if li is None or len(li) == 0:
-                      try:
-                        cloudwatch.create_log_stream(
-                          logGroupName='/aws/cloudtrail/insight',
-                          logStreamName=logstreamname)
-                        logger.info('Log stream created: ' + logstreamname)
-                      except Exception as e:
-                        logger.error('Logstream already exists ' + logstreamname)
-                        raise e
-                    else:
-                      logger.debug('Found logstream: ' + str(li))
-                      if 'uploadSequenceToken' in li[0]:
-                        nextToken = li[0]['uploadSequenceToken']
-                        logger.debug('uploadSequenceToken: ' + nextToken)
-                    json_content = json.loads(content.decode('utf-8'))
-                    throttle = 0
-                    for record in json_content['Records']:
-                      if throttle % 5 == 0:
-                        time.sleep(1)
-                        logger.debug('throttling... ')
-                      throttle +=1
-                      if not nextToken:
-                        result = cloudwatch.put_log_events(
-                          logGroupName='/aws/cloudtrail/insight',
-                          logStreamName=logstreamname,
-                          logEvents=[
-                            {
-                              'timestamp': ts,
-                              'message': json.dumps(record)
-                            },
-                          ]
-                        )
-                      else:
-                        result = cloudwatch.put_log_events(
-                          logGroupName='/aws/cloudtrail/insight',
+                          logGroupName=loggroup,
                           logStreamName=logstreamname,
                           logEvents=[
                             {
