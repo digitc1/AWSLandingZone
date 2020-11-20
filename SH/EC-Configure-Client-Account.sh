@@ -176,6 +176,20 @@ configure_client() {
     aws --profile $CLIENT cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     sleep 5
+
+    #   ------------------------------------
+    #   Enable cloudtrail insights in seclog master account
+    #   ------------------------------------
+
+
+    echo ""
+    echo "-  Enable cloudtrail insights in seclog master account"
+    echo "--------------------------------------------------"
+    echo ""
+
+    aws --profile $CLIENT cloudtrail put-insight-selectors --trail-name lz-cloudtrail-logging --insight-selectors '[{"InsightType": "ApiCallRateInsight"}]'
+
+    sleep 5
  
     echo ""
     echo "- Creating local SNS notifications topic"
