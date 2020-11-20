@@ -132,6 +132,7 @@ update_seclog() {
     echo "--------------------------------------------------"
     echo ""
 
+
     cat > ./policy.json << EOM
 {
   "Version": "2012-10-17",
