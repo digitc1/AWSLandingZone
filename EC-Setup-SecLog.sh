@@ -426,6 +426,40 @@ configure_seclog() {
     sleep 5
 
     #   ------------------------------------
+    #   Set Resource Policy to send Events to LogGroups
+    #   ------------------------------------
+
+    echo ""
+    echo "-  Set Resource Policy to send Events to LogGroups"
+    echo "--------------------------------------------------"
+    echo ""
+
+    cat > ./policy.json << EOM
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "TrustEventsToStoreLogEvent",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": ["events.amazonaws.com","delivery.logs.amazonaws.com"]
+      },
+      "Action": [
+        "logs:PutLogEvents",
+        "logs:CreateLogStream"
+      ],
+      "Resource": "arn:aws:logs:*:${SECLOG_ACCOUNT_ID}:log-group:/aws/events/*:*"
+    }
+  ]
+}
+EOM
+
+    aws --profile $seclogprofile logs put-resource-policy --policy-name TrustEventsToStoreLogEvents --policy-document file://./policy.json
+    rm ./policy.json
+
+    sleep 5
+
+    #   ------------------------------------
     #   Enable Config and SecurityHub globally using stacksets
     #   ------------------------------------
 
@@ -452,6 +486,7 @@ configure_seclog() {
     --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $seclogprofile
+
 
 
     #   ------------------------------------
