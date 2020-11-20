@@ -156,6 +156,7 @@ EOM
     aws --profile $seclogprofile logs put-resource-policy --policy-name TrustEventsToStoreLogEvents --policy-document file://./policy.json
     rm ./policy.json
 
+
     sleep 5
 
     #   ------------------------------------
