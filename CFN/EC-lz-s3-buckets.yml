@@ -285,8 +285,8 @@ Resources:
                   logger.info('S3 object detected: ' + filename)
                   pattern1 = 'AWSLogs/\d+/CloudTrail/'
                   pattern2 = 'AWSLogs/\d+/CloudTrail-Insight/'
-                  isCloudTrail = re.match(pattern, filename)
-                  isCloudTrailInsight = re.match(pattern, filename)
+                  isCloudTrail = re.match(pattern1, filename)
+                  isCloudTrailInsight = re.match(pattern2, filename)
                   if not account['Account'] in filename and (isCloudTrail or isCloudTrailInsight): 
                     if isCloudTrailInsight:
                       loggroup = '/aws/cloudtrail/insight'
