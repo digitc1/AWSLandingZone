@@ -7,7 +7,7 @@
 #
 #			Usage
 #
-#			$ ./EC-Update-SecLog-Splunk.sh [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile>  --notificationemail <Notification Email> --logdestination <Log Destination DG name>  [--batch <true|false>]
+#			$ ./EC-Update-SecLog-Splunk.sh [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile>  --notificationemail <Notification Email> --logdestination <Log Destination DG name>  [--cloudtrailintegration <true|false] [--guarddutyintegration <true|false>] [--securityhubintegration <true|false>] [--batch <true|false>]
 #
 #			
 #
@@ -28,6 +28,9 @@ organisation=${organisation:-}
 seclogprofile=${seclogprofile:-}
 splunkprofile=${splunkprofile:-}
 logdestination=${logdestination:-}
+cloudtrailintegration=${cloudtrailintegration:-true}
+guarddutyintegration=${guarddutyintegration:-true}
+securityhubintegration=${securityhubintegration:-true}
 batch=${batch:-false}
 
 while [ $# -gt 0 ]; do
@@ -61,7 +64,7 @@ CFN_NOTIFICATIONS_CT_TEMPLATE='CFN/EC-lz-notifications.yml'
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile>  --notificationemail <Notification Email> --logdestination <Log Destination DG name>  [--batch <true|false>]" >&2
+    echo "Usage: $0 [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile>  --notificationemail <Notification Email> --logdestination <Log Destination DG name>  [--cloudtrailintegration <true|false] [--guarddutyintegration <true|false>] [--securityhubintegration <true|false>] [--batch <true|false>]" >&2
     echo ""
     echo "   Provide "
     echo "   --organisation       : The orgnisation account as configured in your AWS profile (optional)"
@@ -69,6 +72,9 @@ display_help() {
     echo "   --splunkprofile      : The Splunk account profile as configured in your AWS profile"
     echo "   --notificationemail  : The notification email to where logs are to be sent"
     echo "   --logdestination     : The name of the DG of the firehose log destination"
+    echo "   --cloudtrailintegration  : Flag to enable or disable CloudTrail seclog integration. Default: true (optional)"
+    echo "   --guarddutyintegration   : Flag to enable or disable GuardDuty seclog integration. Default: true (optional)"
+    echo "   --securityhubintegration : Flag to enable or disable SecurityHub seclog integration. Default: true (optional)"
     echo "   --batch              : Flag to enable or disable batch execution mode. Default: false (optional)"
     echo ""
     exit 1
@@ -93,26 +99,33 @@ update_seclog() {
     # Getting SecLog Account Id
     SECLOG_ACCOUNT_ID=`aws --profile $seclogprofile sts get-caller-identity --query 'Account' --output text`
 
-    # Getting C2 Splunk Account Id
-    SPLUNK_ACCOUNT_ID=`aws --profile $splunkprofile sts get-caller-identity --query 'Account' --output text`
+    if [ "$cloudtrailintegration" == "true" ] || [ "$guarddutyintegration" == "true" ] || [ "$securityhubintegration" == "true" ]; then
+        # Getting C2 Splunk Account Id
+        SPLUNK_ACCOUNT_ID=`aws --profile $splunkprofile sts get-caller-identity --query 'Account' --output text`
 
-    # Getting available log destinations from 
-    DESCRIBE_DESTINATIONS=`aws --profile $splunkprofile  logs describe-destinations`
+        # Getting available log destinations from
+        DESCRIBE_DESTINATIONS=`aws --profile $splunkprofile  logs describe-destinations`
 
-    # Extract select Log destination details
-    FIREHOSE_ARN=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .arn'`
-    FIREHOSE_DESTINATION_NAME=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .destinationName'`
-    FIREHOSE_ACCESS_POLICY=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .accessPolicy'`
+        # Extract select Log destination details
+        FIREHOSE_ARN=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .arn'`
+        FIREHOSE_DESTINATION_NAME=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .destinationName'`
+        FIREHOSE_ACCESS_POLICY=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .accessPolicy'`
+    fi
 
     echo ""
     echo "- This script will configure a the SecLog account with following settings:"
     echo "   ----------------------------------------------------"
     echo "     SecLog Account to be configured:  $seclogprofile"
     echo "     SecLog Account Id:                $SECLOG_ACCOUNT_ID"
-    echo "     Splunk Account Id:                $SPLUNK_ACCOUNT_ID"
     echo "     Security Notifications e-mail:    $notificationemail"
-    echo "     Log Destination Name:             $FIREHOSE_DESTINATION_NAME"
-    echo "     Log Destination ARN:              $FIREHOSE_ARN"
+    echo "     CloudTrail integration with Splunk:  $cloudtrailintegration"
+    echo "     GuardDuty integration with Splunk:   $guarddutyintegration"
+    echo "     SecurityHub integration with Splunk: $securityhubintegration"
+    if [[ ("$cloudtrailintegration" == "true" || "$guarddutyintegration" == "true" || "$securityhubintegration" == "true" ) ]]; then
+      echo "     Splunk Account Id:                   $SPLUNK_ACCOUNT_ID"
+      echo "     Log Destination Name:                $FIREHOSE_DESTINATION_NAME"
+      echo "     Log Destination ARN:                 $FIREHOSE_ARN"
+    fi
     echo "     in AWS Region:                    $AWS_REGION"
     echo "   ----------------------------------------------------"
     echo ""
@@ -182,25 +195,6 @@ update_seclog() {
     sleep 5
 
 
-    #   ------------------------------------
-    #   Enable guardduty and securityhub in seclog master account
-    #   ------------------------------------
-
-
-    echo "" 
-    echo "- Enable guardduty in seclog master account"
-    echo "--------------------"
-    echo ""
-
-    aws cloudformation update-stack \
-    --stack-name 'SECLZ-Guardduty-detector' \
-    --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
-    --capabilities CAPABILITY_IAM \
-    --profile $seclogprofile \
-    --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN
-
-    sleep 5
-
 
     #   ------------------------------------
     #   Creating config, cloudtrail, SNS notifications
@@ -212,12 +206,17 @@ update_seclog() {
     echo "--------------------------------------------------"
     echo ""
 
+    cloudtrailparams="ParameterKey=EnableSecLogForCloudTrailParam,ParameterValue=$cloudtrailintegration"
+    if [ "$cloudtrailintegration" == "true" ]; then
+        cloudtrailparams="ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN"
+    fi
+
     aws cloudformation update-stack \
     --stack-name 'SECLZ-config-cloudtrail-SNS' \
     --template-body file://$CFN_LOG_TEMPLATE \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile \
-    --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN
+    --parameters $cloudtrailparams
 
     StackName="SECLZ-config-cloudtrail-SNS"
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
@@ -226,29 +225,57 @@ update_seclog() {
 
     sleep 5
 
+    
+    #   ------------------------------------
+    #   Enable guardduty and securityhub in seclog master account
+    #   ------------------------------------
+
+
+    echo "" 
+    echo "- Enable guardduty in seclog master account"
+    echo "--------------------"
+    echo ""
+
+    guarddutyparams="ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration"
+    if [ "$guarddutyintegration" == "true" ]; then
+        guarddutyparams="ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN"
+    fi
+
+    aws cloudformation update-stack \
+    --stack-name 'SECLZ-Guardduty-detector' \
+    --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
+    --capabilities CAPABILITY_IAM \
+    --profile $seclogprofile \
+    --parameters $guarddutyparams
+
+    sleep 5
+
+
 	#   ------------------------------------
 	#   Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub
 	#   ------------------------------------
+    if  [ "$securityhubintegration" == "true" ]; then
 
+        echo ""
+        echo "- Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub"
+        echo "---------------------------------------"
+        echo ""
 
-	echo ""
-	echo "- Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub"
-	echo "---------------------------------------"
-	echo ""
+        aws cloudformation update-stack \
+        --stack-name 'SECLZ-CloudwatchLogs-SecurityHub' \
+        --template-body file://$CFN_SECURITYHUB_LOG_TEMPLATE \
+        --capabilities CAPABILITY_IAM \
+        --profile $seclogprofile \
+        --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN 
 
-	aws cloudformation update-stack \
-	--stack-name 'SECLZ-CloudwatchLogs-SecurityHub' \
-	--template-body file://$CFN_SECURITYHUB_LOG_TEMPLATE \
-    --capabilities CAPABILITY_IAM \
-	--profile $seclogprofile \
-    --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN 
+        StackName="SECLZ-CloudwatchLogs-SecurityHub"
+        aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+        while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` = "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+        aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
-	StackName="SECLZ-CloudwatchLogs-SecurityHub"
-	aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-	while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` = "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
-	aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+        sleep 5
 
-    sleep 5
+    fi
 
     #   ------------------------------------
     #   Enable Notifications for CIS cloudtrail metrics filters
@@ -291,7 +318,13 @@ update_seclog() {
 # ---------------------------------------------
 
 # Simple check if two arguments are provided
-if [ -z "$seclogprofile" ] || [ -z "$splunkprofile" ]  || [ -z "$logdestination" ] || [ -z "$notificationemail" ]; then
+if  [ -z "$seclogprofile" ] || [ -z "$notificationemail" ] ; then
+    display_help
+    exit 0
+fi
+
+
+if [[ ( -z "$logdestination" || -z "$splunkprofile" ) && ( "$cloudtrailintegration" == "true" ||  "$guarddutyintegration" == "true"  ||  "$securityhubintegration" == "true" ) ]]; then
     display_help
     exit 0
 fi
