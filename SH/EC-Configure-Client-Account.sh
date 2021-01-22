@@ -148,7 +148,7 @@ configure_client() {
     echo "--------------"
     echo ""
     # To allow to send to central EventBus
-    aws --profile $SECLOG events put-permission --action events:PutEvents --principal $accountId --statement-id $CLIENT
+    aws --profile $SECLOG events put-permission --action events:PutEvents --principal $accountId --statement-id $SECLOG
 
 
 
@@ -218,7 +218,7 @@ configure_client() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Guardduty-detector' \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
-    --capabilities CAPABILITY_IAM \
+    --capabilities CAPABILITY_NAMED_IAM \
     --enable-termination-protection \
     --profile $CLIENT
 

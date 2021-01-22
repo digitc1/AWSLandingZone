@@ -173,7 +173,7 @@ invite_client() {
     ALL_REGIONS_EXCEPT_IRELAND_ARRAY=`echo $ALL_REGIONS_EXCEPT_IRELAND | sed -e 's/\[//g;s/\]//g;s/,/ /g;s/\"//g'`
 	  for i in ${ALL_REGIONS_EXCEPT_IRELAND_ARRAY[@]}; 
       do
-        aws --profile $SECLOG_PROFILE --region $i events put-permission --action events:PutEvents --principal $CLIENT_ID --statement-id $CLIENT_PROFILE
+        aws --profile $SECLOG_PROFILE --region $i events put-permission --action events:PutEvents --principal $CLIENT_ID --statement-id $SECLOG_PROFILE
       done
 
 
