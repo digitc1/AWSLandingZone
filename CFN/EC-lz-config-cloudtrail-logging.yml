@@ -135,6 +135,45 @@ Mappings: {}
 Resources:
 
   #   -------------------
+  #   Enable Put Events on default event bus
+  #   -------------------
+
+  SecLogEventBusPolicy: 
+    Type: AWS::Events::EventBusPolicy
+    Condition: IsSecLogMasterAccount
+    Properties: 
+        Action: "events:PutEvents"
+        Principal: "*"
+        StatementId: "MyStatement1"
+        Condition: 
+          Type: "StringEquals"
+          Key: "aws:PrincipalOrgID"
+          Value: !Ref OrganizationOuId
+  
+  SecLogEventBusAssumeRole:
+    Type: AWS::IAM::Role
+    Condition: IsNotSecLogMasterAccount
+    Properties:
+      RoleName: SLZLinkedAccountSendEventRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: event.amazonaws.com
+          Action: sts:AssumeRole
+      Description: Role for a linked account to send events to seclog EventBridge default bus
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Sid: SLZPermissionPutEvents
+              Effect: Allow
+              Action: events:PutEvents
+              Resource: !Sub "arn:aws:events:eu-west-1:${SecLogMasterAccountId}:event-bus/default"
+
+  #   -------------------
   #   Enable CloudTrail
   #   -------------------
   
@@ -434,17 +473,7 @@ Resources:
                 Action: 'config:Put*'
                 Resource: '*'
 
-  SecLogEventBusPolicy: 
-    Type: AWS::Events::EventBusPolicy
-    Condition: IsSecLogMasterAccount
-    Properties: 
-        Action: "events:PutEvents"
-        Principal: "*"
-        StatementId: "MyStatement1"
-        Condition: 
-          Type: "StringEquals"
-          Key: "aws:PrincipalOrgID"
-          Value: !Ref OrganizationOuId
+  
 
   AWSEventsInvokeEventBusSecLogRole:
     Type: AWS::IAM::Role

@@ -83,7 +83,7 @@ invite_client() {
   else
     export ListAccountIds=""
     export delimiter='","'
-    for i in `aws --profile $SECLOG_PROFILE configservice describe-configuration-aggregators --output text --query 'ConfigurationAggregators[*].AccountAggregationSources[*].AccountIds'`
+    for i in `aws --profile $SECLOG_PROFILE configservice describe-configuration-aggregators --output text --query 'ConfigurationAggregators[?ConfigurationAggregatorName==\`SecLogAggregator\`].AccountAggregationSources[*].AccountIds'`
       do
         if [ $i != $CLIENT_ID ] ; then
           ListAccountIds="${ListAccountIds}$i$delimiter"

@@ -96,7 +96,7 @@ function check_sechub_config {
 	SH_STATUS=`aws --profile $SECLOG securityhub list-members --query "Members[?AccountId=='$CLIENT_ACC_ID'].MemberStatus" --output text`
 	SH_MASTER=`aws --profile $SECLOG securityhub list-members --query "Members[?AccountId=='$CLIENT_ACC_ID'].MasterId" --output text`
 
-	if [[ "$SH_STATUS" == "Associated" && "$SH_MASTER" == "$SECLOG_ACC_ID" ]]; then
+	if [[ "$SH_STATUS" == "Enabled" && "$SH_MASTER" == "$SECLOG_ACC_ID" ]]; then
 
 		echo "PASSED (Status:$SH_STATUS and Seclog Master: $SH_MASTER)"
 
