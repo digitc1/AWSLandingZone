@@ -128,10 +128,6 @@ Resources:
     Properties:
       Name: SECLZ-GuardDuty-Events-CloudWatch-Rule-To-SecLog
       Description: 'Landing Zone rule to send notification on GuardDuty Events to SecLog eventbus.'
-      RoleArn: 
-        Fn::GetAtt: 
-        - "AWSEventsInvokeEventBusSecLogRole"
-        - "Arn"
       EventPattern:
         {
           "source": [

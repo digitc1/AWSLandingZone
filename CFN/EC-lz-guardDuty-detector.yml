@@ -124,9 +124,6 @@ Resources:
     Properties:
       Name: SECLZ-GuardDuty-Events-CloudWatch-Rule-To-SecLog
       Description: 'Landing Zone rule to send notification on GuardDuty Events to SecLog eventbus.'
-      RoleArn: !GetAtt
-      - AWSEventsInvokeEventBusSecLogRole
-      - Arn
       EventPattern:
         {
           "source": [
@@ -137,6 +134,9 @@ Resources:
       Targets:
       - Id: "CrossAccountTargetId"
         Arn: !Sub "arn:aws:events:${AWS::Region}:${SecLogMasterAccountId}:event-bus/default"
+        RoleArn: !GetAtt
+        - AWSEventsInvokeEventBusSecLogRole
+        - Arn
 
   CloudWatchEventsLogGroupRole:
     Type: AWS::IAM::Role
