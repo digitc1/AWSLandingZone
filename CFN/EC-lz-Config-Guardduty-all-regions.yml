@@ -89,7 +89,7 @@ Resources:
 
   AWSEventsInvokeEventBusSecLogRole:
     Type: AWS::IAM::Role
-    Condition: IsNotSecLogMasterAccount
+    Condition: IsSecLogMasterAccount
     Properties: 
       Description: "Service Linked role to send messages to event bus of seclog account"
       AssumeRolePolicyDocument:
@@ -128,11 +128,10 @@ Resources:
     Properties:
       Name: SECLZ-GuardDuty-Events-CloudWatch-Rule-To-SecLog
       Description: 'Landing Zone rule to send notification on GuardDuty Events to SecLog eventbus.'
-      RoleArn:  !Join
-        - ''
-        - - 'arn:aws:iam:'
-          - !Sub '${AWS::AccountId}:'
-          - 'role/AWSEventsInvokeEventBusSecLogRole'
+      RoleArn: 
+        Fn::GetAtt: 
+        - "AWSEventsInvokeEventBusSecLogRole"
+        - "Arn"
       EventPattern:
         {
           "source": [
