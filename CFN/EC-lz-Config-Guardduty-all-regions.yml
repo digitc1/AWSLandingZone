@@ -142,6 +142,10 @@ Resources:
       Targets:
       - Id: "CrossAccountTargetId"
         Arn: !Sub "arn:aws:events:${AWS::Region}:${SecLogMasterAccountId}:event-bus/default"
+        RoleArn: 
+          Fn::GetAtt: 
+          - "AWSEventsInvokeEventBusSecLogRole"
+          - "Arn"
 
   CloudWatchEventsLogGroupRole:
     Type: AWS::IAM::Role
