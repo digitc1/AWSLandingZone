@@ -160,7 +160,7 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service: event.amazonaws.com
+            Service: events.amazonaws.com
           Action: sts:AssumeRole
       Description: Role for a linked account to send events to seclog EventBridge default bus
       Policies:

@@ -165,16 +165,16 @@ invite_client() {
     #   Granting the client to use Event-Bus in SecLog for all regions
     #   --------------------------------------------------------------
 
-    echo ""
-    echo "Granting new account access to EventBus on all regions"
-    echo "--------------"
-    echo ""
+    # echo ""
+    # echo "Granting new account access to EventBus on all regions"
+    # echo "--------------"
+    # echo ""
 
-    ALL_REGIONS_EXCEPT_IRELAND_ARRAY=`echo $ALL_REGIONS_EXCEPT_IRELAND | sed -e 's/\[//g;s/\]//g;s/,/ /g;s/\"//g'`
-	  for i in ${ALL_REGIONS_EXCEPT_IRELAND_ARRAY[@]}; 
-      do
-        aws --profile $SECLOG_PROFILE --region $i events put-permission --action events:PutEvents --principal $CLIENT_ID --statement-id $SECLOG_PROFILE
-      done
+    # ALL_REGIONS_EXCEPT_IRELAND_ARRAY=`echo $ALL_REGIONS_EXCEPT_IRELAND | sed -e 's/\[//g;s/\]//g;s/,/ /g;s/\"//g'`
+	  # for i in ${ALL_REGIONS_EXCEPT_IRELAND_ARRAY[@]}; 
+    #   do
+    #     aws --profile $SECLOG_PROFILE --region $i events put-permission --action events:PutEvents --principal $CLIENT_ID --statement-id $SECLOG_PROFILE
+    #  done
 
 
   #   -------------------------------------------------------------------------

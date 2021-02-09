@@ -143,12 +143,12 @@ configure_client() {
     #   Granting the client to use Event-Bus in SecLog
     #   ----------------------------------------------
 
-    echo ""
-    echo "Granting new account access to EventBus"
-    echo "--------------"
-    echo ""
+    # echo ""
+    # echo "Granting new account access to EventBus"
+    # echo "--------------"
+    # echo ""
     # To allow to send to central EventBus
-    aws --profile $SECLOG events put-permission --action events:PutEvents --principal $accountId --statement-id $SECLOG
+    # aws --profile $SECLOG events put-permission --action events:PutEvents --principal $accountId --statement-id $SECLOG
 
 
 
