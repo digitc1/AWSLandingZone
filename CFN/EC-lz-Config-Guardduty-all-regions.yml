@@ -106,8 +106,7 @@ Resources:
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              - Sid: SLZPermissionPutEvents
-                Effect: Allow
+              - Effect: Allow
                 Action: "events:PutEvents"
                 Resource: !Join 
                   - ''
@@ -129,10 +128,9 @@ Resources:
     Properties:
       Name: SECLZ-GuardDuty-Events-CloudWatch-Rule-To-SecLog
       Description: 'Landing Zone rule to send notification on GuardDuty Events to SecLog eventbus.'
-      RoleArn: 
-        Fn::GetAtt: 
-        - "AWSEventsInvokeEventBusSecLogRole"
-        - "Arn"
+      RoleArn:  !Join
+        - ''
+        - !Sub "arn:aws:iam:${AWS::AccountId}:role/AWSEventsInvokeEventBusSecLogRole"
       EventPattern:
         {
           "source": [
