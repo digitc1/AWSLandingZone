@@ -130,7 +130,9 @@ Resources:
       Description: 'Landing Zone rule to send notification on GuardDuty Events to SecLog eventbus.'
       RoleArn:  !Join
         - ''
-        - !Sub "arn:aws:iam:${AWS::AccountId}:role/AWSEventsInvokeEventBusSecLogRole"
+        - - 'arn:aws:iam:'
+          - !Sub '${AWS::AccountId}:'
+          - 'role/AWSEventsInvokeEventBusSecLogRole'
       EventPattern:
         {
           "source": [
