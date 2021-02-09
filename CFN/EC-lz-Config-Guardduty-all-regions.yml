@@ -106,7 +106,8 @@ Resources:
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              - Effect: Allow
+              - Sid: SLZPermissionPutEvents
+                Effect: Allow
                 Action: "events:PutEvents"
                 Resource: !Join 
                   - ''
