@@ -511,10 +511,6 @@ Resources:
     Properties:
       Name: SECLZ-Config-Rule-Compliance-Change-CloudWatch-Rule-To-SecLog
       Description: 'Landing Zone rule to send notification on Config Rule compliance changes to SecLog eventbus.'
-      RoleArn: 
-        Fn::GetAtt: 
-        - "AWSEventsInvokeEventBusSecLogRole"
-        - "Arn"
       EventPattern:
         {
           "source": [
@@ -528,5 +524,9 @@ Resources:
       Targets:
       - Id: "CrossAccountTargetId"
         Arn: !Sub "arn:aws:events:${AWS::Region}:${SecLogMasterAccountId}:event-bus/default"
+        RoleArn: 
+        Fn::GetAtt: 
+        - "AWSEventsInvokeEventBusSecLogRole"
+        - "Arn"
 
 Outputs: {}
