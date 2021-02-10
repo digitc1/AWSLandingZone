@@ -85,6 +85,7 @@ update_seclog() {
     echo "     SecLog Account to be configured:     $seclogprofile"
     echo "     SecLog Account Id:                   $SECLOG_ACCOUNT_ID"
     echo "     GuardDuty integration with Splunk:   $guarddutyintegration"
+    echo "     CloudTrail integration with Splunk:  $cloudtrailintegration"
     if [[ "$guarddutyintegration" == "true" || "$cloudtrailintegration" == "true" ]]; then
       echo "     Splunk Account Id:                   $SPLUNK_ACCOUNT_ID"
       echo "     Log Destination Name:                $FIREHOSE_DESTINATION_NAME"
