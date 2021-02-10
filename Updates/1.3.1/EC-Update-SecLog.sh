@@ -65,7 +65,7 @@ update_seclog() {
     # Getting SecLog Account Id
     SECLOG_ACCOUNT_ID=`aws --profile $seclogprofile sts get-caller-identity --query 'Account' --output text`
 
-    if  [ "$guarddutyintegration" == "true" || "$cloudtrailintegration" == "true" ]; then
+    if  [[ "$guarddutyintegration" == "true" || "$cloudtrailintegration" == "true" ]]; then
         # Getting C2 Splunk Account Id
         SPLUNK_ACCOUNT_ID=`aws --profile $splunkprofile sts get-caller-identity --query 'Account' --output text`
 
@@ -85,7 +85,7 @@ update_seclog() {
     echo "     SecLog Account to be configured:     $seclogprofile"
     echo "     SecLog Account Id:                   $SECLOG_ACCOUNT_ID"
     echo "     GuardDuty integration with Splunk:   $guarddutyintegration"
-    if [ "$guarddutyintegration" == "true" || "$cloudtrailintegration" == "true" ]; then
+    if [[ "$guarddutyintegration" == "true" || "$cloudtrailintegration" == "true" ]]; then
       echo "     Splunk Account Id:                   $SPLUNK_ACCOUNT_ID"
       echo "     Log Destination Name:                $FIREHOSE_DESTINATION_NAME"
       echo "     Log Destination ARN:                 $FIREHOSE_ARN"
