@@ -63,13 +63,11 @@ Conditions:
     - 'true'
 
 Resources:
-  GuardDutyLogGroup:
-    Type: AWS::Logs::LogGroup
-    Condition: IsSecLogMasterAccount
-    Properties:
-      LogGroupName: !Ref AwsGuardDutyGroupName
-      RetentionInDays: !Ref LogsRetentionInDays
 
+  #   -------------------
+  #   Enable Put Events on default event bus
+  #   -------------------
+  
   SecLogEventBusPolicy: 
     Type: AWS::Events::EventBusPolicy
     Condition: IsSecLogMasterAccount
@@ -82,6 +80,12 @@ Resources:
           Key: "aws:PrincipalOrgID"
           Value: !Ref OrganizationOuId
 
+  GuardDutyLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsSecLogMasterAccount
+    Properties:
+      LogGroupName: !Ref AwsGuardDutyGroupName
+      RetentionInDays: !Ref LogsRetentionInDays
 
   AWSEventsInvokeEventBusSecLogRole:
     Type: AWS::IAM::Role
@@ -124,10 +128,6 @@ Resources:
     Properties:
       Name: SECLZ-GuardDuty-Events-CloudWatch-Rule-To-SecLog
       Description: 'Landing Zone rule to send notification on GuardDuty Events to SecLog eventbus.'
-      RoleArn: 
-        Fn::GetAtt: 
-        - "AWSEventsInvokeEventBusSecLogRole"
-        - "Arn"
       EventPattern:
         {
           "source": [
@@ -138,6 +138,10 @@ Resources:
       Targets:
       - Id: "CrossAccountTargetId"
         Arn: !Sub "arn:aws:events:${AWS::Region}:${SecLogMasterAccountId}:event-bus/default"
+        RoleArn: 
+          Fn::GetAtt: 
+          - "AWSEventsInvokeEventBusSecLogRole"
+          - "Arn"
 
   CloudWatchEventsLogGroupRole:
     Type: AWS::IAM::Role
