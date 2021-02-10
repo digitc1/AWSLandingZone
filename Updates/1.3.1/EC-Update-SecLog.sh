@@ -57,7 +57,7 @@ display_help() {
 }
 
 #   ----------------------------
-#   Configure Seclog Account
+#   Update Seclog Account
 #   ----------------------------
 update_seclog() {
 
@@ -103,37 +103,17 @@ update_seclog() {
     #   Update password policy for IAM
     #   ------------------------------------
 
-
     echo ""
-    echo "- Update seclog account event bus permissions ... "
+    echo "- Update password policy for IAM ... "
     echo "-----------------------------------------------------------"
     echo ""
 
     StackName="SECLZ-Iam-Password-Policy"
 
-    # Delete existing stack
-
-    aws cloudformation update-termination-protection \
-    --stack-name 'SECLZ-Iam-Password-Policy'  \
-    --no-enable-termination-protection \
-    --profile $seclogprofile
-
-    sleep 5
-
-    aws cloudformation delete-stack \
-    --stack-name 'SECLZ-Iam-Password-Policy' 
-    --profile $seclogprofile
-
-    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "DELETE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
-    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-
-    # Create new stack
-    aws cloudformation create-stack \
+    aws cloudformation update-stack \
     --stack-name 'SECLZ-Iam-Password-Policy' \
     --template-body file://$CFN_IAM_PWD_POLICY \
     --capabilities CAPABILITY_IAM \
-    --enable-termination-protection \
     --profile $seclogprofile
 
   
@@ -245,11 +225,8 @@ update_seclog() {
       aws --profile $seclogprofile events remove-permission --statement-id $i
     done
 
-    echo "\bDone." 
     sleep 1
-    echo ""
-    echo "Remove event bus permission policies for all regions... " 
-    echo ""
+   
     ALL_REGIONS_EXCEPT_IRELAND_ARRAY=`echo $ALL_REGIONS_EXCEPT_IRELAND | sed -e 's/\[//g;s/\]//g;s/,/ /g;s/\"//g'`
 	  for r in ${ALL_REGIONS_EXCEPT_IRELAND_ARRAY[@]}; 
       do
@@ -264,12 +241,14 @@ update_seclog() {
         do
           aws --profile $seclogprofile events remove-permission --statement-id $i
         done
-        echo "\bDone."
+        
       done
     
 
     sleep 5
 
+    echo ""
+    echo ""
     echo "---------------------------------------------------------------------------------------------------------"
     echo "|                                         ATTENTION PLEASE:                                             |"
     echo "---------------------------------------------------------------------------------------------------------"

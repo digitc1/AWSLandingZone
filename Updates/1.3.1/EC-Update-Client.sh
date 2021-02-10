@@ -46,7 +46,7 @@ display_help() {
 }
 
 #   ----------------------------
-#   Configure Seclog Account
+#   Update Client Account
 #   ----------------------------
 update_client() {
 
@@ -80,29 +80,10 @@ update_client() {
 
     StackName="SECLZ-Iam-Password-Policy"
 
-    # Delete existing stack
-
-    aws cloudformation update-termination-protection \
-    --stack-name 'SECLZ-Iam-Password-Policy'  \
-    --no-enable-termination-protection \
-    --profile $clientaccprofile
-
-    sleep 5
-
-    aws cloudformation delete-stack \
-    --stack-name 'SECLZ-Iam-Password-Policy' 
-    --profile $clientaccprofile
-
-    aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-    while [ `aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "DELETE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
-    aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-
-    # Create new stack
-    aws cloudformation create-stack \
+    aws cloudformation update-stack \
     --stack-name 'SECLZ-Iam-Password-Policy' \
     --template-body file://$CFN_IAM_PWD_POLICY \
     --capabilities CAPABILITY_IAM \
-    --enable-termination-protection \
     --profile $clientaccprofile
 
   
@@ -123,10 +104,9 @@ update_client() {
     echo ""
 
 
-    aws cloudformation create-stack \
+    aws cloudformation update-stack \
     --stack-name 'SECLZ-config-cloudtrail-SNS' \
     --template-body file://$CFN_LOG_TEMPLATE \
-    --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $clientaccprofile \
 
@@ -151,7 +131,7 @@ update_client() {
     aws cloudformation update-stack \
     --stack-name 'SECLZ-Guardduty-detector' \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
-    --capabilities CAPABILITY_IAM \
+    --capabilities CAPABILITY_NAMED_IAM \
     --profile $clientaccprofile \
 
     aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
@@ -159,7 +139,9 @@ update_client() {
     aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     sleep 5
-
+    
+    echo ""
+    echo ""
     echo "---------------------------------------------------------------------------------------------------------"
     echo "|                                         ATTENTION PLEASE:                                             |"
     echo "---------------------------------------------------------------------------------------------------------"
