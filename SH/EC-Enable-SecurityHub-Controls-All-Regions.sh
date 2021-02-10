@@ -49,7 +49,7 @@ configure() {
         aws --profile $PROFILE --region $region securityhub update-security-hub-configuration --auto-enable-controls
 
         # Disable "ControlId": "IAM.6", "Title": "Hardware MFA should be enabled for the root user"
-        aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/aws-foundational-security-best-practices/v/1.0.0/IAM.6"--control-status "DISABLED" --disabled-reason "Managed by Cloud Broker Team"
+        aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/aws-foundational-security-best-practices/v/1.0.0/IAM.6" --control-status "DISABLED" --disabled-reason "Managed by Cloud Broker Team"
 
         # Disable "ControlId": "CIS1.14", "1.14 Ensure hardware MFA is enabled for the \"root\" account"
         aws securityhub --profile $PROFILE --region $region update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/cis-aws-foundations-benchmark/v/1.2.0/1.14" --control-status "DISABLED" --disabled-reason "Managed by Cloud Broker Team"
