@@ -1,7 +1,7 @@
 # Instructions Secure Landing Zone
 
 Detailed instruction on how to setup a Secure Landing Zone solution can be found on following confluence page:
-- https://webgate.ec.europa.eu/CITnet/confluence/display/CLOUDLZ/AWS
+- https://citnet.tech.ec.europa.eu/CITnet/confluence/display/CLOUDLZ/AWS
 
 
 ## Before you begin
