@@ -41,6 +41,8 @@ configure() {
     echo "-------------------------------------"
     echo ""
 
+    accountid=`aws --profile $PROFILE sts get-caller-identity --query 'Account' --output text`
+
 
     for region in $(aws --profile $PROFILE ec2 describe-regions --output text --query 'Regions[*].[RegionName]'); do
         echo "auto-enable-controls for securityhub for region $region ..."
