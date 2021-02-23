@@ -27,6 +27,10 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+# Script Spinner waiting for cloudformation completion
+export i=1
+export sp="/-\|"
+
 #   --------------------
 #       Templates
 #   --------------------
@@ -70,12 +74,12 @@ update_seclog() {
         SPLUNK_ACCOUNT_ID=`aws --profile $splunkprofile sts get-caller-identity --query 'Account' --output text`
 
         # Getting available log destinations from
-        DESCRIBE_DESTINATIONS=`aws --profile $splunkprofile  logs describe-destinations`
+          DESCRIBE_DESTINATIONS=`aws --profile $splunkprofile  logs describe-destinations`
 
-        # Extract select Log destination details
-        FIREHOSE_ARN=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .arn'`
-        FIREHOSE_DESTINATION_NAME=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .destinationName'`
-        FIREHOSE_ACCESS_POLICY=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .accessPolicy'`
+          # Extract select Log destination details
+          FIREHOSE_ARN=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .arn'`
+          FIREHOSE_DESTINATION_NAME=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .destinationName'`
+          FIREHOSE_ACCESS_POLICY=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .accessPolicy'`
     fi
 
 
@@ -110,15 +114,29 @@ update_seclog() {
 
     StackName="SECLZ-Iam-Password-Policy"
 
-    aws cloudformation update-stack \
+    aws cloudformation update-termination-protection \
+    --stack-name 'SECLZ-Iam-Password-Policy'  \
+    --no-enable-termination-protection \
+    --profile $seclogprofile
+
+    sleep 15
+
+    aws cloudformation delete-stack \
+    --stack-name 'SECLZ-Iam-Password-Policy' \
+    --profile $seclogprofile
+
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "DELETE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    
+    # Create new stack
+    aws cloudformation create-stack \
     --stack-name 'SECLZ-Iam-Password-Policy' \
     --template-body file://$CFN_IAM_PWD_POLICY \
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile
 
-  
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     sleep 5
@@ -139,10 +157,9 @@ update_seclog() {
     fi
 
 
-    aws cloudformation create-stack \
+    aws cloudformation update-stack \
     --stack-name 'SECLZ-config-cloudtrail-SNS' \
     --template-body file://$CFN_LOG_TEMPLATE \
-    --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile \
     --parameters $cloudtrailparams
@@ -239,7 +256,7 @@ update_seclog() {
 
         for i in ${SID}; 
         do
-          aws --profile $seclogprofile events remove-permission --statement-id $i
+          aws --profile $seclogprofile --region $r events remove-permission --statement-id $i
         done
         
       done
