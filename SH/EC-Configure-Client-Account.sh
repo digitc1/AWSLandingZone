@@ -45,6 +45,9 @@ display_help() {
 #   ----------------------------
 configure_client() {
 
+    # get version number
+    LZ_VERSION=`cat ./EC-SLZ-Version.txt | xargs`
+
     # Set parameters
     CFN_LOG_TEMPLATE='./CFN/EC-lz-config-cloudtrail-logging.yml'
     CFN_GUARDDUTY_DETECTOR_TEMPLATE='./CFN/EC-lz-guardDuty-detector.yml'
@@ -98,10 +101,12 @@ configure_client() {
     echo "    - /org/member/SecLogMasterAccountId"
     echo "    - /org/member/SecLogOU"
     echo "    - /org/member/KMSCloudtrailKey_arn"
+    echo "    - /org/member/SecLogVersion"
     aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value "SeeSecLog@seclogaccount" --overwrite
     aws --profile $CLIENT ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $AWS_ACC_NUM --overwrite
     aws --profile $CLIENT ssm put-parameter --name /org/member/SecLogOU --type String --value $OrgOuId --overwrite
     aws --profile $CLIENT ssm put-parameter --name /org/member/KMSCloudtrailKey_arn --type String --value $KMS_KEY_ARN --overwrite
+    aws --profile $CLIENT ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite
 
 
     #   Create ExecRole
