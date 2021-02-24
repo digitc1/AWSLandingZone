@@ -11,7 +11,6 @@
 #   --------------------
 
 clientaccprofile=${clientaccprofile:-}
-batch=${batch:-false}
 
 while [ $# -gt 0 ]; do
 
@@ -37,7 +36,6 @@ display_help() {
     echo ""
     echo "   Provide "
     echo "   --clientaccprofile        : The account profile of the client account as configured in your AWS profile"
-    echo "   --batch                  : Flag to enable or disable batch execution mode. Default: false (optional)"
     echo ""
     exit 1
 }
@@ -47,7 +45,20 @@ display_help() {
 #   ----------------------------
 update_client() {
 
+    #   ------------------------------------
+    # Store notification-E-mail, OrgID, SecAccountID in SSM parameters
+    #   ------------------------------------
 
+    echo ""
+    echo "- Storing SSM parameters for Seclog account"
+    echo "--------------------------------------------------"
+    echo ""
+    echo "  populating: "
+    echo "    - /org/member/SLZVersion"
+
+    LZ_VERSION=`cat ../../EC-SLZ-Version.txt | xargs`
+    
+    aws --profile $clientaccprofile ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite
 
 
 }

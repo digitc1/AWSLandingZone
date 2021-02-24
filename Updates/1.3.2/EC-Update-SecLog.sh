@@ -11,11 +11,6 @@
 #   --------------------
 
 seclogprofile=${seclogprofile:-}
-splunkprofile=${splunkprofile:-}
-logdestination=${logdestination:-}
-guarddutyintegration=${guarddutyintegration:-true}
-cloudtrailintegration=${cloudtrailintegration:-true}
-batch=${batch:-false}
 
 while [ $# -gt 0 ]; do
 
@@ -47,7 +42,6 @@ display_help() {
     echo ""
     echo "   Provide "
     echo "   --seclogprofile           : The account profile of the central SecLog account as configured in your AWS profile"
-    echo "   --batch                  : Flag to enable or disable batch execution mode. Default: false (optional)"
     echo ""
     exit 1
 }
@@ -57,20 +51,21 @@ display_help() {
 #   ----------------------------
 update_seclog() {
 
-
+    #   ------------------------------------
+    # Store notification-E-mail, OrgID, SecAccountID in SSM parameters
+    #   ------------------------------------
 
     echo ""
-    echo "- This script will configure a the SecLog account with following settings:"
-    echo "   ----------------------------------------------------"
-    echo "     SecLog Account to be configured:     $seclogprofile"
-    echo "     SecLog Account Id:                   $SECLOG_ACCOUNT_ID"
-    echo "   ----------------------------------------------------"
+    echo "- Storing SSM parameters for Seclog account"
+    echo "--------------------------------------------------"
     echo ""
-    
-    if [ "$batch" == "false" ] ; then
-        echo "   If this is correct press enter to continue"
-        read -p "  or CTRL-C to break"
-    fi
+    echo "  populating: "
+    echo "    - /org/member/SLZVersion"
+
+    LZ_VERSION=`cat ../../EC-SLZ-Version.txt | xargs`
+
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite
+
 
     #   ------------------------------------
     #   Cloudtrail bucket / Config bucket / Access_log bucket ...
