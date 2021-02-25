@@ -138,6 +138,17 @@ Resources:
             LOG_LEVEL: !Ref lambdaLogLevel
             MAX_TRY: !Ref lambdaMaxRetry
 
+    CloudTrailLogShipperLogGroup:
+      Type: AWS::Logs::LogGroup
+      DependsOn: CloudTrailLogShipperFunction
+      Properties:
+        LogGroupName:
+          Fn::Join:
+          - ''
+          - - "/aws/lambda/"
+            - Ref: CloudTrailLogShipperFunction
+        RetentionInDays: 14
+
     #   -------------------
     #   Config 
     #   -------------------
@@ -170,6 +181,18 @@ Resources:
           Variables:
             LOG_LEVEL: !Ref lambdaLogLevel
             MAX_TRY: !Ref lambdaMaxRetry
+
+    ConfigLogShipperLogGroup:
+      Type: AWS::Logs::LogGroup
+      DependsOn: ConfigLogShipperFunction
+      Properties:
+        LogGroupName:
+          Fn::Join:
+          - ''
+          - - "/aws/lambda/"
+            - Ref: ConfigLogShipperFunction
+        RetentionInDays: 14
+
     
     #   -------------------
     #   DynamoDB 
