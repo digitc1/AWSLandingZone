@@ -15,13 +15,13 @@ Resources:
     #   Code Repo Bucket
     #   -------------------
 
-    CloudTrailBucket:
+    LambdaCodeRepoBucket:
         Type: AWS::S3::Bucket
         Properties:
             BucketName:
                 Fn::Join:
                 - ""
-                - - "SECLZ-code-repo-"
+                - - "lambda-code-repo-"
                   - Ref: AWS::AccountId
                   - "-do-not-delete"
             PublicAccessBlockConfiguration:

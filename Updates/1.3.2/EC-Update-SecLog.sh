@@ -32,6 +32,8 @@ export sp="/-\|"
 
 CFN_BUCKETS_TEMPLATE='../../CFN/EC-lz-s3-buckets.yml'
 CFN_TAGS_PARAMS_FILE='../../CFN/EC-lz-TAGS-params.json'
+CFN_BUCKETS_TEMPLATE='../../CFN/EC-lz-s3-buckets.yml'
+CFN_LAMBDAS_TEMPLATE='../../CFN/EC-lz-logshipper-lambdas.yml'
 
 #   ---------------------
 #   The command line help
@@ -65,6 +67,56 @@ update_seclog() {
     LZ_VERSION=`cat ../../EC-SLZ-Version.txt | xargs`
 
     aws --profile $seclogprofile ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite
+
+
+#   ------------------------------------
+    #   Logshipper lambdas for CloudTrail and AWSConfig ...
+    #   ------------------------------------
+
+    echo ""
+    echo "- Logshipper lambdas for CloudTrail and AWSConfig ... "
+    echo "-----------------------------------------------------------"
+    echo ""
+
+    
+    REPO='s3://SECLZ-code-repo-$SECLOG_ACCOUNT_ID-do-not-delete'
+
+    aws cloudformation create-stack \
+    --stack-name 'SECLZ-LogShipper-Lambdas-Bucket' \
+    --template-body file://$CFN_LAMBDAS_BUCKET_TEMPLATE \
+    --profile $seclogprofile
+    
+    
+    StackName=SECLZ-LogShipper-Lambdas-Bucket
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+
+    NOW=`date +"%d%m%Y"`
+    LOGSHIPPER_TEMPLATE='EC-lz-logshipper-lambdas-packaged.yml'
+    CLOUDTRAIL_LAMBDA_CODE='CloudtrailLogShipper-$NOW.zip'
+    CONFIG_LAMBDA_CODE='ConfigLogShipper-$NOW.zip'
+
+    zip $CLOUDTRAIL_LAMBDA_CODE ../../LAMBDA/CloudtrailLogShipper.py
+    zip $CONFIG_LAMBDA_CODE ../../LAMBDA/ConfigLogShipper.py
+
+    aws cloudformation package --template $CFN_LAMBDAS_TEMPLATE --s3-bucket $REPO -output-template-file $LOGSHIPPER_TEMPLATE
+
+    aws cloudformation create-stack \
+    --stack-name 'SECLZ-LogShipper-Lambdas' \
+    --template-body file://$LOGSHIPPER_TEMPLATE \
+    --enable-termination-protection \
+    --profile $seclogprofile
+
+    StackName=SECLZ-LogShipper-Lambdas
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+    rm -rf $LOGSHIPPER_TEMPLATE
+    rm -rf $CLOUDTRAIL_LAMBDA_CODE
+    rm -rf $CONFIG_LAMBDA_CODE
 
 
     #   ------------------------------------
