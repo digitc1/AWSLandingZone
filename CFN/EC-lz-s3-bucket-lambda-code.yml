@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+#   --------------------------------------------------------
+#   Version History
+#
+#   v1.0.0    J. Silva   Initial Version
+#   --------------------------------------------------------
+
+Description: >-
+    Creates S3 bucket for Shiplogger Lambda functions 
+
+Resources:
+
+    #   -------------------
+    #   Code Repo Bucket
+    #   -------------------
+
+    CloudTrailBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+            BucketName:
+                Fn::Join:
+                - ""
+                - - "SECLZ-code-repo-"
+                  - Ref: AWS::AccountId
+                  - "-do-not-delete"
+            PublicAccessBlockConfiguration:
+              BlockPublicAcls: true
+              BlockPublicPolicy: true
+              IgnorePublicAcls: true
+              RestrictPublicBuckets: true
+            

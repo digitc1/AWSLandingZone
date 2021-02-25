@@ -62,6 +62,8 @@ ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-
 
 # parameters for scripts
 CFN_BUCKETS_TEMPLATE='CFN/EC-lz-s3-buckets.yml'
+CFN_LAMBDAS_TEMPLATE='CFN/EC-lz-logshipper-lambdas.yml'
+CFN_LAMBDAS_BUCKET_TEMPLATE='CFN/EC-lz-s3-bucket-lambda-code.yml'
 CFN_GUARDDUTY_TEMPLATE_GLOBAL='CFN/EC-lz-Config-Guardduty-all-regions.yml'
 CFN_LOG_TEMPLATE='CFN/EC-lz-config-cloudtrail-logging.yml'
 CFN_GUARDDUTY_DETECTOR_TEMPLATE='CFN/EC-lz-guardDuty-detector.yml'
@@ -223,6 +225,49 @@ configure_seclog() {
     #Storing the KMSCloudTrailKeyArn into SSM Parameter Store
     aws --profile $seclogprofile ssm put-parameter --name /org/member/KMSCloudtrailKey_arn --type String --value $KMS_KEY_ARN --overwrite &>/dev/null
 
+
+    #   ------------------------------------
+    #   Logshipper lambdas for CloudTrail and AWSConfig ...
+    #   ------------------------------------
+
+    echo ""
+    echo "- Logshipper lambdas for CloudTrail and AWSConfig ... "
+    echo "-----------------------------------------------------------"
+    echo ""
+
+    
+    REPO='s3://SECLZ-code-repo-$SECLOG_ACCOUNT_ID-do-not-delete'
+
+    aws cloudformation create-stack \
+    --stack-name 'SECLZ-LogShipper-Lambdas-Bucket' \
+    --template-body file://$CFN_LAMBDAS_BUCKET_TEMPLATE \
+    --profile $seclogprofile
+    
+
+    NOW=`date +"%d%m%Y"`
+    LOGSHIPPER_TEMPLATE='EC-lz-logshipper-lambdas-packaged.yml'
+    CLOUDTRAIL_LAMBDA_CODE='CloudtrailLogShipper-$NOW.zip'
+    CONFIG_LAMBDA_CODE='ConfigLogShipper-$NOW.zip'
+
+    zip $CLOUDTRAIL_LAMBDA_CODE LAMBDA/CloudtrailLogShipper.py
+    zip $CONFIG_LAMBDA_CODE LAMBDA/ConfigLogShipper.py
+
+    aws cloudformation package --template $CFN_LAMBDAS_TEMPLATE --s3-bucket $REPO -output-template-file $LOGSHIPPER_TEMPLATE
+
+    aws cloudformation create-stack \
+    --stack-name 'SECLZ-LogShipper-Lambdas' \
+    --template-body file://$LOGSHIPPER_TEMPLATE \
+    --enable-termination-protection \
+    --profile $seclogprofile
+
+    StackName=SECLZ-LogShipper-Lambdas
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+    rm -rf $LOGSHIPPER_TEMPLATE
+    rm -rf $CLOUDTRAIL_LAMBDA_CODE
+    rm -rf $CONFIG_LAMBDA_CODE
 
     #   ------------------------------------
     #   Cloudtrail bucket / Config bucket / Access_log bucket ...

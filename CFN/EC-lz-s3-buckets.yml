@@ -5,15 +5,16 @@ AWSTemplateFormatVersion: 2010-09-09
 #
 #   v1.0.0    J. Vandenbergen   Initial Version
 #   v1.1.0    J. Silva          Added SSL Secure Transport Only policy on all buckets
+#   v1.1.5    J. Silva          Defines two lambda functions to push logs created by the linked accounts
+#   v1.2.0    J. Silva          Lambda extraction to dedicated CFT
 #   --------------------------------------------------------
 
 Description: >-
-    v1.0. Creates S3 buckets for CloudTrail, Config and Access Logs.
+    Creates S3 buckets for CloudTrail, Config and Access Logs.
     Enables versioning for CloudTrail and Config buckets.
     CloudTrail and Config Buckets push access logs to Access Logs Bucket.
     Script to be run in the SecLog-Master account
     StackName should contain EC-Customer
-    to its corresponding log group
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -71,30 +72,34 @@ Resources:
                 - - "cloudtrail-logs-"
                   - Ref: AWS::AccountId
                   - "-do-not-delete"
-            PublicAccessBlockConfiguration: 
+            NotificationConfiguration:
+              LambdaConfigurations:
+                - Event: s3:ObjectCreated:*
+                  Function: Fn::ImportValue: SECLZ-LogShipper-Lambdas-ConfigFunctionArn
+            PublicAccessBlockConfiguration:
               BlockPublicAcls: true
               BlockPublicPolicy: true
               IgnorePublicAcls: true
               RestrictPublicBuckets: true
             LifecycleConfiguration:
                 Rules:
-                 - 
+                 -
                     Status: Enabled
                     ExpirationInDays: 425
                     NoncurrentVersionExpirationInDays: 425
                     Transitions:
-                     - 
+                     -
                         TransitionInDays: 60
                         StorageClass: GLACIER
-                     - 
+                     -
                         TransitionInDays: 30
                         StorageClass: STANDARD_IA
 
                     NoncurrentVersionTransitions:
-                     - 
+                     -
                         TransitionInDays: 60
                         StorageClass: GLACIER
-                     - 
+                     -
                         TransitionInDays: 30
                         StorageClass: STANDARD_IA
 
@@ -120,8 +125,8 @@ Resources:
             Bucket:
                 Ref: CloudTrailBucket
             PolicyDocument:
-                Statement: 
-                 - 
+                Statement:
+                 -
                    Sid: "CloudTrailBucketPolicyDelivery1"
                    Effect: "Allow"
                    Principal:
@@ -131,7 +136,7 @@ Resources:
                     - "s3:GetBucketAcl"
                    Resource: !GetAtt CloudTrailBucket.Arn
 
-                 - 
+                 -
                    Sid: "CloudTrailBucketPolicyDelivery2"
                    Effect: "Allow"
                    Principal:
@@ -139,10 +144,10 @@ Resources:
                      - "cloudtrail.amazonaws.com"
                    Action:
                     - "s3:PutObject"
-                   Resource: 
-                     Fn::Join: 
+                   Resource:
+                     Fn::Join:
                        - ""
-                       - 
+                       -
                          - !GetAtt CloudTrailBucket.Arn
                          - "/*"
                    Condition:
@@ -154,17 +159,16 @@ Resources:
                    Principal:
                     Service: cloudtrail.amazonaws.com
                    Effect: Deny
-                   Resource: 
-                     Fn::Join: 
+                   Resource:
+                     Fn::Join:
                        - ""
-                       - 
+                       -
                          - !GetAtt CloudTrailBucket.Arn
                          - "/*"
                    Condition:
                      Bool:
                        "aws:SecureTransport": "false"
 
-    
     #   -------------------
     #   Config Bucket
     #   -------------------
@@ -178,32 +182,36 @@ Resources:
                 - - "config-logs-"
                   - Ref: AWS::AccountId
                   - "-do-not-delete"
+            NotificationConfiguration:
+              LambdaConfigurations:
+                - Event: s3:ObjectCreated:*
+                  Function: Fn::ImportValue: SECLZ-LogShipper-Lambdas-ConfigFunctionArn
             LifecycleConfiguration:
                 Rules:
-                 - 
+                 -
                     Status: Enabled
                     ExpirationInDays: 425
                     NoncurrentVersionExpirationInDays: 425
                     Transitions:
-                     - 
+                     -
                         TransitionInDays: 60
                         StorageClass: GLACIER
-                     - 
+                     -
                         TransitionInDays: 30
                         StorageClass: STANDARD_IA
 
                     NoncurrentVersionTransitions:
-                     - 
+                     -
                         TransitionInDays: 60
                         StorageClass: GLACIER
-                     - 
+                     -
                         TransitionInDays: 30
                         StorageClass: STANDARD_IA
             LoggingConfiguration:
                 DestinationBucketName: !Ref AccessLogsBucket
             VersioningConfiguration:
                 Status: Enabled
-            PublicAccessBlockConfiguration: 
+            PublicAccessBlockConfiguration:
               BlockPublicAcls: true
               BlockPublicPolicy: true
               IgnorePublicAcls: true
@@ -226,8 +234,8 @@ Resources:
             Bucket:
                 Ref: ConfigBucket
             PolicyDocument:
-                Statement: 
-                 - 
+                Statement:
+                 -
                    Sid: "AWSConfigBucketPermissionsCheck"
                    Effect: "Allow"
                    Principal:
@@ -237,7 +245,7 @@ Resources:
                     - "s3:GetBucketAcl"
                    Resource: !GetAtt ConfigBucket.Arn
 
-                 - 
+                 -
                    Sid: "AWSConfigBucketDelivery"
                    Effect: "Allow"
                    Principal:
@@ -245,10 +253,10 @@ Resources:
                      - "config.amazonaws.com"
                    Action:
                     - "s3:PutObject"
-                   Resource: 
-                     Fn::Join: 
+                   Resource:
+                     Fn::Join:
                        - ""
-                       - 
+                       -
                          - !GetAtt ConfigBucket.Arn
                          - "/*"
                    Condition:
@@ -260,17 +268,16 @@ Resources:
                    Principal:
                     Service: config.amazonaws.com
                    Effect: Deny
-                   Resource: 
-                     Fn::Join: 
+                   Resource:
+                     Fn::Join:
                        - ""
-                       - 
+                       -
                          - !GetAtt ConfigBucket.Arn
                          - "/*"
                    Condition:
                     Bool:
                       "aws:SecureTransport": "false"
 
-   
     #   -------------------
     #   AccessLogs Bucket
     #   -------------------
@@ -296,7 +303,7 @@ Resources:
             Value: !Ref project
           - Key: data-classification
             Value: !Ref dataClassification
-          PublicAccessBlockConfiguration: 
+          PublicAccessBlockConfiguration:
             BlockPublicAcls: true
             BlockPublicPolicy: true
             IgnorePublicAcls: true
@@ -308,24 +315,24 @@ Resources:
             Bucket:
                 Ref: AccessLogsBucket
             PolicyDocument:
-                Statement:                  
+                Statement:
                  -
                    Sid: "AWSAccessLogsBucketSSL"
                    Action: "s3:*"
                    Effect: Deny
                    Principal:
                     Service: cloudwatch.amazonaws.com
-                   Resource: 
-                     Fn::Join: 
+                   Resource:
+                     Fn::Join:
                        - ""
-                       - 
+                       -
                          - !GetAtt AccessLogsBucket.Arn
                          - "/*"
                    Condition:
                     Bool:
                       "aws:SecureTransport": "false"
 
-
+    
 Outputs:
   ConfigBucket:
     Description: Bucket for storing config-logs
@@ -344,5 +351,3 @@ Outputs:
     Value: !Ref AccessLogsBucket
     Export:
       Name: !Sub "${AWS::StackName}-AccessLogsBucket"
-
-
