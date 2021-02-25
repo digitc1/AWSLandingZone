@@ -7,7 +7,7 @@ AWSTemplateFormatVersion: 2010-09-09
 #   --------------------------------------------------------
 
 Description: >-
-    Creates S3 bucket for Shiplogger Lambda functions 
+    Creates S3 bucket for LogShipper Lambda functions 
 
 Resources:
 
@@ -15,18 +15,32 @@ Resources:
     #   Code Repo Bucket
     #   -------------------
 
-    LambdaCodeRepoBucket:
+    LambdaArtefactsBucket:
         Type: AWS::S3::Bucket
         Properties:
             BucketName:
                 Fn::Join:
                 - ""
-                - - "lambda-code-repo-"
+                - - "lambda-artefacts-"
                   - Ref: AWS::AccountId
-                  - "-do-not-delete"
             PublicAccessBlockConfiguration:
               BlockPublicAcls: true
               BlockPublicPolicy: true
               IgnorePublicAcls: true
               RestrictPublicBuckets: true
-            
+    
+    AccessLogsPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+            Bucket:
+                Ref: LambdaArtefactsBucket
+            PolicyDocument:
+                Statement:
+                 -
+                   Sid: "AWSConfigBucketPermissionsCheck"
+                   Effect: "Allow"
+                   Action: "s3:*"
+                   Principal:
+                    Service:
+                     - "cloudformation.amazonaws.com"
+                   Resource: !GetAtt LambdaArtefactsBucket.Arn

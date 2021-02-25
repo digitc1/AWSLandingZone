@@ -79,7 +79,7 @@ update_seclog() {
     echo ""
 
     
-    REPO='s3://SECLZ-code-repo-$SECLOG_ACCOUNT_ID-do-not-delete'
+    REPO="s3://SECLZ-code-repo-$SECLOG_ACCOUNT_ID-do-not-delete"
 
     aws cloudformation create-stack \
     --stack-name 'SECLZ-LogShipper-Lambdas-Bucket' \
@@ -94,12 +94,12 @@ update_seclog() {
 
 
     NOW=`date +"%d%m%Y"`
-    LOGSHIPPER_TEMPLATE='EC-lz-logshipper-lambdas-packaged.yml'
-    CLOUDTRAIL_LAMBDA_CODE='CloudtrailLogShipper-$NOW.zip'
-    CONFIG_LAMBDA_CODE='ConfigLogShipper-$NOW.zip'
+    LOGSHIPPER_TEMPLATE="EC-lz-logshipper-lambdas-packaged.yml"
+    CLOUDTRAIL_LAMBDA_CODE="CloudtrailLogShipper-$NOW.zip"
+    CONFIG_LAMBDA_CODE="ConfigLogShipper-$NOW.zip"
 
-    zip $CLOUDTRAIL_LAMBDA_CODE ../../LAMBDA/CloudtrailLogShipper.py
-    zip $CONFIG_LAMBDA_CODE ../../LAMBDA/ConfigLogShipper.py
+    zip $CLOUDTRAIL_LAMBDA_CODE ../../LAMBDAS/CloudtrailLogShipper.py
+    zip $CONFIG_LAMBDA_CODE ../../LAMBDAS/ConfigLogShipper.py
 
     aws cloudformation package --template $CFN_LAMBDAS_TEMPLATE --s3-bucket $REPO -output-template-file $LOGSHIPPER_TEMPLATE
 

@@ -10,12 +10,21 @@ Description: >-
     Creates 2 lambdas and respective ancilliaries to push logs created 
     by the linked accounts from S3 CloudTrail and AWS Config buckets
 
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Code location'
+      Parameters:
+      - cloudtrailLambdaCodeURI
+      - configLambdaCodeURI
+
 Parameters:
-  cloudtraiLambdaCodeURI:
+  cloudtrailLambdaCodeURI:
     Description: 'Location of the CloudTrail Lambda Function'
     Type: String
 
-  cloudtraiLambdaCodeURI:
+  configLambdaCodeURI:
     Description: 'Location of the AWSConfig Lambda Function'
     Type: String
 
@@ -230,6 +239,6 @@ Outputs:
   CloudTrailLogShipperFunctionArn:
     Description: Bucket for storing cloudtrail-logs
     Value: !Ref CloudTrailLogShipperFunction.Arn
-    Export:Bucket
+    Export:
       Name: !Sub "${AWS::StackName}-CloudTrailFunctionArn"
 
