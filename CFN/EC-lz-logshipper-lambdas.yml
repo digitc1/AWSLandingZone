@@ -20,14 +20,7 @@ Metadata:
       - configLambdaCodeURI
 
 Parameters:
-  cloudtrailLambdaCodeURI:
-    Description: 'Location of the CloudTrail Lambda Function'
-    Type: String
-
-  configLambdaCodeURI:
-    Description: 'Location of the AWSConfig Lambda Function'
-    Type: String
-
+ 
   lambdaLogLevel:
     Description: 'Lambda logging level'
     Type: String
@@ -136,7 +129,7 @@ Resources:
       DependsOn:
         - DynamoDBTable
       Properties:
-        CodeUri: !Ref configLambdaCodeURI
+        CodeUri: !Ref ##cloudtrailCodeURI##
         Handler: 'CloudtrailLogShipper.lambda_handler'
         MemorySize: 128
         Role: !GetAtt LogShipperLambdaExecutionRole.Arn
@@ -181,7 +174,7 @@ Resources:
       DependsOn:
         - DynamoDBTable
       Properties:
-        CodeUri: !Ref configLambdaCodeURI
+        CodeUri: !Ref ##configCodeURI##
         Handler: 'ConfigLogShipper.lambda_handler'
         Role: !GetAtt LogShipperLambdaExecutionRole.Arn
         Runtime: python3.8

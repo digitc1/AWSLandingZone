@@ -160,7 +160,11 @@ Resources:
                     Service: cloudtrail.amazonaws.com
                    Effect: Deny
                    Resource:
-                     Fn::Join:
+                     - Fn::Join:
+                       - ""
+                       -
+                         - !GetAtt CloudTrailBucket.Arn
+                     - Fn::Join:
                        - ""
                        -
                          - !GetAtt CloudTrailBucket.Arn
@@ -269,7 +273,11 @@ Resources:
                     Service: config.amazonaws.com
                    Effect: Deny
                    Resource:
-                     Fn::Join:
+                     - Fn::Join:
+                       - ""
+                       -
+                         - !GetAtt ConfigBucket.Arn
+                     - Fn::Join:
                        - ""
                        -
                          - !GetAtt ConfigBucket.Arn
@@ -323,7 +331,11 @@ Resources:
                    Principal:
                     Service: cloudwatch.amazonaws.com
                    Resource:
-                     Fn::Join:
+                     - Fn::Join:
+                       - ""
+                       -
+                         - !GetAtt AccessLogsBucket.Arn
+                     - Fn::Join:
                        - ""
                        -
                          - !GetAtt AccessLogsBucket.Arn

@@ -248,6 +248,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-LogShipper-Lambdas-Bucket' \
     --template-body file://$CFN_LAMBDAS_BUCKET_TEMPLATE \
+    --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
     
     StackName=SECLZ-LogShipper-Lambdas-Bucket
@@ -258,6 +259,7 @@ configure_seclog() {
 
     NOW=`date +"%d%m%Y"`
     LOGSHIPPER_TEMPLATE="EC-lz-logshipper-lambdas-packaged.yml"
+    LOGSHIPPER_TEMPLATE_WITH_CODE="EC-lz-logshipper-lambdas.yml"
     CLOUDTRAIL_LAMBDA_CODE="CloudtrailLogShipper-$NOW.zip"
     CONFIG_LAMBDA_CODE="ConfigLogShipper-$NOW.zip"
 
@@ -265,9 +267,11 @@ configure_seclog() {
     zip $CONFIG_LAMBDA_CODE LAMBDAS/ConfigLogShipper.py
 
     
-    METADATA="cloudtrailLambdaCodeURI=$CLOUDTRAIL_LAMBDA_CODE,configLambdaCodeURI=$CONFIG_LAMBDA_CODE"
+    METADATA="cloudtrailCodeURI=$CLOUDTRAIL_LAMBDA_CODE,configCodeURI=$CONFIG_LAMBDA_CODE"
 
-    aws cloudformation package --template $CFN_LAMBDAS_TEMPLATE --s3-bucket $REPO --metadata  $METADATA --output-template-file $LOGSHIPPER_TEMPLATE
+    awk '{ sub("##cloudtrailCodeURI##",$CLOUDTRAIL_LAMBDA_CODE);gsub("##configCodeURI##",$CONFIG_LAMBDA_CODE);print }' $CFN_LAMBDAS_TEMPLATE > $LOGSHIPPER_TEMPLATE_WITH_CODE
+
+    aws cloudformation package --template $LOGSHIPPER_TEMPLATE_WITH_CODE --s3-bucket $REPO --metadata  $METADATA --output-template-file $LOGSHIPPER_TEMPLATE --profile $seclogprofile
 
 
     aws cloudformation create-stack \
@@ -282,6 +286,7 @@ configure_seclog() {
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     rm -rf $LOGSHIPPER_TEMPLATE
+    rm -rf $LOGSHIPPER_TEMPLATE_WITH_CODE
     rm -rf $CLOUDTRAIL_LAMBDA_CODE
     rm -rf $CONFIG_LAMBDA_CODE
 
