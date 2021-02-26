@@ -61,6 +61,7 @@ Resources:
                     - dynamodb:GetItem
                     - dynamodb:PutItem
                     - dynamodb:DeleteItem
+                    - dynamodb:DescribeTable
                   Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/SECLZSyncLogs'
                 - Effect: Allow
                   Action:
@@ -128,8 +129,9 @@ Resources:
       Type: 'AWS::Lambda::Function'
       DependsOn:
         - DynamoDBTable
+        - LogShipperLambdaExecutionRole
       Properties:
-        CodeUri: !Ref ##cloudtrailCodeURI##
+        Code: ##cloudtrailCodeURI##
         Handler: 'CloudtrailLogShipper.lambda_handler'
         MemorySize: 128
         Role: !GetAtt LogShipperLambdaExecutionRole.Arn
@@ -173,8 +175,9 @@ Resources:
       Type: 'AWS::Lambda::Function'
       DependsOn:
         - DynamoDBTable
+        - LogShipperLambdaExecutionRole
       Properties:
-        CodeUri: !Ref ##configCodeURI##
+        Code: ##configCodeURI##
         Handler: 'ConfigLogShipper.lambda_handler'
         Role: !GetAtt LogShipperLambdaExecutionRole.Arn
         Runtime: python3.8
@@ -201,6 +204,8 @@ Resources:
     #   -------------------
     DynamoDBTable:
         Type: AWS::DynamoDB::Table
+        DependsOn:
+        - LogShipperLambdaExecutionRole
         Properties:
             BillingMode: PAY_PER_REQUEST
             AttributeDefinitions:
@@ -225,13 +230,13 @@ Resources:
 Outputs:
   ConfigLogShipperFunctionArn:
     Description: ARN for ConfigLogShipperFunction
-    Value: !Ref ConfigLogShipperFunction.Arn
+    Value: !GetAtt ConfigLogShipperFunction.Arn
     Export:
       Name: !Sub "${AWS::StackName}-ConfigFunctionArn"
 
   CloudTrailLogShipperFunctionArn:
     Description: Bucket for storing cloudtrail-logs
-    Value: !Ref CloudTrailLogShipperFunction.Arn
+    Value: !GetAtt CloudTrailLogShipperFunction.Arn
     Export:
       Name: !Sub "${AWS::StackName}-CloudTrailFunctionArn"
 

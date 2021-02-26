@@ -267,18 +267,20 @@ configure_seclog() {
     zip $CONFIG_LAMBDA_CODE LAMBDAS/ConfigLogShipper.py
 
     
-    METADATA="cloudtrailCodeURI=$CLOUDTRAIL_LAMBDA_CODE,configCodeURI=$CONFIG_LAMBDA_CODE"
+    awk -v cl=$CLOUDTRAIL_LAMBDA_CODE -v co=$CONFIG_LAMBDA_CODE '{ sub(/##cloudtrailCodeURI##/,cl);gsub(/##configCodeURI##/,co);print }' $CFN_LAMBDAS_TEMPLATE > $LOGSHIPPER_TEMPLATE_WITH_CODE
 
-    awk '{ sub("##cloudtrailCodeURI##",$CLOUDTRAIL_LAMBDA_CODE);gsub("##configCodeURI##",$CONFIG_LAMBDA_CODE);print }' $CFN_LAMBDAS_TEMPLATE > $LOGSHIPPER_TEMPLATE_WITH_CODE
+    aws cloudformation package --template $LOGSHIPPER_TEMPLATE_WITH_CODE --s3-bucket $REPO --output-template-file $LOGSHIPPER_TEMPLATE --profile $seclogprofile
 
-    aws cloudformation package --template $LOGSHIPPER_TEMPLATE_WITH_CODE --s3-bucket $REPO --metadata  $METADATA --output-template-file $LOGSHIPPER_TEMPLATE --profile $seclogprofile
-
-
-    aws cloudformation create-stack \
-    --stack-name 'SECLZ-LogShipper-Lambdas' \
-    --template-body file://$LOGSHIPPER_TEMPLATE \
-    --enable-termination-protection \
+    aws cloudformation deploy --stack-name  'SECLZ-LogShipper-Lambdas' \
+    --template-file $LOGSHIPPER_TEMPLATE \
+    --capabilities CAPABILITY_IAM \
     --profile $seclogprofile
+
+    #aws cloudformation create-stack \
+    #--stack-name 'SECLZ-LogShipper-Lambdas' \
+    #--template-body file://$LOGSHIPPER_TEMPLATE \
+    #--enable-termination-protection \
+    #--profile $seclogprofile
 
     StackName=SECLZ-LogShipper-Lambdas
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName

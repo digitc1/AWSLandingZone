@@ -31,6 +31,7 @@ export sp="/-\|"
 #   --------------------
 
 CFN_BUCKETS_TEMPLATE='../../CFN/EC-lz-s3-buckets.yml'
+CFN_BUCKETS_TEMPLATE_CLEANUP='./EC-lz-s3-buckets.yml'
 CFN_TAGS_PARAMS_FILE='../../CFN/EC-lz-TAGS-params.json'
 CFN_BUCKETS_TEMPLATE='../../CFN/EC-lz-s3-buckets.yml'
 CFN_LAMBDAS_TEMPLATE='../../CFN/EC-lz-logshipper-lambdas.yml'
@@ -68,8 +69,29 @@ update_seclog() {
 
     aws --profile $seclogprofile ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite
 
+    #   ------------------------------------
+    #   S3 Bucket Template cleanup ...
+    #   ------------------------------------
 
-#   ------------------------------------
+    echo ""
+    echo "- S3 Bucket Template cleanup ... "
+    echo "-----------------------------------------------------------"
+    echo ""
+
+    aws cloudformation update-stack \
+    --stack-name 'SECLZ-Central-Buckets' \
+    --template-body file://$CFN_BUCKETS_TEMPLATE_CLEANUP \
+    --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --profile $seclogprofile
+
+    StackName=SECLZ-Central-Buckets
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+
+    #   ------------------------------------
     #   Logshipper lambdas for CloudTrail and AWSConfig ...
     #   ------------------------------------
 
@@ -115,6 +137,7 @@ update_seclog() {
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     rm -rf $LOGSHIPPER_TEMPLATE
+    rm -rf $CFN_LAMBDAS_TEMPLATE
     rm -rf $CLOUDTRAIL_LAMBDA_CODE
     rm -rf $CONFIG_LAMBDA_CODE
 
