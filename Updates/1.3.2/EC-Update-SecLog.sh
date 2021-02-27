@@ -101,13 +101,13 @@ update_seclog() {
     echo ""
 
     
-    REPO="s3://SECLZ-code-repo-$SECLOG_ACCOUNT_ID-do-not-delete"
+    REPO="s3://lambda-artefacts-$SECLOG_ACCOUNT_ID"
 
     aws cloudformation create-stack \
     --stack-name 'SECLZ-LogShipper-Lambdas-Bucket' \
     --template-body file://$CFN_LAMBDAS_BUCKET_TEMPLATE \
+    --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
-    
     
     StackName=SECLZ-LogShipper-Lambdas-Bucket
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
@@ -117,18 +117,21 @@ update_seclog() {
 
     NOW=`date +"%d%m%Y"`
     LOGSHIPPER_TEMPLATE="EC-lz-logshipper-lambdas-packaged.yml"
+    LOGSHIPPER_TEMPLATE_WITH_CODE="EC-lz-logshipper-lambdas.yml"
     CLOUDTRAIL_LAMBDA_CODE="CloudtrailLogShipper-$NOW.zip"
     CONFIG_LAMBDA_CODE="ConfigLogShipper-$NOW.zip"
 
-    zip $CLOUDTRAIL_LAMBDA_CODE ../../LAMBDAS/CloudtrailLogShipper.py
-    zip $CONFIG_LAMBDA_CODE ../../LAMBDAS/ConfigLogShipper.py
+    zip $CLOUDTRAIL_LAMBDA_CODE LAMBDAS/CloudtrailLogShipper.py
+    zip $CONFIG_LAMBDA_CODE LAMBDAS/ConfigLogShipper.py
 
-    aws cloudformation package --template $CFN_LAMBDAS_TEMPLATE --s3-bucket $REPO -output-template-file $LOGSHIPPER_TEMPLATE
+    
+    awk -v cl=$CLOUDTRAIL_LAMBDA_CODE -v co=$CONFIG_LAMBDA_CODE '{ sub(/##cloudtrailCodeURI##/,cl);gsub(/##configCodeURI##/,co);print }' $CFN_LAMBDAS_TEMPLATE > $LOGSHIPPER_TEMPLATE_WITH_CODE
 
-    aws cloudformation create-stack \
-    --stack-name 'SECLZ-LogShipper-Lambdas' \
-    --template-body file://$LOGSHIPPER_TEMPLATE \
-    --enable-termination-protection \
+    aws cloudformation package --template $LOGSHIPPER_TEMPLATE_WITH_CODE --s3-bucket $REPO --output-template-file $LOGSHIPPER_TEMPLATE --profile $seclogprofile
+
+    aws cloudformation deploy --stack-name  'SECLZ-LogShipper-Lambdas' \
+    --template-file $LOGSHIPPER_TEMPLATE \
+    --capabilities CAPABILITY_IAM \
     --profile $seclogprofile
 
     StackName=SECLZ-LogShipper-Lambdas
@@ -137,7 +140,7 @@ update_seclog() {
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     rm -rf $LOGSHIPPER_TEMPLATE
-    rm -rf $CFN_LAMBDAS_TEMPLATE
+    rm -rf $LOGSHIPPER_TEMPLATE_WITH_CODE
     rm -rf $CLOUDTRAIL_LAMBDA_CODE
     rm -rf $CONFIG_LAMBDA_CODE
 
