@@ -243,12 +243,13 @@ configure_seclog() {
     echo ""
 
     
-    REPO="s3://lambda-artefacts-$SECLOG_ACCOUNT_ID"
+    REPO="lambda-artefacts-$SECLOG_ACCOUNT_ID"
 
     aws cloudformation create-stack \
     --stack-name 'SECLZ-LogShipper-Lambdas-Bucket' \
     --template-body file://$CFN_LAMBDAS_BUCKET_TEMPLATE \
     --capabilities CAPABILITY_NAMED_IAM \
+    --enable-termination-protection \
     --profile $seclogprofile
     
     StackName=SECLZ-LogShipper-Lambdas-Bucket
@@ -263,8 +264,8 @@ configure_seclog() {
     CLOUDTRAIL_LAMBDA_CODE="CloudtrailLogShipper-$NOW.zip"
     CONFIG_LAMBDA_CODE="ConfigLogShipper-$NOW.zip"
 
-    zip $CLOUDTRAIL_LAMBDA_CODE LAMBDAS/CloudtrailLogShipper.py
-    zip $CONFIG_LAMBDA_CODE LAMBDAS/ConfigLogShipper.py
+    zip -j $CLOUDTRAIL_LAMBDA_CODE LAMBDAS/CloudtrailLogShipper.py
+    zip -j $CONFIG_LAMBDA_CODE LAMBDAS/ConfigLogShipper.py
 
     
     awk -v cl=$CLOUDTRAIL_LAMBDA_CODE -v co=$CONFIG_LAMBDA_CODE '{ sub(/##cloudtrailCodeURI##/,cl);gsub(/##configCodeURI##/,co);print }' $CFN_LAMBDAS_TEMPLATE > $LOGSHIPPER_TEMPLATE_WITH_CODE
@@ -276,16 +277,14 @@ configure_seclog() {
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile
 
-    #aws cloudformation create-stack \
-    #--stack-name 'SECLZ-LogShipper-Lambdas' \
-    #--template-body file://$LOGSHIPPER_TEMPLATE \
-    #--enable-termination-protection \
-    #--profile $seclogprofile
 
     StackName=SECLZ-LogShipper-Lambdas
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
-    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    
+    aws cloudformation update-termination-protection \
+        --enable-termination-protection \
+        --stack-name $StackName \
+        --profile $seclogprofile
 
     rm -rf $LOGSHIPPER_TEMPLATE
     rm -rf $LOGSHIPPER_TEMPLATE_WITH_CODE
