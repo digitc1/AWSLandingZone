@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+#   --------------------------------------------------------
+#   Version History
+#
+#   v1.0.0    J. Silva   Initial Version
+#   --------------------------------------------------------
+
+Description: >-
+    Creates S3 bucket for LogShipper Lambda functions 
+
+Resources:
+
+    #   -------------------
+    #   Code Repo Bucket
+    #   -------------------
+
+    LambdaArtefactsBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+            BucketName:
+                Fn::Join:
+                - ""
+                - - "lambda-artefacts-"
+                  - Ref: AWS::AccountId
+            PublicAccessBlockConfiguration:
+              BlockPublicAcls: true
+              BlockPublicPolicy: true
+              IgnorePublicAcls: true
+              RestrictPublicBuckets: true
+    
+    LambdaArtefactBucketPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+            Bucket:
+                Ref: LambdaArtefactsBucket
+            PolicyDocument:
+                Statement:
+                 -
+                   Sid: "CloudformationPermissions"
+                   Effect: "Allow"
+                   Action: "s3:*"
+                   Principal:
+                    Service:
+                     - "cloudformation.amazonaws.com"
+                   Resource: !GetAtt LambdaArtefactsBucket.Arn
+        

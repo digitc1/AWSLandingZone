@@ -23,6 +23,10 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+# Script Spinner waiting for cloudformation completion
+export i=1
+export sp="/-\|"
+
 #   --------------------
 #       Templates
 #   --------------------
@@ -74,24 +78,41 @@ update_client() {
 
 
     echo ""
-    echo "- Update seclog account event bus permissions ... "
+    echo "- Update password policy for IAM ... "
     echo "-----------------------------------------------------------"
     echo ""
 
     StackName="SECLZ-Iam-Password-Policy"
 
-    aws cloudformation update-stack \
+    # Delete existing stack
+
+    aws cloudformation update-termination-protection \
+    --stack-name 'SECLZ-Iam-Password-Policy'  \
+    --no-enable-termination-protection \
+    --profile $clientaccprofile
+
+    sleep 15
+
+    aws cloudformation delete-stack \
+    --stack-name 'SECLZ-Iam-Password-Policy' \
+    --profile $clientaccprofile
+
+    aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "DELETE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+   
+    # Create new stack
+    aws cloudformation create-stack \
     --stack-name 'SECLZ-Iam-Password-Policy' \
     --template-body file://$CFN_IAM_PWD_POLICY \
     --capabilities CAPABILITY_IAM \
     --profile $clientaccprofile
 
-  
     aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-    while [ `aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    while [ `aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-
-    sleep 5
+    if [ "$batch" == "false" ] ; then
+        sleep 5
+    fi
 
     #   ------------------------------------
     #   Update config, cloudtrail, SNS notifications
@@ -103,6 +124,7 @@ update_client() {
     echo "--------------------------------------------------"
     echo ""
 
+    StackName="SECLZ-config-cloudtrail-SNS"
 
     aws cloudformation update-stack \
     --stack-name 'SECLZ-config-cloudtrail-SNS' \
@@ -110,12 +132,12 @@ update_client() {
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $clientaccprofile \
 
-    StackName="SECLZ-config-cloudtrail-SNS"
     aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
     while [ `aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-
-    sleep 5
+    if [ "$batch" == "false" ] ; then
+        sleep 5
+    fi
 
     #   ------------------------------------
     #   Update  guardduty in seclog account
@@ -137,8 +159,9 @@ update_client() {
     aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
     while [ `aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-
-    sleep 5
+     if [ "$batch" == "false" ] ; then
+        sleep 5
+    fi
     
     echo ""
     echo ""

@@ -35,9 +35,10 @@ display_help() {
 configure() {
 
    
+    accountid=`aws --profile $PROFILE sts get-caller-identity --query 'Account' --output text`
 
     echo ""
-    echo "- Enable securityhub controls for all regions"
+    echo "- Enable securityhub controls for all regions. Account $accountid"
     echo "-------------------------------------"
     echo ""
 
@@ -50,6 +51,11 @@ configure() {
         aws --profile $PROFILE --region $region securityhub batch-enable-standards --standards-subscription-requests StandardsArn="arn:aws:securityhub:$region::standards/aws-foundational-security-best-practices/v/1.0.0"
         aws --profile $PROFILE --region $region securityhub update-security-hub-configuration --auto-enable-controls
 
+        sleep 2
+        # Disable "ControlId": "IAM.6", "Title": "Hardware MFA should be enabled for the root user"
+        aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/aws-foundational-security-best-practices/v/1.0.0/IAM.6" --control-status "DISABLED" --disabled-reason "Managed by Cloud Broker Team"
+        
+        sleep 2
         # Disable "ControlId": "IAM.6", "Title": "Hardware MFA should be enabled for the root user"
         aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/aws-foundational-security-best-practices/v/1.0.0/IAM.6" --control-status "DISABLED" --disabled-reason "Managed by Cloud Broker Team"
 
