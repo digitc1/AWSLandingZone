@@ -44,32 +44,4 @@ Resources:
                     Service:
                      - "cloudformation.amazonaws.com"
                    Resource: !GetAtt LambdaArtefactsBucket.Arn
-                 
-
-    
-    LambdaArtefactBucketAccessRole:
-        Type: 'AWS::IAM::Role'
-        Properties:
-          AssumeRolePolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - 
-                Effect: Allow
-                Principal:
-                    AWS:
-                    - Fn::Join:
-                      -  ""
-                      - - "arn:aws:iam::"
-                        - Ref: AWS::AccountId
-                        - ":role/BrokerAccessLandingZoneNoMFARole"
-                Action:
-                - 'sts:AssumeRole'
-          Policies:
-            - PolicyName: root
-              PolicyDocument:
-                Version: 2012-10-17
-                Statement:
-                  - 
-                    Effect: Allow
-                    Action: 's3:*'
-                    Resource: !GetAtt LambdaArtefactsBucket.Arn
+        
