@@ -28,7 +28,6 @@ Metadata:
           - environment
           - criticity
           - dataClassification
-          - lambdaStack
 
 Parameters:
     owner:
@@ -55,16 +54,8 @@ Parameters:
         Description: "Tag: data-classification. Level of criticality of the stored data"
         Type: String
         Default: ''
-    
-    lambdaStack:
-        Description: "Stack that deploys the lambdas for log shipping"
-        Type: String
-        Default: 'SECLZ-LogShipper-Lambdas'
-
-    
 
 Mappings: {}
-
 
 Resources:
 
@@ -81,12 +72,6 @@ Resources:
                 - - "cloudtrail-logs-"
                   - Ref: AWS::AccountId
                   - "-do-not-delete"
-            NotificationConfiguration:
-              LambdaConfigurations:
-                - Event: s3:ObjectCreated:*
-                  Function: 
-                    Fn::ImportValue: 
-                      !Sub "${lambdaStack}-CloudTrailFunctionArn"
             PublicAccessBlockConfiguration:
               BlockPublicAcls: true
               BlockPublicPolicy: true
@@ -197,12 +182,6 @@ Resources:
                 - - "config-logs-"
                   - Ref: AWS::AccountId
                   - "-do-not-delete"
-            NotificationConfiguration:
-              LambdaConfigurations:
-                - Event: s3:ObjectCreated:*
-                  Function: 
-                    Fn::ImportValue: 
-                      !Sub "${lambdaStack}-ConfigFunctionArn"
             LifecycleConfiguration:
                 Rules:
                  -
@@ -329,12 +308,6 @@ Resources:
             BlockPublicPolicy: true
             IgnorePublicAcls: true
             RestrictPublicBuckets: true
-          LifecycleConfiguration:
-              Rules:
-                -
-                  Status: Enabled
-                  ExpirationInDays: 60
-                  NoncurrentVersionExpirationInDays: 60
 
     AccessLogsPolicy:
         Type: AWS::S3::BucketPolicy
@@ -363,7 +336,7 @@ Resources:
                     Bool:
                       "aws:SecureTransport": "false"
 
-    
+
 Outputs:
   ConfigBucket:
     Description: Bucket for storing config-logs

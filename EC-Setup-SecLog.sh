@@ -51,8 +51,6 @@ while [ $# -gt 0 ]; do
 done
 
 
-
-
 # Script Spinner waiting for cloudformation completion
 export i=1
 export sp="/-\|"
@@ -60,8 +58,14 @@ export sp="/-\|"
 AWS_REGION='eu-west-1'
 ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
 
+
+# get version number
+LZ_VERSION=`cat EC-SLZ-Version.txt | xargs`
+
 # parameters for scripts
 CFN_BUCKETS_TEMPLATE='CFN/EC-lz-s3-buckets.yml'
+CFN_LAMBDAS_TEMPLATE='CFN/EC-lz-logshipper-lambdas.yml'
+CFN_LAMBDAS_BUCKET_TEMPLATE='CFN/EC-lz-s3-bucket-lambda-code.yml'
 CFN_GUARDDUTY_TEMPLATE_GLOBAL='CFN/EC-lz-Config-Guardduty-all-regions.yml'
 CFN_LOG_TEMPLATE='CFN/EC-lz-config-cloudtrail-logging.yml'
 CFN_GUARDDUTY_DETECTOR_TEMPLATE='CFN/EC-lz-guardDuty-detector.yml'
@@ -83,6 +87,8 @@ CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'
 #   ---------------------
 display_help() {
 
+    echo "Landing Zone installation script for SECLOG account version $LZ_Version"
+    echo ""
     echo "Usage: $0 [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile> --notificationemail <Notification Email> --logdestination <Log Destination DG name> [--cloudtrailintegration <true|false] [--guarddutyintegration <true|false>] [--securityhubintegration <true|false>] [--batch <true|false>]"
     echo ""
     echo "   Provide "
@@ -135,6 +141,7 @@ configure_seclog() {
     echo ""
     echo "- This script will configure a the SecLog account with following settings:"
     echo "   ----------------------------------------------------"
+    echo "     Landing Zone script version:         $LZ_VERSION"
     echo "     SecLog Account to be configured:     $seclogprofile"
     echo "     SecLog Account Id:                   $SECLOG_ACCOUNT_ID"
     echo "     Security Notifications e-mail:       $notificationemail"
@@ -165,10 +172,12 @@ configure_seclog() {
     echo "   - /org/member/SecLogMasterAccountId"
     echo "   - /org/member/SecLogOU"
     echo "   - /org/member/SecLog_notification-mail"
-
+    echo "    - /org/member/SecLogVersion"
+    
     aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value $notificationemail --overwrite
     aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $SECLOG_ACCOUNT_ID --overwrite
     aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogOU --type String --value $ORG_OU_ID --overwrite
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite
 
     #   ------------------------------------
     #   Create CFN template for AdministrationRole and ExecutionRole
@@ -223,6 +232,64 @@ configure_seclog() {
     #Storing the KMSCloudTrailKeyArn into SSM Parameter Store
     aws --profile $seclogprofile ssm put-parameter --name /org/member/KMSCloudtrailKey_arn --type String --value $KMS_KEY_ARN --overwrite &>/dev/null
 
+
+    #   ------------------------------------
+    #   Logshipper lambdas for CloudTrail and AWSConfig ...
+    #   ------------------------------------
+
+    echo ""
+    echo "- Logshipper lambdas for CloudTrail and AWSConfig ... "
+    echo "-----------------------------------------------------------"
+    echo ""
+
+    
+    REPO="lambda-artefacts-$SECLOG_ACCOUNT_ID"
+
+    aws cloudformation create-stack \
+    --stack-name 'SECLZ-LogShipper-Lambdas-Bucket' \
+    --template-body file://$CFN_LAMBDAS_BUCKET_TEMPLATE \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --enable-termination-protection \
+    --profile $seclogprofile
+    
+    StackName=SECLZ-LogShipper-Lambdas-Bucket
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+
+    NOW=`date +"%d%m%Y"`
+    LOGSHIPPER_TEMPLATE="EC-lz-logshipper-lambdas-packaged.yml"
+    LOGSHIPPER_TEMPLATE_WITH_CODE="EC-lz-logshipper-lambdas.yml"
+    CLOUDTRAIL_LAMBDA_CODE="CloudtrailLogShipper-$NOW.zip"
+    CONFIG_LAMBDA_CODE="ConfigLogShipper-$NOW.zip"
+
+    zip -j $CLOUDTRAIL_LAMBDA_CODE LAMBDAS/CloudtrailLogShipper.py
+    zip -j $CONFIG_LAMBDA_CODE LAMBDAS/ConfigLogShipper.py
+
+    
+    awk -v cl=$CLOUDTRAIL_LAMBDA_CODE -v co=$CONFIG_LAMBDA_CODE '{ sub(/##cloudtrailCodeURI##/,cl);gsub(/##configCodeURI##/,co);print }' $CFN_LAMBDAS_TEMPLATE > $LOGSHIPPER_TEMPLATE_WITH_CODE
+
+    aws cloudformation package --template $LOGSHIPPER_TEMPLATE_WITH_CODE --s3-bucket $REPO --output-template-file $LOGSHIPPER_TEMPLATE --profile $seclogprofile
+
+    aws cloudformation deploy --stack-name  'SECLZ-LogShipper-Lambdas' \
+    --template-file $LOGSHIPPER_TEMPLATE \
+    --capabilities CAPABILITY_IAM \
+    --profile $seclogprofile
+
+
+    StackName=SECLZ-LogShipper-Lambdas
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    
+    aws cloudformation update-termination-protection \
+        --enable-termination-protection \
+        --stack-name $StackName \
+        --profile $seclogprofile
+
+    rm -rf $LOGSHIPPER_TEMPLATE
+    rm -rf $LOGSHIPPER_TEMPLATE_WITH_CODE
+    rm -rf $CLOUDTRAIL_LAMBDA_CODE
+    rm -rf $CONFIG_LAMBDA_CODE
 
     #   ------------------------------------
     #   Cloudtrail bucket / Config bucket / Access_log bucket ...

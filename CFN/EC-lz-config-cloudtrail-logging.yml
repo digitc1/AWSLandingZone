@@ -53,6 +53,10 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Description: Email for the security notifications
     Default: "/org/member/SecLog_notification-mail"
+  DigitFMB:
+    Type: String
+    Description: Backup Email for the security notifications
+    Default: "DIGIT-CLOUD-LANDING-ZONE@ec.europa.eu"
   CloudtrailKMSarn:
     Type: AWS::SSM::Parameter::Value<String>
     Description: arn for KMS key to encrypt cloudtrail
@@ -328,8 +332,10 @@ Resources:
       DisplayName: !Ref NotifyDisplayName
       TopicName: !Ref NotifyTopicName
       Subscription:
-      - Protocol: email
-        Endpoint: !Ref NotifyEmail
+        - Protocol: email
+          Endpoint: !Ref NotifyEmail
+        - Protocol: email
+          Endpoint: !Ref DigitFMB
   
   SNSNotificationPolicy:
     Type: 'AWS::SNS::TopicPolicy'
