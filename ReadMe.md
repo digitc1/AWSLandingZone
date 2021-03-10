@@ -86,18 +86,24 @@ $ ./EC-Setup-SecLog.sh--seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLU
 
 ### Update SECLOG account 
 
-This script will update the existing stacks (where applicable) of the secure landing zone in the seclog account to the latest version. 
-
-Run the script
+Updates are now based on the version of the landing zone to be upgraded. Depending on the version, different parameters may be required so the best approach is to execute the script without any parameter and check for the instructions provided by the script. For instance, if we are upgrating to version 1.3.3, run the following commands:
 ```
-$ ./EC-Update-SecLog.sh --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2  --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest
+$ cd ./Updates/1.3.3
+$ sh ./EC-Update-SecLog.sh  
 ```
+The script will output the following help message:
 
-Depending on the version being updated, the user may be required to execute a 2nd stage of the LZ update script. Check if there is a folder under ./Updates that corresponds to the current version of the LZ being deployed. If so, execute the corresponding EC-Update-Client.sh script from that folder. The script of each update version may have specific script parameters, please check first before executing.
-
-Example: Upgrading the LZ on the seclog account to version 1.2.6:
 ```
-$ sh ./Updates/1.2.6/EC-Update-SecLog.sh --seclogprofile D3_seclog --guarddutyintegration true
+Usage: ./EC-Update-SecLog.sh --seclogprofile <SecLog Profile>
+   Provide 
+   --seclogprofile        : The profile of the seclog account as configured in your AWS profile"
+```
+So in this case, to execute the update script, run the following:
+
+```
+$ sh ./EC-Update-SecLog.sh  --seclogprofile D3_SECLOG 
+```
+It's important to note that the LZ versions should only be updated in sequence, meaning if upgrading from 1.3.0 to 1.3.3, the operation must execute all the update scripts (i.e. 1.3.1 and 1.3.2) before upgrading to the latest version.
 ```
 
 **Run script in batch mode - no confirmation asked from user**
@@ -208,24 +214,24 @@ For the 3rd stage, first check in the SECLOG account if all stackset instances h
 
 ### Update client account  
 
-This script will update the existing stacks (where applicable) of secure landing zone on the client account to the latest version. 
+Updates are now based on the version of the landing zone to be upgraded. Depending on the version, different parameters may be required so the best approach is to execute the script without any parameter and check for the instructions provided by the script. For instance, if we are upgrating to version 1.3.3, run the following commands:
+```
+$ cd ./Updates/1.3.3
+$ sh ./EC-Update-Client.sh  
+```
+The script will output the following help message:
 
-Run the script
 ```
-$ ./EC-Update-Client.sh  --oganisation DIGIT_ORG_ACC --clientaccprofile D3_Acc1 
+Usage: $0 --seclogprofile <Client Acc Profile>
+   Provide 
+   --clientaccprofile        : The profile of the client account as configured in your AWS profile"
 ```
+So in this case, to execute the update script, run the following:
 
-Depending on the version being updated, the user may be required to execute a 2nd stage of the LZ update script. Check if there is a folder under ./Updates that corresponds to the current version of the LZ being deployed. If so, execute the corresponding EC-Update-Client.sh script from that folder. The script of each update version may have specific script parameters, please check first before executing.
-
-Example: Upgrading the LZ on the client account to version 1.2.6:
 ```
-$ sh ./Updates/1.2.6/EC-Update-Client.sh --clientaccprofile D3_Acc1 --seclogprofile D3_seclog --guarddutyintegration true
+$ sh ./EC-Update-Client.sh --clientaccprofile D3_Acc1 
 ```
-
-**Run script in batch mode - no confirmation asked from user**
-```
-$ ./EC-Update-Client.sh  --clientaccprofile D3_Acc1  --batch true
-```
+It's important to note that the LZ versions should only be updated in sequence, meaning if upgrading from 1.3.0 to 1.3.3, the operation must execute all the update scripts (i.e. 1.3.1 and 1.3.2) before upgrading to the latest version.
 
 ### Downgrade Secure Landing zone - disable SECLOG to SOC integration
 
