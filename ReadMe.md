@@ -137,7 +137,7 @@ To configure the Client  account that you just created, we'll need to run the *E
 
 Run the script
 ```
-$ ./EC-Setup-Client.sh  --oganisation DIGIT_ORG_ACC --clientaccprofile D3_Acc1 --seclogprofile D3_seclog
+$ ./EC-Setup-Client.sh --clientaccprofile D3_Acc1 --seclogprofile D3_seclog
 ```
 
 Wait for the execution of the installation script to finish. When done, the user will see a message with the following instructions:
@@ -158,8 +158,36 @@ Check in the SECLOG account if all stackset instances have been deployed, and wh
 
 **Run script in batch mode - no confirmation asked from user**
 ```
-$ ./EC-Setup-Client.sh  --clientaccprofile D3_Acc1 --seclogprofile D3_seclog --batch true
+$ ./EC-Setup-Client.sh --clientaccprofile D3_Acc1 --seclogprofile D3_seclog --batch true
 ```
+
+Wait for the execution of the installation script to finish. When done, the user will see a message with the following instructions:
+```
+--------------------------------------------------------------------------------------------------------------------
+|                                         ATTENTION PLEASE:                                                        |
+--------------------------------------------------------------------------------------------------------------------
+|                                                                                                                  |
+|                                                                                                                  |
+|  Batch mode has been selected. You'll be required to execute an intermediary step to create instances from       |
+|  two stacksets provisioned on the seclog account. When the batch installation of the LZ script finishes,         |
+|  please execute the following command:                                                                           |
+|                                                                                                                  |
+|               sh ./SH/EC-Install-Stacksets-from-SecLog-Account.sh 001122334455,006677889900,...  $seclogprofile  |
+|                                                                                                                  |
+|  where the first parameter (comma separated) are the client account IDs where the LZ has been installed and      |
+|  the second parameter is the SECLOG account profile.                                                             |
+|                                                                                                                  |
+|  Please check the installation of the stackset instances from the AWS console for the SECLOG account. As soon    |
+|  all the instances are deployed, please execute the 2nd stage of the LZ installation with the following command  |
+|                                                                                                                  |
+|               sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh $clientaccprofile                            |
+|                                                                                                                  |
+--------------------------------------------------------------------------------------------------------------------
+```
+
+This is a 3 stage process.
+
+Finnally check in the SECLOG account if all stackset instances have been deployed, and when all is done, copy and paste the command as shown to execute it.
 
 ### Update client account  
 
