@@ -137,8 +137,13 @@ To configure the Client  account that you just created, we'll need to run the *E
 
 Run the script
 ```
-$ ./EC-Setup-Client.sh --clientaccprofile D3_Acc1 --seclogprofile D3_seclog
+$ ./EC-Setup-Client.sh --organisation EC_BROKER_ADM --clientaccprofile D3_Acc1 --seclogprofile D3_seclog
 ```
+Or
+```
+$ ./EC-Setup-Client.sh --clientaccountemail digit-cloud-tech-account-aXXX@ec.europa.eu --clientaccprofile D3_Acc1 --seclogprofile D3_seclog
+```
+
 
 Wait for the execution of the installation script to finish. When done, the user will see a message with the following instructions:
 ```
@@ -157,8 +162,17 @@ Wait for the execution of the installation script to finish. When done, the user
 Check in the SECLOG account if all stackset instances have been deployed, and when all is done, copy and paste the command as shown to execute it.
 
 **Run script in batch mode - no confirmation asked from user**
+
+This is a 3 stage process. First execute the setup script to deploy the base components of the LZ on the  client account by issuing the following command:
+
 ```
-$ ./EC-Setup-Client.sh --clientaccprofile D3_Acc1 --seclogprofile D3_seclog --batch true
+$ ./EC-Setup-Client.sh --organisation EC_BROKER_ADM  --clientaccprofile D3_Acc1 --seclogprofile D3_seclog --batch true
+```
+
+Or, if thte organisation account is not available, use the following:
+
+```
+$ ./EC-Setup-Client.sh --clientaccountemail digit-cloud-tech-account-aXXX@ec.europa.eu --clientaccprofile D3_Acc1 --seclogprofile D3_seclog --batch true
 ```
 
 Wait for the execution of the installation script to finish. When done, the user will see a message with the following instructions:
@@ -172,7 +186,7 @@ Wait for the execution of the installation script to finish. When done, the user
 |  two stacksets provisioned on the seclog account. When the batch installation of the LZ script finishes,         |
 |  please execute the following command:                                                                           |
 |                                                                                                                  |
-|               sh ./SH/EC-Install-Stacksets-from-SecLog-Account.sh 001122334455,006677889900,...  $seclogprofile  |
+|               sh ./SH/EC-Install-Stacksets-from-SecLog-Account.sh 001111111111,002222222222,...  $seclogprofile  |
 |                                                                                                                  |
 |  where the first parameter (comma separated) are the client account IDs where the LZ has been installed and      |
 |  the second parameter is the SECLOG account profile.                                                             |
@@ -185,9 +199,12 @@ Wait for the execution of the installation script to finish. When done, the user
 --------------------------------------------------------------------------------------------------------------------
 ```
 
-This is a 3 stage process.
+The second stage is to deploy the stackset instances on all regions for all accounts that were installed as part of the batch execution. The *EC-Install-Stacksets-from-SecLog-Account.sh* will require 2 parameters:
 
-Finnally check in the SECLOG account if all stackset instances have been deployed, and when all is done, copy and paste the command as shown to execute it.
+* CLIENT ACCOUNT IDs       : Comma separated list of all accounts where the stackset instances are to be installed
+* SECLOG PROFILE          : The SECLOG account from where to pull the stacksets
+
+For the 3rd stage, first check in the SECLOG account if all stackset instances have been deployed. When it's all is done, execute the last command from the message above for "all" client accounts..
 
 ### Update client account  
 
