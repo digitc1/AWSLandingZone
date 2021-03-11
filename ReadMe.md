@@ -96,17 +96,20 @@ The script will output the following help message:
 ```
 Usage: ./EC-Update-SecLog.sh --seclogprofile <SecLog Profile>
    Provide 
-   --seclogprofile        : The profile of the seclog account as configured in your AWS profile"
+   --seclogprofile : The profile of the seclog account as configured in your AWS profile
 ```
+
 So in this case, to execute the update script, run the following:
 
 ```
 $ sh ./EC-Update-SecLog.sh  --seclogprofile D3_SECLOG 
 ```
+
 It's important to note that the LZ versions should only be updated in sequence, meaning if upgrading from 1.3.0 to 1.3.3, the operation must execute all the update scripts (i.e. 1.3.1 and 1.3.2) before upgrading to the latest version.
-```
+
 
 **Run script in batch mode - no confirmation asked from user**
+
 ```
 $ ./EC-Update-SecLog.sh --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2  --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest --batch true
 ```
@@ -118,6 +121,7 @@ To create a new project account, we'll need to run the "EC-Create-Account.sh" sc
 - The email address of this account you wish (for example 'D3_Acc1@ec.europa.eu')
 
 Run the script
+
 ```
 $ ./EC-Create-Account.sh D3_Acc1 D3_Acc1@ec.europa.eu
 ```
@@ -125,6 +129,7 @@ $ ./EC-Create-Account.sh D3_Acc1 D3_Acc1@ec.europa.eu
 Run this script for every new project accounts you wish to create.
 
 ### Configure the client account (run this script on a new or existing account you whish to add)
+
 
 This script will add a new (or existing) client account to the secure landing zone environment.
 For existing accounts, make sure the SECLZ-CreateCloudBrokerRole exists in the client account, otherwise execute this script in the client account first: "https://webgate.ec.europa.eu/CITnet/stash/projects/CLOUDLZ/repos/aws-secure-landing-zone/raw/EC-landingzone-v2/CFN/EC-lz-CloudBroker-Role.yml?at=refs%2Fheads%2Fmaster"
@@ -142,16 +147,20 @@ To configure the Client  account that you just created, we'll need to run the *E
 * --batch              : Flag to enable or disable batch execution mode. Default: false (optional)
 
 Run the script
+
 ```
 $ ./EC-Setup-Client.sh --organisation EC_BROKER_ADM --clientaccprofile D3_Acc1 --seclogprofile D3_seclog
 ```
+
 Or
+
 ```
 $ ./EC-Setup-Client.sh --clientaccountemail digit-cloud-tech-account-aXXX@ec.europa.eu --clientaccprofile D3_Acc1 --seclogprofile D3_seclog
 ```
 
 
 Wait for the execution of the installation script to finish. When done, the user will see a message with the following instructions:
+
 ```
 ---------------------------------------------------------------------------------------------------------
 |                                         ATTENTION PLEASE:                                             |
@@ -165,6 +174,7 @@ Wait for the execution of the installation script to finish. When done, the user
 |                                                                                                       |
 ---------------------------------------------------------------------------------------------------------
 ```
+
 Check in the SECLOG account if all stackset instances have been deployed, and when all is done, copy and paste the command as shown to execute it.
 
 **Run script in batch mode - no confirmation asked from user**
@@ -182,6 +192,7 @@ $ ./EC-Setup-Client.sh --clientaccountemail digit-cloud-tech-account-aXXX@ec.eur
 ```
 
 Wait for the execution of the installation script to finish. When done, the user will see a message with the following instructions:
+
 ```
 --------------------------------------------------------------------------------------------------------------------
 |                                         ATTENTION PLEASE:                                                        |
