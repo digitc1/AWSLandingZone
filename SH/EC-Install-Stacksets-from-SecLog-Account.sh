@@ -48,10 +48,10 @@ create_stackset_instances_client() {
   echo ""
   echo "Create stackset instances on client account from Seclog account"
   echo "========================================="
-  echo "Utilisation: Script will create stackset instances on the account ids provided from to SecLog account on multiple AWS regions"
+  echo "Script will create stackset instances on the account ids provided from to SecLog account on multiple AWS regions"
 
-  echo "   Following account ids: $CLIENT_IDS"
-  echo "   Will be invited to this SecLog account: $SECLOG_PROFILE"
+  echo "   Client account id(s): $CLIENT_IDS"
+  echo "   SecLog account:       $SECLOG_PROFILE"
   
   SECLOG_ID=`aws --profile $SECLOG_PROFILE sts get-caller-identity --query 'Account' --output text`
   
@@ -66,7 +66,7 @@ create_stackset_instances_client() {
   # Create StackInstances (globally except Ireland)
   aws cloudformation create-stack-instances \
   --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
-  --accounts $CLIENT_IDS \
+  --accounts `echo $CLIENT_IDS | sed 's/,/ /g'` \
   --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
   --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ID \
   --regions $ALL_REGIONS_EXCEPT_IRELAND \
@@ -83,7 +83,7 @@ create_stackset_instances_client() {
   # Create StackInstances (globally excluding Ireland)
     aws cloudformation create-stack-instances \
     --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
-    --accounts $CLIENT_IDS \
+    --accounts `echo $CLIENT_IDS | sed 's/,/ /g'` \
     --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ID \
     --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \

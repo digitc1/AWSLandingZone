@@ -144,9 +144,9 @@ invite_client() {
     --profile $SECLOG_PROFILE
 
 
-  if [ "$BATCH" -ne "true" ] ; then
+  if [ "$BATCH" != "true" ] ; then
     
-    sh ./EC-Install-Stacksets-from-SecLog-Account.sh $CLIENT_ID $SECLOG_PROFILE
+    sh ./SH/EC-Install-Stacksets-from-SecLog-Account.sh $CLIENT_ID $SECLOG_PROFILE
     
   fi
 
