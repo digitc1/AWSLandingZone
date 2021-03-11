@@ -86,18 +86,24 @@ $ ./EC-Setup-SecLog.sh--seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLU
 
 ### Update SECLOG account 
 
-This script will update the existing stacks (where applicable) of the secure landing zone in the seclog account to the latest version. 
-
-Run the script
+Updates are now based on the version of the landing zone to be upgraded. Depending on the version, different parameters may be required so the best approach is to execute the script without any parameter and check for the instructions provided by the script. For instance, if we are upgrating to version 1.3.3, run the following commands:
 ```
-$ ./EC-Update-SecLog.sh --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2  --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest
+$ cd ./Updates/1.3.3
+$ sh ./EC-Update-SecLog.sh  
 ```
+The script will output the following help message:
 
-Depending on the version being updated, the user may be required to execute a 2nd stage of the LZ update script. Check if there is a folder under ./Updates that corresponds to the current version of the LZ being deployed. If so, execute the corresponding EC-Update-Client.sh script from that folder. The script of each update version may have specific script parameters, please check first before executing.
-
-Example: Upgrading the LZ on the seclog account to version 1.2.6:
 ```
-$ sh ./Updates/1.2.6/EC-Update-SecLog.sh --seclogprofile D3_seclog --guarddutyintegration true
+Usage: ./EC-Update-SecLog.sh --seclogprofile <SecLog Profile>
+   Provide 
+   --seclogprofile        : The profile of the seclog account as configured in your AWS profile"
+```
+So in this case, to execute the update script, run the following:
+
+```
+$ sh ./EC-Update-SecLog.sh  --seclogprofile D3_SECLOG 
+```
+It's important to note that the LZ versions should only be updated in sequence, meaning if upgrading from 1.3.0 to 1.3.3, the operation must execute all the update scripts (i.e. 1.3.1 and 1.3.2) before upgrading to the latest version.
 ```
 
 **Run script in batch mode - no confirmation asked from user**
@@ -137,8 +143,13 @@ To configure the Client  account that you just created, we'll need to run the *E
 
 Run the script
 ```
-$ ./EC-Setup-Client.sh  --oganisation DIGIT_ORG_ACC --clientaccprofile D3_Acc1 --seclogprofile D3_seclog
+$ ./EC-Setup-Client.sh --organisation EC_BROKER_ADM --clientaccprofile D3_Acc1 --seclogprofile D3_seclog
 ```
+Or
+```
+$ ./EC-Setup-Client.sh --clientaccountemail digit-cloud-tech-account-aXXX@ec.europa.eu --clientaccprofile D3_Acc1 --seclogprofile D3_seclog
+```
+
 
 Wait for the execution of the installation script to finish. When done, the user will see a message with the following instructions:
 ```
@@ -157,30 +168,70 @@ Wait for the execution of the installation script to finish. When done, the user
 Check in the SECLOG account if all stackset instances have been deployed, and when all is done, copy and paste the command as shown to execute it.
 
 **Run script in batch mode - no confirmation asked from user**
+
+This is a 3 stage process. First execute the setup script to deploy the base components of the LZ on the  client account by issuing the following command:
+
 ```
-$ ./EC-Setup-Client.sh  --clientaccprofile D3_Acc1 --seclogprofile D3_seclog --batch true
+$ ./EC-Setup-Client.sh --organisation EC_BROKER_ADM  --clientaccprofile D3_Acc1 --seclogprofile D3_seclog --batch true
 ```
+
+Or, if thte organisation account is not available, use the following:
+
+```
+$ ./EC-Setup-Client.sh --clientaccountemail digit-cloud-tech-account-aXXX@ec.europa.eu --clientaccprofile D3_Acc1 --seclogprofile D3_seclog --batch true
+```
+
+Wait for the execution of the installation script to finish. When done, the user will see a message with the following instructions:
+```
+--------------------------------------------------------------------------------------------------------------------
+|                                         ATTENTION PLEASE:                                                        |
+--------------------------------------------------------------------------------------------------------------------
+|                                                                                                                  |
+|                                                                                                                  |
+|  Batch mode has been selected. You'll be required to execute an intermediary step to create instances from       |
+|  two stacksets provisioned on the seclog account. When the batch installation of the LZ script finishes,         |
+|  please execute the following command:                                                                           |
+|                                                                                                                  |
+|               sh ./SH/EC-Install-Stacksets-from-SecLog-Account.sh 001111111111,002222222222,...  $seclogprofile  |
+|                                                                                                                  |
+|  where the first parameter (comma separated) are the client account IDs where the LZ has been installed and      |
+|  the second parameter is the SECLOG account profile.                                                             |
+|                                                                                                                  |
+|  Please check the installation of the stackset instances from the AWS console for the SECLOG account. As soon    |
+|  all the instances are deployed, please execute the 2nd stage of the LZ installation with the following command  |
+|                                                                                                                  |
+|               sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh $clientaccprofile                            |
+|                                                                                                                  |
+--------------------------------------------------------------------------------------------------------------------
+```
+
+The second stage is to deploy the stackset instances on all regions for all accounts that were installed as part of the batch execution. The *EC-Install-Stacksets-from-SecLog-Account.sh* will require 2 parameters:
+
+* CLIENT ACCOUNT IDs       : Comma separated list of all accounts where the stackset instances are to be installed
+* SECLOG PROFILE          : The SECLOG account from where to pull the stacksets
+
+For the 3rd stage, first check in the SECLOG account if all stackset instances have been deployed. When it's all is done, execute the last command from the message above for "all" client accounts..
 
 ### Update client account  
 
-This script will update the existing stacks (where applicable) of secure landing zone on the client account to the latest version. 
+Updates are now based on the version of the landing zone to be upgraded. Depending on the version, different parameters may be required so the best approach is to execute the script without any parameter and check for the instructions provided by the script. For instance, if we are upgrating to version 1.3.3, run the following commands:
+```
+$ cd ./Updates/1.3.3
+$ sh ./EC-Update-Client.sh  
+```
+The script will output the following help message:
 
-Run the script
 ```
-$ ./EC-Update-Client.sh  --oganisation DIGIT_ORG_ACC --clientaccprofile D3_Acc1 
+Usage: $0 --seclogprofile <Client Acc Profile>
+   Provide 
+   --clientaccprofile        : The profile of the client account as configured in your AWS profile"
 ```
+So in this case, to execute the update script, run the following:
 
-Depending on the version being updated, the user may be required to execute a 2nd stage of the LZ update script. Check if there is a folder under ./Updates that corresponds to the current version of the LZ being deployed. If so, execute the corresponding EC-Update-Client.sh script from that folder. The script of each update version may have specific script parameters, please check first before executing.
-
-Example: Upgrading the LZ on the client account to version 1.2.6:
 ```
-$ sh ./Updates/1.2.6/EC-Update-Client.sh --clientaccprofile D3_Acc1 --seclogprofile D3_seclog --guarddutyintegration true
+$ sh ./EC-Update-Client.sh --clientaccprofile D3_Acc1 
 ```
-
-**Run script in batch mode - no confirmation asked from user**
-```
-$ ./EC-Update-Client.sh  --clientaccprofile D3_Acc1  --batch true
-```
+It's important to note that the LZ versions should only be updated in sequence, meaning if upgrading from 1.3.0 to 1.3.3, the operation must execute all the update scripts (i.e. 1.3.1 and 1.3.2) before upgrading to the latest version.
 
 ### Downgrade Secure Landing zone - disable SECLOG to SOC integration
 

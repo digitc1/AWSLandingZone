@@ -19,6 +19,7 @@
 #
 #   v1.0    J. Vandenbergen   Initial Version
 #   v1.1    A. Levret         Update Config aggregator (create, add account to existing aggregator)
+#   v1.2    J. Silva          Extracted the execution of the stackset instances installation to a separate script
 #   --------------------------------------------------------
 
 # --------------------
@@ -28,18 +29,18 @@
 CLIENT_PROFILE=$1
 SECLOG_PROFILE=$2
 CLIENT_ACCOUNT_EMAIL=$3
-ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
-
+BATCH=$4
 #   ---------------------
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 CLIENT_PROFILE SECLOG_PROFILE CLIENTACCOUNTEMAIL" >&2
+    echo "Usage: $0 CLIENT_PROFILE SECLOG_PROFILE CLIENTACCOUNTEMAIL BATCH" >&2
     echo
     echo "   Provide"
     echo "     - client account profile"
     echo "     - SecLog account profile"
     echo "     - root client account email"
+    echo "     - batch flag (true/false)"
     echo
     exit 1
 }
@@ -143,56 +144,11 @@ invite_client() {
     --profile $SECLOG_PROFILE
 
 
-  #   -------------------------------------------------------------------------
-  #   Enabling config and security Hub globally in all regions (except Ireland)
-  #   -------------------------------------------------------------------------
-
-  echo "Enabling config and SecurityHub globally in all regions (except Ireland)"
-  echo "--------------"
-  echo ""
-  
-  # Create StackInstances (globally except Ireland)
-  aws cloudformation create-stack-instances \
-  --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
-  --accounts $CLIENT_ID \
-  --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
-  --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ID \
-  --regions $ALL_REGIONS_EXCEPT_IRELAND \
-  --profile $SECLOG_PROFILE
-
-
-    #   --------------------------------------------------------------
-    #   Granting the client to use Event-Bus in SecLog for all regions
-    #   --------------------------------------------------------------
-
-    # echo ""
-    # echo "Granting new account access to EventBus on all regions"
-    # echo "--------------"
-    # echo ""
-
-    # ALL_REGIONS_EXCEPT_IRELAND_ARRAY=`echo $ALL_REGIONS_EXCEPT_IRELAND | sed -e 's/\[//g;s/\]//g;s/,/ /g;s/\"//g'`
-	  # for i in ${ALL_REGIONS_EXCEPT_IRELAND_ARRAY[@]}; 
-    #   do
-    #     aws --profile $SECLOG_PROFILE --region $i events put-permission --action events:PutEvents --principal $CLIENT_ID --statement-id $SECLOG_PROFILE
-    #  done
-
-
-  #   -------------------------------------------------------------------------
-  #   Enabling guardduty globally in all regions (except Ireland)
-  #   -------------------------------------------------------------------------
-
-  echo "Enabling guardduty globally in all regions"
-  echo "--------------"
-  echo ""
-
-   # Create StackInstances (globally excluding Ireland)
-    aws cloudformation create-stack-instances \
-    --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
-    --accounts $CLIENT_ID \
-    --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ID \
-    --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
-    --regions $ALL_REGIONS_EXCEPT_IRELAND \
-    --profile $SECLOG_PROFILE
+  if [ "$BATCH" != "true" ] ; then
+    
+    sh ./SH/EC-Install-Stacksets-from-SecLog-Account.sh $CLIENT_ID $SECLOG_PROFILE
+    
+  fi
 
 }
 
