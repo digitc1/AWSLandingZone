@@ -131,6 +131,7 @@ Run this script for every new project accounts you wish to create.
 ### Configure the client account (run this script on a new or existing account you whish to add)
 
 This script will add a new (or existing) client account to the secure landing zone environment.
+
 For existing accounts, make sure the SECLZ-CreateCloudBrokerRole exists in the client account, otherwise execute this script in the client account first: "https://webgate.ec.europa.eu/CITnet/stash/projects/CLOUDLZ/repos/aws-secure-landing-zone/raw/EC-landingzone-v2/CFN/EC-lz-CloudBroker-Role.yml?at=refs%2Fheads%2Fmaster"
 
 This script will:
