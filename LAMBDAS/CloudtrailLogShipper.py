@@ -37,7 +37,7 @@ def lambda_handler(event, context):
   LOGGER.debug("Function name: %s", context.function_name)
   LOGGER.debug("Function version: %s", context.function_version)
   region = os.environ['AWS_REGION']
-  loggroup = '/aws/cloudtrail'
+  loggroup = get_cloudtrail_logggroup()
   account = sts.get_caller_identity()
   for record in event['Records']:
     filename = record['s3']['object']['key']
@@ -48,7 +48,7 @@ def lambda_handler(event, context):
     if not account['Account'] in filename and (isCloudTrail or isCloudTrailInsight):
         LOGGER.info('S3 object matching regexp detected: ' + filename)
         if isCloudTrailInsight:
-            loggroup = '/aws/cloudtrail/insight'
+            loggroup = get_insight_logggroup()
         bucketname = record['s3']['bucket']['name']
         LOGGER.debug('S3 bucket: ' + bucketname)
         l = re.split(r'/',filename)
@@ -317,3 +317,21 @@ def get_max_try():
         return os.environ['MAX_TRY']
     except KeyError:
         return 30
+
+def get_cloudtrail_logggroup():
+    """
+    This function gets the cloudtrail log group from the environment variables table.
+    """
+    try:
+        return os.environ['CLOUDTRAIL_LOG_GROUP']
+    except KeyError:
+        return '/aws/cloudtrail'
+
+def get_insight_logggroup():
+    """
+    This function gets the cloudtrail insight log group from the environment variables table.
+    """
+    try:
+        return os.environ['INSIGHT_LOG_GROUP']
+    except KeyError:
+        return '/aws/cloudtrail/insight'

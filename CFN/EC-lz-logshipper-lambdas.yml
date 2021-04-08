@@ -31,6 +31,20 @@ Parameters:
     Type: Number
     Default: 30
 
+  lambdaCloudTrailLogGroup:
+    Description: 'Lambda CloudTrail loggroup'
+    Type: String
+    Default: '/aws/cloudtrail'
+  
+  lambdaInsightLogGroup:
+    Description: 'Lambda CloudTrail Insight loggroup'
+    Type: String
+    Default: '/aws/cloudtrail/insight'
+
+  lambdaConfigLogGroup:    
+    Description: 'Lambda Config loggroup'
+    Type: String
+    Default: '/aws/events/config'
 
 Resources:
 
@@ -141,6 +155,8 @@ Resources:
           Variables:
             LOG_LEVEL: !Ref lambdaLogLevel
             MAX_TRY: !Ref lambdaMaxRetry
+            CLOUDTRAIL_LOG_GROUP: !Ref lambdaCloudTrailLogGroup
+            INSIGHT_LOG_GROUP: !Ref lambdaInsightLogGroup
 
     CloudTrailLogShipperLogGroup:
       Type: AWS::Logs::LogGroup
@@ -186,6 +202,7 @@ Resources:
           Variables:
             LOG_LEVEL: !Ref lambdaLogLevel
             MAX_TRY: !Ref lambdaMaxRetry
+            CONFIG_LOG_GROUP: !Ref lambdaConfigLogGroup
 
     ConfigLogShipperLogGroup:
       Type: AWS::Logs::LogGroup
