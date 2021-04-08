@@ -62,7 +62,7 @@ Parameters:
         Default: 'SECLZ-LogShipper-Lambdas'
 
     FilesRetentionInDays:
-        Description: 'Specifies the number of days you want to retain CloudTrail log events in the CloudWatch Logs.'
+        Description: 'Specifies the number of days you want to retain log files in the SLZ S3 buckets.'
         Type: Number
         Default: 60
         AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
