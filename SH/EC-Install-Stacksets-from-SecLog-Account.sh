@@ -67,7 +67,7 @@ create_stackset_instances_client() {
   aws cloudformation create-stack-instances \
   --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
   --accounts `echo $CLIENT_IDS | sed 's/,/ /g'` \
-  --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
+  --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5,RegionConcurrencyType=PARALLEL \
   --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ID \
   --regions $ALL_REGIONS_EXCEPT_IRELAND \
   --profile $SECLOG_PROFILE
@@ -85,9 +85,9 @@ create_stackset_instances_client() {
     --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
     --accounts `echo $CLIENT_IDS | sed 's/,/ /g'` \
     --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ID \
-    --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5 \
+    --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=5,RegionConcurrencyType=PARALLEL \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
-    --profile $SECLOG_PROFILE
+    --profile $SECLOG_PROFILEs
 
 }
 
