@@ -42,6 +42,7 @@ cloudtrailgroupname=${cloudtrailgroupname:-}
 insightgroupname=${insightgroupname:-}
 guarddutygroupname=${guarddutygroupname:-}
 securityhubgroupname=${securityhubgroupname:-}
+configgroupname=${configgroupname:-}
 
 while [ $# -gt 0 ]; do
 
@@ -104,10 +105,11 @@ display_help() {
     echo "   --cloudtrailintegration        : Flag to enable or disable CloudTrail seclog integration. Default: true (optional)"
     echo "   --guarddutyintegration         : Flag to enable or disable GuardDuty seclog integration. Default: true (optional)"
     echo "   --securityhubintegration       : Flag to enable or disable SecurityHub seclog integration. Default: true (optional)"
-    echo "   --cloudtrailgroupname          : The custom name for Cloudwatch CloudTrail loggroup name (optional)"
-    echo "   --insightgroupname             : The custom name for Cloudwatch CloudTrail Insight loggroup name (optional)"
-    echo "   --guarddutygroupname           : The custom name for Cloudwatch GuardDuty loggroup name (optional)"
-    echo "   --securityhubgroupname         : The custom name for Cloudwatch SecurityHub loggroup name (optional)"
+    echo "   --cloudtrailgroupname          : The custom name for CloudTrail Cloudwatch loggroup name (optional)"
+    echo "   --insightgroupname             : The custom name for CloudTrail Insight Cloudwatch loggroup name (optional)"
+    echo "   --guarddutygroupname           : The custom name for GuardDuty Cloudwatch loggroup name (optional)"
+    echo "   --securityhubgroupname         : The custom name for SecurityHub Cloudwatch loggroup name (optional)"
+    echo "   --configgroupname              : The custom name for AWSConfig Cloudwatch loggroup name (optional)"
     echo "   --batch                        : Flag to enable or disable batch execution mode. Default: false (optional)"
     echo ""
     exit 1
@@ -175,6 +177,10 @@ configure_seclog() {
         echo "     SecurityHub loggroup name:           $securityhubgroupname"
     fi
     
+    if  [ -z "$configgroupname" ] ; then
+        echo "     AWSConfig loggroup name:           $configgroupname"
+    fi
+    
     if [[ ("$cloudtrailintegration" == "true" || "$guarddutyintegration" == "true" || "$securityhubintegration" == "true" ) ]]; then
       echo "     Splunk Account Id:                   $SPLUNK_ACCOUNT_ID"
       echo "     Log Destination Name:                $FIREHOSE_DESTINATION_NAME"
@@ -201,20 +207,34 @@ configure_seclog() {
     echo "   - /org/member/SecLog_notification-mail"
     echo "    - /org/member/SecLogVersion"
 
-    if  [ -z "$cloudtrailgroupname" ] ; then
+    if  [ ! -z "$cloudtrailgroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite
+    else
+        $cloudtrailgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_cloudtrail-groupname" --output text --query 'Parameter.Value'`
     fi
     
-    if  [ -z "$insightgroupname" ] ; then
+    if  [ ! -z "$insightgroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite
+    else
+        $insightgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_insight-groupname" --output text --query 'Parameter.Value'`
     fi
     
-    if  [ -z "$guarddutygroupname" ] ; then
+    if  [ ! -z "$guarddutygroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
+    else
+        $guarddutygroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_guardduty-groupname" --output text --query 'Parameter.Value'`
     fi
     
-    if  [ -z "$securityhubgroupname" ] ; then
+    if  [ ! -z "$securityhubgroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite
+    else
+        $securityhubgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_securityhub-groupname" --output text --query 'Parameter.Value'`
+    fi
+
+    if  [ ! -z "$configgroupname" ] ; then
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite
+    else
+        $configgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_config-groupname" --output text --query 'Parameter.Value'`
     fi
     
     aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value $notificationemail --overwrite
