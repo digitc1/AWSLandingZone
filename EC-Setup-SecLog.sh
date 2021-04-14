@@ -564,6 +564,19 @@ configure_seclog() {
     echo "--------------------------------------------------"
     echo ""
 
+    resources='["arn:aws:logs:*:'$SECLOG_ACCOUNT_ID':log-group:/aws/events/*:*"'
+     
+    if  [ ! -z "$guarddutygroupname" ] ; then
+        resources+=',"arn:aws:logs:*:'$SECLOG_ACCOUNT_ID':log-group:'$guarddutygroupname':*"'
+    fi
+    if  [ ! -z "$securityhubgroupname" ] ; then
+        resources+=',"arn:aws:logs:*:'$SECLOG_ACCOUNT_ID':log-group:'$securityhubgroupname':*"'
+    fi
+    if  [ ! -z "$configgroupname" ] ; then
+        resources+=',"arn:aws:logs:*:'$SECLOG_ACCOUNT_ID':log-group:'$configgroupname':*"'
+    fi
+    resources+=']'
+
     cat > ./policy.json << EOM
 {
   "Version": "2012-10-17",
@@ -578,7 +591,7 @@ configure_seclog() {
         "logs:PutLogEvents",
         "logs:CreateLogStream"
       ],
-      "Resource": "arn:aws:logs:*:${SECLOG_ACCOUNT_ID}:log-group:/aws/events/*:*"
+      "Resource": ${resources}
     }
   ]
 }
