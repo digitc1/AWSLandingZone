@@ -550,7 +550,7 @@ EOM
     --stack-set-name 'SECLZ-Enable-Config-SecurityHub-Globally' \
     --accounts $SECLOG_ACCOUNT_ID \
     --parameter-overrides  ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
-    --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=10,RegionConcurrencyType=PARALLEL \
+    --operation-preferences FailureToleranceCount=9,MaxConcurrentCount=10,RegionConcurrencyType=PARALLEL \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $seclogprofile
 
@@ -579,7 +579,8 @@ EOM
     --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
     --accounts $SECLOG_ACCOUNT_ID \
     --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration \
-    --operation-preferences FailureToleranceCount=3,MaxConcurrentCount=10,RegionConcurrencyType=PARALLEL \
+    --operation-preferences FailureToleranceCount=9,MaxConcurrentCount=10,RegionConcurrencyType=PARALLEL \
+
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $seclogprofile
 
