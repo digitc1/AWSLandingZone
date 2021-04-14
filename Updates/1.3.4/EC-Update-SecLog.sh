@@ -125,11 +125,11 @@ update_seclog() {
     fi
 
     if  [ ! -z "$cloudtrailgroupname" ] ; then
-        echo "     Guardduty loggroup name:             $cloudtrailgroupname"
+        echo "     CloudTrail Insight loggroup name:             $cloudtrailgroupname"
     fi
     
     if  [ ! -z "$guarddutygroupname" ] ; then
-         echo "     CloudTrail Insight loggroup name:   $guarddutygroupname"
+         echo "    Guardduty loggroup name:   $guarddutygroupname"
     fi
     
     if  [ ! -z "$securityhubgroupname" ] ; then
