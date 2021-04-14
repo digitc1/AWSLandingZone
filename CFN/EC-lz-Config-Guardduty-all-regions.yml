@@ -86,7 +86,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Condition: IsSecLogMasterAccount
     Properties:
-      LogGroupName: !If [ HasGuardDutyLogsGroupName, !Ref AwsGuardDutyGroupName, !Ref '/aws/events/guardduty' ]
+      LogGroupName: !If [ HasGuardDutyLogsGroupName, !Ref AwsGuardDutyGroupName, '/aws/events/guardduty' ]
       RetentionInDays: !Ref LogsRetentionInDays
 
   AWSEventsInvokeEventBusSecLogRole:

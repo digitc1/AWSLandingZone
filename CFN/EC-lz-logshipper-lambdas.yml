@@ -169,8 +169,8 @@ Resources:
           Variables:
             LOG_LEVEL: !Ref lambdaLogLevel
             MAX_TRY: !Ref lambdaMaxRetry
-            CLOUDTRAIL_LOG_GROUP: !If [ HasCloudTrailLogGroupName, !Ref lambdaCloudTrailLogGroup, !Ref '/aws/cloudtrail' ] 
-            INSIGHT_LOG_GROUP: !If [ HasCloudTrailInsightsLogsGroupName, !Ref lambdaInsightLogGroup, !Ref '/aws/cloudtrail/insight' ] 
+            CLOUDTRAIL_LOG_GROUP: !If [ HasCloudTrailLogGroupName, !Ref lambdaCloudTrailLogGroup, '/aws/cloudtrail' ] 
+            INSIGHT_LOG_GROUP: !If [ HasCloudTrailInsightsLogsGroupName, !Ref lambdaInsightLogGroup, '/aws/cloudtrail/insight' ] 
 
     CloudTrailLogShipperLogGroup:
       Type: AWS::Logs::LogGroup
@@ -216,7 +216,7 @@ Resources:
           Variables:
             LOG_LEVEL: !Ref lambdaLogLevel
             MAX_TRY: !Ref lambdaMaxRetry
-            CONFIG_LOG_GROUP: !If [ HasAwsConfigLogGroupName, !Ref lambdaConfigLogGroup, !Ref '/aws/events/config' ]
+            CONFIG_LOG_GROUP: !If [ HasAwsConfigLogGroupName, !Ref lambdaConfigLogGroup, '/aws/events/config' ]
 
     ConfigLogShipperLogGroup:
       Type: AWS::Logs::LogGroup

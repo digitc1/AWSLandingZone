@@ -50,7 +50,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Condition: IsSecLogMasterAccount
     Properties:
-      LogGroupName:  !If [ HasSecurityHubLogsGroupName, !Ref SecurityHubLogsGroupName, !Ref '/aws/cloudtrail/insight' ] 
+      LogGroupName:  !If [ HasSecurityHubLogsGroupName, !Ref SecurityHubLogsGroupName, '/aws/cloudtrail/insight' ] 
       RetentionInDays: !Ref LogsRetentionInDays
 
   SecurityHubSubscriptionFilter:
