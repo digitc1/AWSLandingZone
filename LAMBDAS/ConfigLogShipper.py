@@ -298,25 +298,17 @@ def get_log_level():
     """
     This function gets the LogLevel from the environment variables table.
     """
-    try:
-        return os.environ['LOG_LEVEL']
-    except KeyError:
-        return "INFO"
+    return os.environ.get('LOG_LEVEL', 'INFO')
+
 
 def get_max_try():
     """
     This function gets the LogLevel from the environment variables table.
     """
-    try:
-        return os.environ['MAX_TRY']
-    except KeyError:
-        return 30
+    return os.environ.get('MAX_TRY', 30)
 
 def get_config_logggroup():
     """
     This function gets the config log group from the environment variables table.
     """
-    try:
-        return os.environ['CONFIG_LOG_GROUP']
-    except KeyError:
-        return '/aws/events/config'
+    return os.environ.get('CONFIG_LOG_GROUP', '/aws/events/config')

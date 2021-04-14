@@ -304,34 +304,23 @@ def get_log_level():
     """
     This function gets the LogLevel from the environment variables table.
     """
-    try:
-        return os.environ['LOG_LEVEL']
-    except KeyError:
-        return "INFO"
+    return os.environ.get('LOG_LEVEL', 'INFO')
+
 
 def get_max_try():
     """
     This function gets the LogLevel from the environment variables table.
     """
-    try:
-        return os.environ['MAX_TRY']
-    except KeyError:
-        return 30
+    return os.environ.get('MAX_TRY', 30)
 
 def get_cloudtrail_logggroup():
     """
     This function gets the cloudtrail log group from the environment variables table.
     """
-    try:
-        return os.environ['CLOUDTRAIL_LOG_GROUP']
-    except KeyError:
-        return '/aws/cloudtrail'
+    return os.environ.get('CLOUDTRAIL_LOG_GROUP', '/aws/cloudtrail')
 
 def get_insight_logggroup():
     """
     This function gets the cloudtrail insight log group from the environment variables table.
     """
-    try:
-        return os.environ['INSIGHT_LOG_GROUP']
-    except KeyError:
-        return '/aws/cloudtrail/insight'
+    return os.environ.get('INSIGHT_LOG_GROUP', '/aws/cloudtrail/insight')
