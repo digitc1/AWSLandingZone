@@ -162,11 +162,11 @@ configure_seclog() {
     echo "     SecurityHub integration with Splunk: $securityhubintegration"
     
     if  [ ! -z "$insightgroupname" ] ; then
-        echo "     CloudTrail loggroup name:            $insightgroupname"
+        echo "     CloudTrail Insight loggroup name:            $insightgroupname"
     fi
 
     if  [ ! -z "$cloudtrailgroupname" ] ; then
-        echo "     CloudTrail Insight loggroup name:             $cloudtrailgroupname"
+        echo "     CloudTrail loggroup name:             $cloudtrailgroupname"
     fi
     
     if  [ ! -z "$guarddutygroupname" ] ; then
