@@ -11,6 +11,7 @@
 #   --------------------
 
 clientaccprofile=${clientaccprofile:-}
+seclogprofile=${seclogprofile:-}
 
 while [ $# -gt 0 ]; do
 
@@ -31,8 +32,8 @@ export sp="/-\|"
 #       Templates
 #   --------------------
 
-CFN_GUARDDUTY_DETECTOR_TEMPLATE='./CFN/EC-lz-guardDuty-detector.yml'
-
+CFN_GUARDDUTY_DETECTOR_TEMPLATE='../../CFN/EC-lz-guardDuty-detector.yml'
+CFN_NOTIFICATIONS_CT_TEMPLATE='../../CFN/EC-lz-notifications.yml'
 
 #   ---------------------
 #   The command line help
@@ -43,6 +44,7 @@ display_help() {
     echo ""
     echo "   Provide "
     echo "   --clientaccprofile        : The profile of the client account as configured in your AWS profile"
+    echo "   --seclogprofile           : The account profile of the central SecLog account as configured in your AWS profile"
     echo ""
     exit 1
 }
@@ -70,6 +72,38 @@ update_client() {
     
     aws --profile $clientaccprofile ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite
 
+    $cloudtrailgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_cloudtrail-groupname" --output text --query 'Parameter.Value'`
+    $insightgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_insight-groupname" --output text --query 'Parameter.Value'`
+    $guarddutygroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_guardduty-groupname" --output text --query 'Parameter.Value'`
+    $securityhubgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_securityhub-groupname" --output text --query 'Parameter.Value'`
+    $configgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_config-groupname" --output text --query 'Parameter.Value'`
+    
+    
+
+    if  [ ! -z "$cloudtrailgroupname" ] ; then
+        echo "    - /org/member/SecLog_cloudtrail-groupname"
+        aws --profile $clientaccprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite
+    fi
+    
+    if  [ ! -z "$insightgroupname" ] ; then
+        echo "    - /org/member/SecLog_insight-groupname"
+        aws --profile $clientaccprofile ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite
+    fi
+    
+    if  [ ! -z "$guarddutygroupname" ] ; then
+        echo "    - /org/member/SecLog_guardduty-groupname"
+        aws --profile $clientaccprofile ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
+    fi
+    
+    if  [ ! -z "$securityhubgroupname" ] ; then
+        echo "    - /org/member/SecLog_securityhub-groupname"
+        aws --profile $clientaccprofile ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite
+    fi
+
+    if  [ ! -z "$configgroupname" ] ; then
+        echo "    - /org/member/SecLog_config-groupname"
+        aws --profile $clientaccprofile ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite
+    fi
 
 
     #   ------------------------------------
@@ -93,9 +127,23 @@ update_client() {
     aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
 
-}
+    echo ""
+    echo "- Update Enabling Notifications for cloudtrail"
+    echo "-------------------------------------"
+    echo ""
 
-function version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
+    StackName=SECLZ-Notifications-Cloudtrail
+    aws cloudformation update-stack \
+    --stack-name $StackName \
+    --template-body file://$CFN_NOTIFICATIONS_CT_TEMPLATE \
+    --profile $clientaccprofile
+
+    aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+
+}
 
 
 # ---------------------------------------------

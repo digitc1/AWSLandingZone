@@ -17,6 +17,11 @@ cloudtrailintegration=${cloudtrailintegration:-true}
 securityhubintegration=${securityhubintegration:-true}
 guarddutyintegration=${guarddutyintegration:-true}
 batch=${batch:-false}
+cloudtrailgroupname=${cloudtrailgroupname:-}
+insightgroupname=${insightgroupname:-}
+guarddutygroupname=${guarddutygroupname:-}
+securityhubgroupname=${securityhubgroupname:-}
+configgroupname=${configgroupname:-}
 
 while [ $# -gt 0 ]; do
 
@@ -46,6 +51,12 @@ CFN_SECURITYHUB_LOG_TEMPLATE='../../CFN/EC-lz-config-securityhub-logging.yml'
 CFN_LOG_TEMPLATE='../../CFN/EC-lz-config-cloudtrail-logging.yml'
 CFN_GUARDDUTY_TEMPLATE_GLOBAL='../../CFN/EC-lz-Config-Guardduty-all-regions.yml'
 
+CFN_LAMBDAS_BUCKET_TEMPLATE='../../CFN/EC-lz-s3-bucket-lambda-code.yml'
+CFN_LAMBDAS_TEMPLATE='../../CFN/EC-lz-logshipper-lambdas.yml'
+
+
+CFN_NOTIFICATIONS_CT_TEMPLATE='../../CFN/EC-lz-notifications.yml'
+
 #   ---------------------
 #   The command line help
 #   ---------------------
@@ -60,6 +71,11 @@ display_help() {
     echo "   --cloudtrailintegration    : Flag to enable or disable CloudTrail seclog integration. Default: true (optional)"
     echo "   --guarddutyintegration     : Flag to enable or disable GuardDuty seclog integration. Default: true (optional)"
     echo "   --securityhubintegration   : Flag to enable or disable SecurityHub seclog integration. Default: true (optional)"
+    echo "   --cloudtrailgroupname      : The custom name for CloudTrail Cloudwatch loggroup name (optional)"
+    echo "   --insightgroupname         : The custom name for CloudTrail Insight Cloudwatch loggroup name (optional)"
+    echo "   --guarddutygroupname       : The custom name for GuardDuty Cloudwatch loggroup name (optional)"
+    echo "   --securityhubgroupname     : The custom name for SecurityHub Cloudwatch loggroup name (optional)"
+    echo "   --configgroupname          : The custom name for AWSConfig Cloudwatch loggroup name (optional)"
     echo "   --batch                    : Flag to enable or disable batch execution mode. Default: false (optional)"
     echo ""
     exit 1
@@ -103,6 +119,26 @@ update_seclog() {
       echo "     Splunk Account Id:                   $SPLUNK_ACCOUNT_ID"
       echo "     Log Destination ARN:                 $FIREHOSE_ARN"
     fi
+    
+    if  [ -z "$insightgroupname" ] ; then
+        echo "     CloudTrail loggroup name:            $insightgroupname"
+    fi
+
+    if  [ -z "$cloudtrailgroupname" ] ; then
+        echo "     Guardduty loggroup name:             $cloudtrailgroupname"
+    fi
+    
+    if  [ -z "" ] ; then
+         echo "     CloudTrail Insight loggroup name:   $guarddutygroupname"
+    fi
+    
+    if  [ -z "$securityhubgroupname" ] ; then
+        echo "     SecurityHub loggroup name:           $securityhubgroupname"
+    fi
+    
+    if  [ -z "$configgroupname" ] ; then
+        echo "     AWSConfig loggroup name:           $configgroupname"
+    fi
     echo "     in AWS Region:                    $AWS_REGION"
     echo "   ----------------------------------------------------"
     echo ""
@@ -127,6 +163,35 @@ update_seclog() {
     
     aws --profile $seclogprofile ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite
 
+    if  [ ! -z "$cloudtrailgroupname" ] ; then
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite
+    else
+        $cloudtrailgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_cloudtrail-groupname" --output text --query 'Parameter.Value'`
+    fi
+    
+    if  [ ! -z "$insightgroupname" ] ; then
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite
+    else
+        $insightgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_insight-groupname" --output text --query 'Parameter.Value'`
+    fi
+    
+    if  [ ! -z "$guarddutygroupname" ] ; then
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
+    else
+        $guarddutygroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_guardduty-groupname" --output text --query 'Parameter.Value'`
+    fi
+    
+    if  [ ! -z "$securityhubgroupname" ] ; then
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite
+    else
+        $securityhubgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_securityhub-groupname" --output text --query 'Parameter.Value'`
+    fi
+
+    if  [ ! -z "$configgroupname" ] ; then
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite
+    else
+        $configgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_config-groupname" --output text --query 'Parameter.Value'`
+    fi
 
     #   ------------------------------------
     #   Cloudtrail bucket / Config bucket / Access_log bucket ...
@@ -244,6 +309,119 @@ update_seclog() {
     --template-body file://$CFN_GUARDDUTY_TEMPLATE_GLOBAL \
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile
+
+
+    #   ------------------------------------
+    #   Set Resource Policy to send Events to LogGroups
+    #   ------------------------------------
+
+    echo ""
+    echo "-  Set Resource Policy to send Events to LogGroups"
+    echo "--------------------------------------------------"
+    echo ""
+
+    resources='["arn:aws:logs:*:'$SECLOG_ACCOUNT_ID':log-group:/aws/events/*:*"'
+     
+    if  [ ! -z "$guarddutygroupname" ] ; then
+        resources+=',"arn:aws:logs:*:'$SECLOG_ACCOUNT_ID':log-group:'$guarddutygroupname':*"'
+    fi
+    if  [ ! -z "$securityhubgroupname" ] ; then
+        resources+=',"arn:aws:logs:*:'$SECLOG_ACCOUNT_ID':log-group:'$securityhubgroupname':*"'
+    fi
+    if  [ ! -z "$configgroupname" ] ; then
+        resources+=',"arn:aws:logs:*:'$SECLOG_ACCOUNT_ID':log-group:'$configgroupname':*"'
+    fi
+    resources+=']'
+
+    cat > ./policy.json << EOM
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "TrustEventsToStoreLogEvent",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": ["events.amazonaws.com","delivery.logs.amazonaws.com"]
+      },
+      "Action": [
+        "logs:PutLogEvents",
+        "logs:CreateLogStream"
+      ],
+      "Resource": ${resources}
+    }
+  ]
+}
+EOM
+
+    aws --profile $seclogprofile logs put-resource-policy --policy-name TrustEventsToStoreLogEvents --policy-document file://./policy.json
+    rm ./policy.json
+
+
+    #   ------------------------------------
+    #   Logshipper lambdas for CloudTrail and AWSConfig ...
+    #   ------------------------------------
+
+    echo ""
+    echo "- Logshipper lambdas for CloudTrail and AWSConfig ... "
+    echo "-----------------------------------------------------------"
+    echo ""
+
+    SECLOG_ACCOUNT_ID=`aws --profile $seclogprofile sts get-caller-identity --query 'Account' --output text`
+    REPO="lambda-artefacts-$SECLOG_ACCOUNT_ID"
+
+    
+    NOW=`date +"%d%m%Y"`
+    LOGSHIPPER_TEMPLATE="EC-lz-logshipper-lambdas-packaged.yml"
+    LOGSHIPPER_TEMPLATE_WITH_CODE="EC-lz-logshipper-lambdas.yml"
+    CLOUDTRAIL_LAMBDA_CODE="CloudtrailLogShipper-$NOW.zip"
+    CONFIG_LAMBDA_CODE="ConfigLogShipper-$NOW.zip"
+
+    zip -j $CLOUDTRAIL_LAMBDA_CODE ../../LAMBDAS/CloudtrailLogShipper.py
+    zip -j $CONFIG_LAMBDA_CODE ../../LAMBDAS/ConfigLogShipper.py
+
+    
+    awk -v cl=$CLOUDTRAIL_LAMBDA_CODE -v co=$CONFIG_LAMBDA_CODE '{ sub(/##cloudtrailCodeURI##/,cl);gsub(/##configCodeURI##/,co);print }' $CFN_LAMBDAS_TEMPLATE > $LOGSHIPPER_TEMPLATE_WITH_CODE
+
+    aws cloudformation package --template $LOGSHIPPER_TEMPLATE_WITH_CODE --s3-bucket $REPO --output-template-file $LOGSHIPPER_TEMPLATE --profile $seclogprofile
+
+    aws cloudformation deploy --stack-name  'SECLZ-LogShipper-Lambdas' \
+    --template-file $LOGSHIPPER_TEMPLATE \
+    --capabilities CAPABILITY_IAM \
+    --profile $seclogprofile
+
+    StackName=SECLZ-LogShipper-Lambdas
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+    aws cloudformation update-termination-protection \
+        --enable-termination-protection \
+        --stack-name $StackName \
+        --profile $seclogprofile
+   
+    rm -rf $LOGSHIPPER_TEMPLATE
+    rm -rf $LOGSHIPPER_TEMPLATE_WITH_CODE
+    rm -rf $CLOUDTRAIL_LAMBDA_CODE
+    rm -rf $CONFIG_LAMBDA_CODE
+
+    #   ------------------------------------
+    #   Enable Notifications for CIS cloudtrail metrics filters
+    #   ------------------------------------
+
+
+    echo ""
+    echo "- Enable Notifications for CIS cloudtrail metrics filters"
+    echo "---------------------------------------"
+    echo ""
+
+    aws cloudformation update-stack \
+    --stack-name 'SECLZ-Notifications-Cloudtrail' \
+    --template-body file://$CFN_NOTIFICATIONS_CT_TEMPLATE \
+    --profile $seclogprofile
+
+    StackName="SECLZ-Notifications-Cloudtrail"
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
 
 }
 
