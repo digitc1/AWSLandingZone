@@ -37,7 +37,7 @@ def lambda_handler(event, context):
   LOGGER.debug("Function name: %s", context.function_name)
   LOGGER.debug("Function version: %s", context.function_version)
   region = os.environ['AWS_REGION']
-  loggroup = '/aws/events/config'
+  loggroup = get_config_logggroup()
   account = sts.get_caller_identity()
   for record in event['Records']:
     filename = record['s3']['object']['key']
@@ -311,4 +311,12 @@ def get_max_try():
         return os.environ['MAX_TRY']
     except KeyError:
         return 30
-        
+
+def get_config_logggroup():
+    """
+    This function gets the config log group from the environment variables table.
+    """
+    try:
+        return os.environ['CONFIG_LOG_GROUP']
+    except KeyError:
+        return '/aws/events/config'

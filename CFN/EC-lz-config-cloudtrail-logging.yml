@@ -88,17 +88,17 @@ Parameters:
     Description: "Frequency of config snapshots being delivered to SecLog account"
     Default: Six_Hours
   CloudTrailInsightsLogsGroupName:
-    Type: String
-    Default: '/aws/cloudtrail/insight'
-    Description: CloudTrail Insights Log Group name.
-  CloudWatchLogsGroupName:
-    Type: String
-    Default: '/aws/cloudtrail'
-    Description: CloudWatchLogs Group name.
-  AwsConfigLogsGroupName:
-    Type: String
-    Default: /aws/events/config
-    Description: CloudWatch LogGroup name for AWS config cloudwatch events
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: CloudTrail Insights CloudWatch LogGroup name
+    Default: "/org/member/SecLog_insight-groupname"
+  CloudTrailLogGroupName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: '/org/member/SecLog_cloudtrail-groupname'
+    Description: Cloudtrail CloudWatch LogGroup name
+  AwsConfigLogGroupName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: '/org/member/SecLog_config-groupname'
+    Description: AWS config CloudWatch LogGroup name
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain CloudTrail log events in the CloudWatch Logs.'
     Type: Number
@@ -114,6 +114,18 @@ Parameters:
 #    Description: "List of client account IDs"
 
 Conditions:
+  HasCloudTrailInsightsLogsGroupName: !Not 
+    - !Equals
+      - !Ref CloudTrailInsightsLogsGroupName
+      - !Ref 'AWS::NoValue'
+  HasCloudTrailLogGroupName: !Not
+    - !Equals
+      - !Ref CloudTrailLogGroupName
+      - !Ref 'AWS::NoValue'
+  HasAwsConfigLogGroupName: !Not
+    - !Equals
+      - !Ref AwsConfigLogGroupName
+      - !Ref 'AWS::NoValue'
   EnableConfigRuleChangeNotification: !Equals
     - !Ref EnableConfigRuleComplianceChangeAlarm
     - 'true'
@@ -197,7 +209,7 @@ Resources:
   TrailLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Ref CloudWatchLogsGroupName
+      LogGroupName: !If [ HasCloudTrailLogGroupName, !Ref CloudTrailLogGroupName, !Ref '/aws/cloudtrail' ] 
       RetentionInDays: !Ref LogsRetentionInDays
 
   TrailSubscriptionFilter:
@@ -216,7 +228,7 @@ Resources:
   TrailInsightsLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Ref CloudTrailInsightsLogsGroupName
+      LogGroupName: !If [ HasCloudTrailInsightsLogsGroupName, !Ref CloudTrailInsightsLogsGroupName, !Ref '/aws/cloudtrail/insight' ] 
       RetentionInDays: !Ref LogsRetentionInDays
 
   TrailInsightsSubscriptionFilter:
@@ -295,7 +307,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Condition: IsSecLogMasterAccount
     Properties:
-      LogGroupName: !Ref AwsConfigLogsGroupName
+      LogGroupName: !If [ HasAwsConfigLogGroupName, !Ref AwsConfigLogGroupName, !Ref '/aws/events/config' ] 
       RetentionInDays: !Ref LogsRetentionInDays
 
   AwsConfigSubscriptionFilter:

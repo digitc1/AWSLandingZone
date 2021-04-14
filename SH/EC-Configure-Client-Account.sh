@@ -75,6 +75,13 @@ configure_client() {
 
     # Getting KMS key encryption arn
     KMS_KEY_ARN=`aws --profile $SECLOG ssm get-parameter --name "/org/member/KMSCloudtrailKey_arn" --output text --query 'Parameter.Value'`
+    
+    $cloudtrailgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_cloudtrail-groupname" --output text --query 'Parameter.Value'`
+    $insightgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_insight-groupname" --output text --query 'Parameter.Value'`
+    $guarddutygroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_guardduty-groupname" --output text --query 'Parameter.Value'`
+    $securityhubgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_securityhub-groupname" --output text --query 'Parameter.Value'`
+    $configgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_config-groupname" --output text --query 'Parameter.Value'`
+    
 
     echo ""
     echo "   Executing Configure Client account script"
@@ -108,6 +115,31 @@ configure_client() {
     aws --profile $CLIENT ssm put-parameter --name /org/member/KMSCloudtrailKey_arn --type String --value $KMS_KEY_ARN --overwrite
     aws --profile $CLIENT ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite
 
+
+    if  [ ! -z "$cloudtrailgroupname" ] ; then
+        echo "    - /org/member/SecLog_cloudtrail-groupname"
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite
+    fi
+    
+    if  [ ! -z "$insightgroupname" ] ; then
+        echo "    - /org/member/SecLog_insight-groupname"
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite
+    fi
+    
+    if  [ ! -z "$guarddutygroupname" ] ; then
+        echo "    - /org/member/SecLog_guardduty-groupname"
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
+    fi
+    
+    if  [ ! -z "$securityhubgroupname" ] ; then
+        echo "    - /org/member/SecLog_securityhub-groupname"
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite
+    fi
+
+    if  [ ! -z "$configgroupname" ] ; then
+        echo "    - /org/member/SecLog_config-groupname"
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite
+    fi
 
     #   Create ExecRole
     #   -------------------
