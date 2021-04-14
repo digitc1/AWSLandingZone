@@ -236,7 +236,7 @@ update_seclog() {
     --stack-name $StackName \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
     --capabilities CAPABILITY_IAM \
-    --parameters $guarddutyparams
+    --parameters $guarddutyparams \
     --profile $seclogprofile
 
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
