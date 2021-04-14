@@ -40,7 +40,7 @@ CFN_NOTIFICATIONS_CT_TEMPLATE='../../CFN/EC-lz-notifications.yml'
 #   ---------------------
 display_help() {
 
-    echo "Usage: $0 --clientaccprofile <Client Acc Profile>"
+    echo "Usage: $0 <params>"
     echo ""
     echo "   Provide "
     echo "   --clientaccprofile        : The profile of the client account as configured in your AWS profile"

@@ -94,7 +94,7 @@ display_help() {
 
     echo "Landing Zone installation script for SECLOG account version $LZ_Version"
     echo ""
-    echo "Usage: $0 [--organisation <Org Account Profile>] --seclogprofile <Seclog Acc Profile> --splunkprofile <Splunk Acc Profile> --notificationemail <Notification Email> --logdestination <Log Destination DG name> [--cloudtrailintegration <true|false] [--guarddutyintegration <true|false>] [--securityhubintegration <true|false>] [--batch <true|false>]"
+    echo "Usage: $0 <params>"
     echo ""
     echo "   Provide "
     echo "   --organisation                 : The orgnisation account as configured in your AWS profile (optional)"
@@ -161,23 +161,23 @@ configure_seclog() {
     echo "     GuardDuty integration with Splunk:   $guarddutyintegration"
     echo "     SecurityHub integration with Splunk: $securityhubintegration"
     
-    if  [ -z "$insightgroupname" ] ; then
+    if  [ ! -z "$insightgroupname" ] ; then
         echo "     CloudTrail loggroup name:            $insightgroupname"
     fi
 
-    if  [ -z "$cloudtrailgroupname" ] ; then
+    if  [ ! -z "$cloudtrailgroupname" ] ; then
         echo "     Guardduty loggroup name:             $cloudtrailgroupname"
     fi
     
-    if  [ -z "" ] ; then
+    if  [ ! -z "$guarddutygroupname" ] ; then
          echo "     CloudTrail Insight loggroup name:   $guarddutygroupname"
     fi
     
-    if  [ -z "$securityhubgroupname" ] ; then
+    if  [ ! -z "$securityhubgroupname" ] ; then
         echo "     SecurityHub loggroup name:           $securityhubgroupname"
     fi
     
-    if  [ -z "$configgroupname" ] ; then
+    if  [ ! -z "$configgroupname" ] ; then
         echo "     AWSConfig loggroup name:           $configgroupname"
     fi
     

@@ -62,7 +62,7 @@ CFN_NOTIFICATIONS_CT_TEMPLATE='../../CFN/EC-lz-notifications.yml'
 #   ---------------------
 display_help() {
 
-    echo "Usage: $0 --seclogprofile <Client Acc Profile>"
+    echo "Usage: $0 <params>"
     echo ""
     echo "   Provide "
     echo "   --seclogprofile            : The account profile of the central SecLog account as configured in your AWS profile"
@@ -120,23 +120,23 @@ update_seclog() {
       echo "     Log Destination ARN:                 $FIREHOSE_ARN"
     fi
     
-    if  [ -z "$insightgroupname" ] ; then
+    if  [ ! -z "$insightgroupname" ] ; then
         echo "     CloudTrail loggroup name:            $insightgroupname"
     fi
 
-    if  [ -z "$cloudtrailgroupname" ] ; then
+    if  [ ! -z "$cloudtrailgroupname" ] ; then
         echo "     Guardduty loggroup name:             $cloudtrailgroupname"
     fi
     
-    if  [ -z "" ] ; then
+    if  [ ! -z "$guarddutygroupname" ] ; then
          echo "     CloudTrail Insight loggroup name:   $guarddutygroupname"
     fi
     
-    if  [ -z "$securityhubgroupname" ] ; then
+    if  [ ! -z "$securityhubgroupname" ] ; then
         echo "     SecurityHub loggroup name:           $securityhubgroupname"
     fi
     
-    if  [ -z "$configgroupname" ] ; then
+    if  [ ! -z "$configgroupname" ] ; then
         echo "     AWSConfig loggroup name:           $configgroupname"
     fi
     echo "     in AWS Region:                    $AWS_REGION"
