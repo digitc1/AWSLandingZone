@@ -40,7 +40,7 @@ Conditions:
   HasSecurityHubLogsGroupName: !Not 
     - !Equals
       - !Ref SecurityHubLogsGroupName
-      - !Ref 'AWS::NoValue'
+      - !Ref AWS::NoValue
   IsSecLogMasterAccount: !Equals
     - !Ref AWS::AccountId
     - !Ref SecLogMasterAccountId

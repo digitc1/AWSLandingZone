@@ -50,15 +50,15 @@ Conditions:
   HasCloudTrailInsightsLogsGroupName: !Not 
     - !Equals
       - !Ref lambdaInsightLogGroup
-      - !Ref 'AWS::NoValue'
+      - !Ref AWS::NoValue
   HasCloudTrailLogGroupName: !Not
     - !Equals
       - !Ref lambdaCloudTrailLogGroup
-      - !Ref 'AWS::NoValue'
+      - !Ref AWS::NoValue
   HasAwsConfigLogGroupName: !Not
     - !Equals
       - !Ref lambdaConfigLogGroup
-      - !Ref 'AWS::NoValue'
+      - !Ref AWS::NoValue
 
 Resources:
 
