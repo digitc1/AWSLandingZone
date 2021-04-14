@@ -170,7 +170,7 @@ configure_seclog() {
     fi
     
     if  [ ! -z "$guarddutygroupname" ] ; then
-         echo "     Guardduty loggroup name:   $guarddutygroupname"
+         echo "     Guardduty loggroup name:            $guarddutygroupname"
     fi
     
     if  [ ! -z "$securityhubgroupname" ] ; then
