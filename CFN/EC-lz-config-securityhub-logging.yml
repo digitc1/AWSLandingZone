@@ -18,10 +18,6 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Description: CloudTrail Insights CloudWatch LogGroup name
     Default: "/org/member/SecLog_securityhub-groupname"
-
-    Type: String
-    Default: /aws/events/securityhub
-    Description: CloudWatch LogGroup name for Security Hub cloudwatch events
   FirehoseDestinationArn:
     Type: String
     Default: ""
@@ -37,7 +33,8 @@ Parameters:
     Description: "Contains account id of SecLogMaster"
 
 Conditions:
-  HasSecurityHubLogsGroupName: !Not [!Equals [!Ref SecurityHubLogsGroupName, !Ref AWS::NoValue ]]
+  HasSecurityHubLogsGroupName: 
+    !Not [!Equals [!Ref SecurityHubLogsGroupName, !Ref AWS::NoValue ]]
   IsSecLogMasterAccount: !Equals
     - !Ref AWS::AccountId
     - !Ref SecLogMasterAccountId
@@ -47,7 +44,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Condition: IsSecLogMasterAccount
     Properties:
-      LogGroupName:  !If [ HasSecurityHubLogsGroupName, !Ref SecurityHubLogsGroupName, '/aws/cloudtrail/insight' ] 
+      LogGroupName:  !If [ HasSecurityHubLogsGroupName, !Ref SecurityHubLogsGroupName, '/aws/events/securityhub' ] 
       RetentionInDays: !Ref LogsRetentionInDays
 
   SecurityHubSubscriptionFilter:

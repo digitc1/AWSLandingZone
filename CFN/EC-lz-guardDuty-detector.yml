@@ -26,9 +26,10 @@ Parameters:
     Default: 60
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
   AwsGuardDutyGroupName:
-    Type: String
-    Default: /aws/events/guardduty
-    Description: CloudWatch LogGroup name for AWS GuardDuty cloudwatch events
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: CloudTrail Insights CloudWatch LogGroup name
+    Default: "/org/member/SecLog_securityhub-groupname"
+    
   FirehoseDestinationArn:
     Type: String
     Default: ""
@@ -58,19 +59,23 @@ Conditions:
       - !Ref AWS::AccountId
       - !Ref SecLogMasterAccountId
   IsSecLogMasterAccountWithSOCIntegration: !And
-  - !Equals
-    - !Ref AWS::AccountId
-    - !Ref SecLogMasterAccountId
-  - !Equals
-    - !Ref EnableSecLogIntegrationFoGuardDutyParam
-    - 'true'
+    - !Equals
+      - !Ref AWS::AccountId
+      - !Ref SecLogMasterAccountId
+    - !Equals
+      - !Ref EnableSecLogIntegrationFoGuardDutyParam
+      - 'true'
+  HasGuardDutyLogsGroupName: !Not 
+    - !Equals
+      - !Ref AwsGuardDutyGroupName
+      - !Ref AWS::NoValue
 
 Resources:
   GuardDutyLogGroup:
     Type: AWS::Logs::LogGroup
     Condition: IsSecLogMasterAccount
     Properties:
-      LogGroupName: !Ref AwsGuardDutyGroupName
+      LogGroupName:  !If [ HasGuardDutyLogsGroupName, !Ref AwsGuardDutyGroupName, '/aws/events/guardduty' ] 
       RetentionInDays: !Ref LogsRetentionInDays
 
   AwsGuardDutySubscriptionFilter:

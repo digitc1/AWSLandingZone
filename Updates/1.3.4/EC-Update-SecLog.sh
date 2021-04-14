@@ -225,11 +225,18 @@ update_seclog() {
     echo "----------------------------------------"
     echo ""
 
+    guarddutyparams="ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration"
+    if [ "$guarddutyintegration" == "true" ]; then
+        guarddutyparams="ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN"
+    fi
+
+
     StackName=SECLZ-Guardduty-detector
     aws cloudformation update-stack \
     --stack-name $StackName \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
     --capabilities CAPABILITY_IAM \
+    --parameters $guarddutyparams
     --profile $seclogprofile
 
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
