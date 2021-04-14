@@ -147,7 +147,7 @@ Conditions:
   HasLogGroupName: !Not
     - !Equals
       - !Ref LogGroupName
-      - !Ref 'AWS::NoValue'
+      - !Ref AWS::NoValue
   EnableSecurityGroupChange: !Equals
     - !Ref EnableSecurityGroupChangeAlarm
     - 'true'
