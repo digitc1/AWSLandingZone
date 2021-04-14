@@ -45,10 +45,7 @@ Parameters:
     Default: "o-jyyw8qs5c8"
 
 Conditions:
-  HasGuardDutyLogsGroupName: !Not 
-    - !Equals
-      - !Ref AwsGuardDutyGroupName
-      - !Ref AWS::NoValue
+  HasGuardDutyLogsGroupName: !Not [!Equals [!Ref AwsGuardDutyGroupName, !Ref AWS::NoValue ]]
   IsSecLogMasterAccount: !Equals
     - !Ref AWS::AccountId
     - !Ref SecLogMasterAccountId

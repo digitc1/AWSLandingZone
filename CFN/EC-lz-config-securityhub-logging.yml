@@ -37,10 +37,7 @@ Parameters:
     Description: "Contains account id of SecLogMaster"
 
 Conditions:
-  HasSecurityHubLogsGroupName: !Not 
-    - !Equals
-      - !Ref SecurityHubLogsGroupName
-      - !Ref AWS::NoValue
+  HasSecurityHubLogsGroupName: !Not [!Equals [!Ref SecurityHubLogsGroupName, !Ref AWS::NoValue ]]
   IsSecLogMasterAccount: !Equals
     - !Ref AWS::AccountId
     - !Ref SecLogMasterAccountId
