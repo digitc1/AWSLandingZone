@@ -76,11 +76,11 @@ configure_client() {
     # Getting KMS key encryption arn
     KMS_KEY_ARN=`aws --profile $SECLOG ssm get-parameter --name "/org/member/KMSCloudtrailKey_arn" --output text --query 'Parameter.Value'`
     
-    $cloudtrailgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_cloudtrail-groupname" --output text --query 'Parameter.Value'`
-    $insightgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_insight-groupname" --output text --query 'Parameter.Value'`
-    $guarddutygroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_guardduty-groupname" --output text --query 'Parameter.Value'`
-    $securityhubgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_securityhub-groupname" --output text --query 'Parameter.Value'`
-    $configgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_config-groupname" --output text --query 'Parameter.Value'`
+    cloudtrailgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_cloudtrail-groupname" --output text --query 'Parameter.Value'`
+    insightgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_insight-groupname" --output text --query 'Parameter.Value'`
+    guarddutygroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_guardduty-groupname" --output text --query 'Parameter.Value'`
+    securityhubgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_securityhub-groupname" --output text --query 'Parameter.Value'`
+    configgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_config-groupname" --output text --query 'Parameter.Value'`
     
 
     echo ""
