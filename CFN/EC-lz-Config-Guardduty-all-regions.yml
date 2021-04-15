@@ -46,7 +46,7 @@ Parameters:
 
 Conditions:
   HasGuardDutyLogsGroupName: !Not 
-    - !Equals [
+    - !Equals 
       - !Ref AwsGuardDutyGroupName
       - ''
   IsSecLogMasterAccount: !Equals

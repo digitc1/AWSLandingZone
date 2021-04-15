@@ -27,8 +27,8 @@ Parameters:
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
   AwsGuardDutyGroupName:
     Type: AWS::SSM::Parameter::Value<String>
-    Description: CloudTrail Insights CloudWatch LogGroup name
-    Default: "/org/member/SecLog_securityhub-groupname"
+    Description: Guardduty CloudWatch LogGroup name
+    Default: "/org/member/SecLog_guardduty-groupname"
     
   FirehoseDestinationArn:
     Type: String
@@ -68,7 +68,7 @@ Conditions:
   HasGuardDutyLogsGroupName: !Not 
     - !Equals
       - !Ref AwsGuardDutyGroupName
-      - !Ref ''
+      - ''
 
 Resources:
   GuardDutyLogGroup:
