@@ -144,7 +144,7 @@ Parameters:
     Description: "Local Admin SNS Topic for Landing Zone"
 
 Conditions:
-  HasLogGroupName: !Not [!Equals [!Ref LogGroupName,  !Ref AWS::NoValue ]]
+  HasLogGroupName: !Not [!Equals [!Ref LogGroupName,  '' ]]
   EnableSecurityGroupChange: !Equals
     - !Ref EnableSecurityGroupChangeAlarm
     - 'true'

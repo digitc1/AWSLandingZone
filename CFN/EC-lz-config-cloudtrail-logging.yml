@@ -117,15 +117,15 @@ Conditions:
   HasCloudTrailInsightsLogsGroupName: !Not 
     - !Equals
       - !Ref CloudTrailInsightsLogsGroupName
-      - !Ref AWS::NoValue
+      - !Ref ''
   HasCloudTrailLogGroupName: !Not 
     - !Equals 
       - !Ref CloudTrailLogGroupName
-      - !Ref AWS::NoValue
+      - !Ref ''
   HasAwsConfigLogGroupName: !Not
     - !Equals 
       - !Ref AwsConfigLogGroupName
-      - !Ref AWS::NoValue
+      - !Ref ''
   EnableConfigRuleChangeNotification: !Equals
     - !Ref EnableConfigRuleComplianceChangeAlarm
     - 'true'

@@ -47,9 +47,9 @@ Parameters:
     Description: AWS config CloudWatch LogGroup name  
 
 Conditions:
-  HasCloudTrailInsightsLogsGroupName: !Not [!Equals [!Ref lambdaInsightLogGroup, !Ref AWS::NoValue ]]
-  HasCloudTrailLogGroupName: !Not [!Equals [!Ref lambdaCloudTrailLogGroup, !Ref AWS::NoValue ]]
-  HasAwsConfigLogGroupName: !Not [!Equals [!Ref lambdaConfigLogGroup, !Ref AWS::NoValue ]]
+  HasCloudTrailInsightsLogsGroupName: !Not [!Equals [!Ref lambdaInsightLogGroup, '' ]]
+  HasCloudTrailLogGroupName: !Not [!Equals [!Ref lambdaCloudTrailLogGroup, '' ]]
+  HasAwsConfigLogGroupName: !Not [!Equals [!Ref lambdaConfigLogGroup, '' ]]
 
 Resources:
 

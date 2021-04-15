@@ -68,7 +68,7 @@ Conditions:
   HasGuardDutyLogsGroupName: !Not 
     - !Equals
       - !Ref AwsGuardDutyGroupName
-      - !Ref AWS::NoValue
+      - !Ref ''
 
 Resources:
   GuardDutyLogGroup:
