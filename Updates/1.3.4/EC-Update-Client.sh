@@ -34,6 +34,8 @@ export sp="/-\|"
 
 CFN_GUARDDUTY_DETECTOR_TEMPLATE='../../CFN/EC-lz-guardDuty-detector.yml'
 CFN_NOTIFICATIONS_CT_TEMPLATE='../../CFN/EC-lz-notifications.yml'
+CFN_LOG_TEMPLATE='../../CFN/EC-lz-config-cloudtrail-logging.yml'
+
 
 #   ---------------------
 #   The command line help
@@ -128,12 +130,36 @@ update_client() {
     aws cloudformation update-stack \
     --stack-name $StackName \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
-    --capabilities CAPABILITY_IAM \
+    --capabilities CAPABILITY_NAMED_IAM \
     --profile $clientaccprofile
 
     aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
     while [ `aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+
+    #   ------------------------------------
+    #   Updating config, cloudtrail, SNS notifications
+    #   ------------------------------------
+
+
+    echo ""
+    echo "- Updating config, cloudtrail, SNS notifications"
+    echo "--------------------------------------------------"
+    echo ""
+
+
+    aws cloudformation update-stack \
+    --stack-name 'SECLZ-config-cloudtrail-SNS' \
+    --template-body file://$CFN_LOG_TEMPLATE \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --profile $clientaccprofile 
+
+    StackName="SECLZ-config-cloudtrail-SNS"
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
 
 
     echo ""
