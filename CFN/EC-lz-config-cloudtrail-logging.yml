@@ -298,7 +298,7 @@ Resources:
     UpdateReplacePolicy: Retain
     Condition: IsSecLogMasterAccount
     Properties:
-      LogGroupName: !Ref AwsGuardDutyGroupName
+      LogGroupName: !Ref AwsConfigLogGroupName
       RetentionInDays: !Ref LogsRetentionInDays
 
   AwsConfigSubscriptionFilter:
