@@ -82,26 +82,31 @@ update_client() {
 
     if  [ ! -z "$cloudtrailgroupname" ] ; then
         echo "    - /org/member/SecLog_cloudtrail-groupname"
+        aws --profile $clientaccprofile ssm delete-parameter --name /org/member/SecLog_cloudtrail-groupname 2> /dev/null
         aws --profile $clientaccprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite
     fi
     
     if  [ ! -z "$insightgroupname" ] ; then
         echo "    - /org/member/SecLog_insight-groupname"
+        aws --profile $clientaccprofile ssm delete-parameter --name /org/member/SecLog_insight-groupname 2> /dev/null
         aws --profile $clientaccprofile ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite
     fi
     
     if  [ ! -z "$guarddutygroupname" ] ; then
         echo "    - /org/member/SecLog_guardduty-groupname"
+        aws --profile $clientaccprofile ssm delete-parameter --name /org/member/SecLog_guardduty-groupname 2> /dev/null
         aws --profile $clientaccprofile ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
     fi
     
     if  [ ! -z "$securityhubgroupname" ] ; then
         echo "    - /org/member/SecLog_securityhub-groupname"
+        aws --profile $clientaccprofile ssm delete-parameter --name /org/member/SecLog_securityhub-groupname 2> /dev/null
         aws --profile $clientaccprofile ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite
     fi
 
     if  [ ! -z "$configgroupname" ] ; then
         echo "    - /org/member/SecLog_config-groupname"
+        aws --profile $clientaccprofile ssm delete-parameter --name /org/member/SecLog_config-groupname 2> /dev/null
         aws --profile $clientaccprofile ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite
     fi
 

@@ -88,15 +88,15 @@ Parameters:
     Description: "Frequency of config snapshots being delivered to SecLog account"
     Default: Six_Hours
   CloudTrailInsightsLogsGroupName:
-    Type: AWS::SSM::Parameter::Value<String>
+    Type: AWS::SSM::Parameter::Name
     Description: CloudTrail Insights CloudWatch LogGroup name
     Default: "/org/member/SecLog_insight-groupname"
   CloudTrailLogGroupName:
-    Type: AWS::SSM::Parameter::Value<String>
+    Type: AWS::SSM::Parameter::Name
     Default: '/org/member/SecLog_cloudtrail-groupname'
     Description: Cloudtrail CloudWatch LogGroup name
   AwsConfigLogGroupName:
-    Type: AWS::SSM::Parameter::Value<String>
+    Type: AWS::SSM::Parameter::Name
     Default: '/org/member/SecLog_config-groupname'
     Description: AWS config CloudWatch LogGroup name
   LogsRetentionInDays:
@@ -209,7 +209,7 @@ Resources:
   TrailLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !If [ HasCloudTrailLogGroupName, !Ref CloudTrailLogGroupName, '/aws/cloudtrail' ] 
+      LogGroupName: !If [ HasCloudTrailLogGroupName, '{{resolve:ssm:/org/member/SecLog_cloudtrail-groupname:1}}', '/aws/cloudtrail' ] 
       RetentionInDays: !Ref LogsRetentionInDays
 
   TrailSubscriptionFilter:
@@ -228,7 +228,7 @@ Resources:
   TrailInsightsLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !If [ HasCloudTrailInsightsLogsGroupName, !Ref CloudTrailInsightsLogsGroupName, '/aws/cloudtrail/insight' ] 
+      LogGroupName: !If [ HasCloudTrailInsightsLogsGroupName, '{{resolve:ssm:/org/member/SecLog_insight-groupname:1}}', '/aws/cloudtrail/insight' ] 
       RetentionInDays: !Ref LogsRetentionInDays
 
   TrailInsightsSubscriptionFilter:
@@ -307,7 +307,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Condition: IsSecLogMasterAccount
     Properties:
-      LogGroupName: !If [ HasAwsConfigLogGroupName, !Ref AwsConfigLogGroupName, '/aws/events/config' ] 
+      LogGroupName: !If [ HasAwsConfigLogGroupName, '{{resolve:ssm:/org/member/SecLog_config-groupname:1}}', '/aws/events/config' ] 
       RetentionInDays: !Ref LogsRetentionInDays
 
   AwsConfigSubscriptionFilter:

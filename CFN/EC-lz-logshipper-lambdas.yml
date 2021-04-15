@@ -32,17 +32,17 @@ Parameters:
     Default: 30
 
   lambdaCloudTrailLogGroup:
-    Type: AWS::SSM::Parameter::Value<String>
+    Type: AWS::SSM::Parameter::Name
     Description: CloudTrail Insights CloudWatch LogGroup name
     Default: "/org/member/SecLog_cloudtrail-groupname"
   
   lambdaInsightLogGroup:
-    Type: AWS::SSM::Parameter::Value<String>
+    Type: AWS::SSM::Parameter::Name
     Description: CloudTrail Insights CloudWatch LogGroup name
     Default: "/org/member/SecLog_insight-groupname"
 
   lambdaConfigLogGroup:
-    Type: AWS::SSM::Parameter::Value<String>
+    Type: AWS::SSM::Parameter::Name
     Default: '/org/member/SecLog_config-groupname'
     Description: AWS config CloudWatch LogGroup name  
 
@@ -160,8 +160,8 @@ Resources:
           Variables:
             LOG_LEVEL: !Ref lambdaLogLevel
             MAX_TRY: !Ref lambdaMaxRetry
-            CLOUDTRAIL_LOG_GROUP: !If [ HasCloudTrailLogGroupName, !Ref lambdaCloudTrailLogGroup, '/aws/cloudtrail' ] 
-            INSIGHT_LOG_GROUP: !If [ HasCloudTrailInsightsLogsGroupName, !Ref lambdaInsightLogGroup, '/aws/cloudtrail/insight' ] 
+            CLOUDTRAIL_LOG_GROUP: !If [ HasCloudTrailLogGroupName, '{{resolve:ssm:/org/member/SecLog_cloudtrail-groupname:1}}', '/aws/cloudtrail' ] 
+            INSIGHT_LOG_GROUP: !If [ HasCloudTrailInsightsLogsGroupName, '{{resolve:ssm:/org/member/SecLog_insight-groupname:1}}', '/aws/cloudtrail/insight' ] 
 
     CloudTrailLogShipperLogGroup:
       Type: AWS::Logs::LogGroup
@@ -207,7 +207,7 @@ Resources:
           Variables:
             LOG_LEVEL: !Ref lambdaLogLevel
             MAX_TRY: !Ref lambdaMaxRetry
-            CONFIG_LOG_GROUP: !If [ HasAwsConfigLogGroupName, !Ref lambdaConfigLogGroup, '/aws/events/config' ]
+            CONFIG_LOG_GROUP: !If [ HasAwsConfigLogGroupName, '{{resolve:ssm:/org/member/SecLog_config-groupname:1}}', '/aws/events/config' ]
 
     ConfigLogShipperLogGroup:
       Type: AWS::Logs::LogGroup
