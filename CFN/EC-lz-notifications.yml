@@ -14,7 +14,7 @@ Description: >-
 
 Parameters:
   LogGroupName:
-    Type: AWS::SSM::Parameter::String<Value>
+    Type: AWS::SSM::Parameter::Value<String>
     Default: '/org/member/SecLog_cloudtrail-groupname'
     Description: Cloudtrail CloudWatch LogGroup name
     

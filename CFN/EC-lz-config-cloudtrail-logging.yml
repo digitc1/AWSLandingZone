@@ -88,15 +88,15 @@ Parameters:
     Description: "Frequency of config snapshots being delivered to SecLog account"
     Default: Six_Hours
   CloudTrailInsightsLogsGroupName:
-    Type: AWS::SSM::Parameter::String<Value>
+    Type: AWS::SSM::Parameter::Value<String>
     Description: CloudTrail Insights CloudWatch LogGroup name
     Default: "/org/member/SecLog_insight-groupname"
   CloudTrailLogGroupName:
-    Type: AWS::SSM::Parameter::String<Value>
+    Type: AWS::SSM::Parameter::Value<String>
     Default: '/org/member/SecLog_cloudtrail-groupname'
     Description: Cloudtrail CloudWatch LogGroup name
   AwsConfigLogGroupName:
-    Type: AWS::SSM::Parameter::String<Value>
+    Type: AWS::SSM::Parameter::Value<String>
     Default: '/org/member/SecLog_config-groupname'
     Description: AWS config CloudWatch LogGroup name
   LogsRetentionInDays:

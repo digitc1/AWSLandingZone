@@ -15,7 +15,7 @@ Description: >-
 Parameters:
 
   SecurityHubLogsGroupName:
-    Type: AWS::SSM::Parameter::String<Value>
+    Type: AWS::SSM::Parameter::Value<String>
     Description: CloudTrail Insights CloudWatch LogGroup name
     Default: "/org/member/SecLog_securityhub-groupname"
   FirehoseDestinationArn:
