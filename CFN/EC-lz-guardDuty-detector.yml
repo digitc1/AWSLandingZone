@@ -71,6 +71,13 @@ Resources:
     Type: AWS::Logs::LogGroup
     Condition: IsSecLogMasterAccount
     Properties:
+      LogGroupName:  '/aws/events/guardduty'
+      RetentionInDays: !Ref LogsRetentionInDays
+
+  GuardDutyLogGroupUpdated:
+    Type: AWS::Logs::LogGroup
+    Condition: IsSecLogMasterAccount
+    Properties:
       LogGroupName:  !Ref AwsGuardDutyGroupName
       RetentionInDays: !Ref LogsRetentionInDays
 
@@ -80,7 +87,7 @@ Resources:
     Properties:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
-      LogGroupName: !Ref 'GuardDutyLogGroup'
+      LogGroupName: !Ref 'GuardDutyLogGroupUpdated'
 
 
   AWSEventsInvokeEventBusSecLogRole:
@@ -161,17 +168,17 @@ Resources:
             - Effect: Allow
               Action: logs:CreateLogStream
               Resource:
-              - !GetAtt GuardDutyLogGroup.Arn
+              - !GetAtt GuardDutyLogGroupUpdated.Arn
             - Effect: Allow
               Action: logs:PutLogEvents
               Resource:
-              - !GetAtt GuardDutyLogGroup.Arn
+              - !GetAtt GuardDutyLogGroupUpdated.Arn
             
 
   # GuardDuty CloudWatch Event - For GuardDuty
   GuardDutyEvents: 
     Type: AWS::Events::Rule
-    DependsOn: GuardDutyLogGroup
+    DependsOn: GuardDutyLogGroupUpdated
     Condition: IsSecLogMasterAccount
     Properties: 
       Name: SECLZ-GuardDuty-Event
@@ -189,6 +196,6 @@ Resources:
           Arn: !Ref SNSNotificationTopic         
           Id: "GuardDutySNSTopic-SecLog"
         -
-          Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${GuardDutyLogGroup}"
+          Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${GuardDutyLogGroupUpdated}"
           Id: "AwsGuardDutyCloudWatch-Seclog"
  

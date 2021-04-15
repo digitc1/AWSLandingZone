@@ -41,6 +41,13 @@ Resources:
     Type: AWS::Logs::LogGroup
     Condition: IsSecLogMasterAccount
     Properties:
+      LogGroupName:  '/aws/events/securityhub'
+      RetentionInDays: !Ref LogsRetentionInDays
+  
+  SecurityHubLogGroupUpdated:
+    Type: AWS::Logs::LogGroup
+    Condition: IsSecLogMasterAccount
+    Properties:
       LogGroupName:  !Ref SecurityHubLogsGroupName
       RetentionInDays: !Ref LogsRetentionInDays
 
@@ -50,7 +57,7 @@ Resources:
     Properties:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
-      LogGroupName: !Ref 'SecurityHubLogGroup'
+      LogGroupName: !Ref 'SecurityHubLogGroupUpdated'
 
   CloudWatchEventsLogGroupRole:
     Type: AWS::IAM::Role
@@ -72,16 +79,16 @@ Resources:
             - Effect: Allow
               Action: logs:CreateLogStream
               Resource: 
-              - !GetAtt SecurityHubLogGroup.Arn
+              - !GetAtt SecurityHubLogGroupUpdated.Arn
             - Effect: Allow
               Action: logs:PutLogEvents
               Resource: 
-              - !GetAtt SecurityHubLogGroup.Arn
+              - !GetAtt SecurityHubLogGroupUpdated.Arn
 
   # SecurityHub CloudWatch Events to Cloudwatch LogGroup
   SecurityHubEvent:
     Type: AWS::Events::Rule
-    DependsOn: SecurityHubLogGroup
+    DependsOn: SecurityHubLogGroupUpdated
     Condition: IsSecLogMasterAccount
     Properties:
       Name: SECLZ-SecurityHub
@@ -100,5 +107,5 @@ Resources:
             Fn::Join: 
               - ""
               - 
-                - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${SecurityHubLogGroup}"
+                - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${SecurityHubLogGroupUpdated}"
           Id: "SecurityHubCloudWatch-Seclog"

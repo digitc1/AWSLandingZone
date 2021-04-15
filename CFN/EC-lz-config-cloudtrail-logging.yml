@@ -181,20 +181,15 @@ Resources:
   #   Enable CloudTrail
   #   -------------------
   
-  CloudTrailLogging:
-    Type: "AWS::CloudTrail::Trail"
-    Properties:
-      IncludeGlobalServiceEvents: true
-      IsMultiRegionTrail: true
-      TrailName: 'lz-cloudtrail-logging'
-      S3BucketName: !Sub "cloudtrail-logs-${SecLogMasterAccountId}-do-not-delete"
-      KMSKeyId: !Ref CloudtrailKMSarn
-      IsLogging: true
-      EnableLogFileValidation: true
-      CloudWatchLogsLogGroupArn: !GetAtt TrailLogGroup.Arn
-      CloudWatchLogsRoleArn: !GetAtt TrailLogGroupRole.Arn
+  
 
   TrailLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: '/aws/cloudtrail'
+      RetentionInDays: !Ref LogsRetentionInDays
+
+  TrailLogGroupUpdated:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Ref CloudTrailLogGroupName
@@ -206,14 +201,31 @@ Resources:
     Properties:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
-      LogGroupName: !Ref 'TrailLogGroup'
+      LogGroupName: !Ref 'TrailLogGroupUpdated'
 
-
+  CloudTrailLogging:
+    Type: "AWS::CloudTrail::Trail"
+    Properties:
+      IncludeGlobalServiceEvents: true
+      IsMultiRegionTrail: true
+      TrailName: 'lz-cloudtrail-logging'
+      S3BucketName: !Sub "cloudtrail-logs-${SecLogMasterAccountId}-do-not-delete"
+      KMSKeyId: !Ref CloudtrailKMSarn
+      IsLogging: true
+      EnableLogFileValidation: true
+      CloudWatchLogsLogGroupArn: !GetAtt TrailLogGroupUpdated.Arn
+      CloudWatchLogsRoleArn: !GetAtt TrailLogGroupRole.Arn
   #   -------------------
   #   Trail Insights
   #   -------------------
   
   TrailInsightsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: '/aws/cloudtrail/insight'
+      RetentionInDays: !Ref LogsRetentionInDays
+  
+  TrailInsightsLogGroupUpdated:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Ref CloudTrailInsightsLogsGroupName
@@ -225,7 +237,7 @@ Resources:
     Properties:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
-      LogGroupName: !Ref 'TrailInsightsLogGroup'
+      LogGroupName: !Ref 'TrailInsightsLogGroupUpdated'
 
 
   # Enable Trail Ingisght events to be sent to the corresponding loggroup
@@ -246,7 +258,7 @@ Resources:
       State: ENABLED
       Targets:
       - Id: "AwsTrailInsightsCloudWatch-Seclog"
-        Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${TrailInsightsLogGroup}"
+        Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${TrailInsightsLogGroupUpdated}"
 
 
   #   -------------------
@@ -272,19 +284,19 @@ Resources:
           - Sid: AWSCloudTrailCreateLogStream
             Effect: Allow
             Action: logs:CreateLogStream
-            Resource: !GetAtt TrailLogGroup.Arn
+            Resource: !GetAtt TrailLogGroupUpdated.Arn
           - Sid: AWSCloudTrailPutLogEvents
             Effect: Allow
             Action: logs:PutLogEvents
-            Resource: !GetAtt TrailLogGroup.Arn
+            Resource: !GetAtt TrailLogGroupUpdated.Arn
           - Sid: AWSCloudTrailInsightsCreateLogStream
             Effect: Allow
             Action: logs:CreateLogStream
-            Resource: !GetAtt TrailInsightsLogGroup.Arn
+            Resource: !GetAtt TrailInsightsLogGroupUpdated.Arn
           - Sid: AWSCloudTrailInsightsPutLogEvents
             Effect: Allow
             Action: logs:PutLogEvents
-            Resource: !GetAtt TrailInsightsLogGroup.Arn
+            Resource: !GetAtt TrailInsightsLogGroupUpdated.Arn
 
   #   -------------------
   #   Enable Config
@@ -295,7 +307,14 @@ Resources:
     Type: AWS::Logs::LogGroup
     Condition: IsSecLogMasterAccount
     Properties:
-      LogGroupName: !Ref AwsGuardDutyGroupName
+      LogGroupName: '/aws/events/config'
+      RetentionInDays: !Ref LogsRetentionInDays
+
+  AwsConfigLogGroupUpdated:
+    Type: AWS::Logs::LogGroup
+    Condition: IsSecLogMasterAccount
+    Properties:
+      LogGroupName: !Ref AwsConfigLogGroupName
       RetentionInDays: !Ref LogsRetentionInDays
 
   AwsConfigSubscriptionFilter:
@@ -304,7 +323,7 @@ Resources:
     Properties:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
-      LogGroupName: !Ref 'AwsConfigLogGroup'
+      LogGroupName: !Ref 'AwsConfigLogGroupUpdated'
 
   ConfigRecorder:
     Type: 'AWS::Config::ConfigurationRecorder'
@@ -437,7 +456,7 @@ Resources:
       - Id: "AWS-Landing-Zone-Compliance-Change-Topic"
         Arn: !Ref SNSNotificationTopic
       - Id: "AwsConfigCloudWatch-Seclog"
-        Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${AwsConfigLogGroup}"
+        Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${AwsConfigLogGroupUpdated}"
          
 
   ConfigRole:
