@@ -26,7 +26,7 @@ Parameters:
     Default: 60
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
   AwsGuardDutyGroupName:
-    Type: AWS::SSM::Parameter::Name
+    Type: AWS::SSM::Parameter::String<Value>
     Default: "/org/member/SecLog_guardduty-groupname"
     Description: GuardDuty CloudWatch LogGroup name  
   SecLogMasterAccountId:
@@ -45,10 +45,6 @@ Parameters:
     Default: "o-jyyw8qs5c8"
 
 Conditions:
-  HasGuardDutyLogsGroupName: !Not 
-    - !Equals 
-      - !Ref AwsGuardDutyGroupName
-      - ''
   IsSecLogMasterAccount: !Equals
     - !Ref AWS::AccountId
     - !Ref SecLogMasterAccountId
@@ -86,7 +82,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Condition: IsSecLogMasterAccount
     Properties:
-      LogGroupName: !If [ HasGuardDutyLogsGroupName, '{{resolve:ssm:/org/member/SecLog_guardduty-groupname:1}}', '/aws/events/guardduty' ]
+      LogGroupName: !Ref AwsGuardDutyGroupName
       RetentionInDays: !Ref LogsRetentionInDays
 
   AWSEventsInvokeEventBusSecLogRole:

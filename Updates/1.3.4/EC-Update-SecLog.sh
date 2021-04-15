@@ -158,44 +158,60 @@ update_seclog() {
     echo ""
     echo "  populating: "
     echo "    - /org/member/SLZVersion"
+    echo "    - /org/member/SecLog_cloudtrail-groupname"
+    echo "    - /org/member/SecLog_insight-groupname"
+    echo "    - /org/member/SecLog_guardduty-groupname"
+    echo "    - /org/member/SecLog_securityhub-groupname"
+    echo "    - /org/member/SecLog_config-groupname"
 
     
     
     aws --profile $seclogprofile ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite
 
     if  [ ! -z "$cloudtrailgroupname" ] ; then
-        aws --profile $seclogprofile ssm delete-parameter --name /org/member/SecLog_cloudtrail-groupname 2> /dev/null
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite
     else
-        cloudtrailgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_cloudtrail-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
+        prevcloudtrailgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_cloudtrail-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
+        if  [ -z "$prevcloudtrailgroupname" ] ; then
+            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail" --overwrite
+        fi
     fi
     
     if  [ ! -z "$insightgroupname" ] ; then
-        aws --profile $seclogprofile ssm delete-parameter --name /org/member/SecLog_insight-groupname 2> /dev/null
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite
     else
-        insightgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_insight-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
+        previnsightgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_insight-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
+        if  [ -z "$previnsightgroupname" ] ; then
+            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value "/aws/cloudtrail/insight" --overwrite
+        fi
     fi
     
     if  [ ! -z "$guarddutygroupname" ] ; then
-        aws --profile $seclogprofile ssm delete-parameter --name /org/member/SecLog_guardduty-groupname 2> /dev/null
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
     else
-        guarddutygroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_guardduty-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
+        prevguarddutygroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_guardduty-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
+        if  [ -z "$prevguarddutygroupname" ] ; then
+            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value "/aws/events/guardduty" --overwrite
+        fi
     fi
     
     if  [ ! -z "$securityhubgroupname" ] ; then
-        aws --profile $seclogprofile ssm delete-parameter --name /org/member/SecLog_securityhub-groupname 2> /dev/null
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite
+        
     else
-        securityhubgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_securityhub-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
+        prevsecurityhubgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_securityhub-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
+        if  [ -z "$prevsecurityhubgroupname" ] ; then
+            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value "/aws/events/securityhub" --overwrite
+        fi
     fi
 
     if  [ ! -z "$configgroupname" ] ; then
-        aws --profile $seclogprofile ssm delete-parameter --name /org/member/SecLog_config-groupname 2> /dev/null
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite
     else
-        configgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_config-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
+        prevconfiggroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_config-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
+        if  [ -z "$prevconfiggroupname" ] ; then
+            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value "/aws/events/config" --overwrite
+        fi
     fi
 
     #   ------------------------------------

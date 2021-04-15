@@ -14,7 +14,7 @@ Description: >-
 
 Parameters:
   LogGroupName:
-    Type: AWS::SSM::Parameter::Name
+    Type: AWS::SSM::Parameter::String<Value>
     Default: '/org/member/SecLog_cloudtrail-groupname'
     Description: Cloudtrail CloudWatch LogGroup name
     
@@ -144,7 +144,6 @@ Parameters:
     Description: "Local Admin SNS Topic for Landing Zone"
 
 Conditions:
-  HasLogGroupName: !Not [!Equals [!Ref LogGroupName,  '' ]]
   EnableSecurityGroupChange: !Equals
     - !Ref EnableSecurityGroupChangeAlarm
     - 'true'

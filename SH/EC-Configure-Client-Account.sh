@@ -109,6 +109,11 @@ configure_client() {
     echo "    - /org/member/SecLogOU"
     echo "    - /org/member/KMSCloudtrailKey_arn"
     echo "    - /org/member/SecLogVersion"
+    echo "    - /org/member/SecLog_cloudtrail-groupname"
+    echo "    - /org/member/SecLog_insight-groupname"
+    echo "    - /org/member/SecLog_guardduty-groupname"
+    echo "    - /org/member/SecLog_securityhub-groupname"
+    echo "    - /org/member/SecLog_config-groupname"
     aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value "SeeSecLog@seclogaccount" --overwrite
     aws --profile $CLIENT ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $AWS_ACC_NUM --overwrite
     aws --profile $CLIENT ssm put-parameter --name /org/member/SecLogOU --type String --value $OrgOuId --overwrite
@@ -117,33 +122,33 @@ configure_client() {
 
 
     if  [ ! -z "$cloudtrailgroupname" ] ; then
-        echo "    - /org/member/SecLog_cloudtrail-groupname"
-        aws --profile $CLIENT ssm delete-parameter --name /org/member/SecLog_cloudtrail-groupname 2> /dev/null
         aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite
+    else
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail" --overwrite
     fi
     
     if  [ ! -z "$insightgroupname" ] ; then
-        echo "    - /org/member/SecLog_insight-groupname"
-        aws --profile $CLIENT ssm delete-parameter --name /org/member/SecLog_insight-groupname 2> /dev/null
         aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite
+    else
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail/insight" --overwrite
     fi
     
     if  [ ! -z "$guarddutygroupname" ] ; then
-        echo "    - /org/member/SecLog_guardduty-groupname"
-        aws --profile $CLIENT ssm delete-parameter --name /org/member/SecLog_guardduty-groupname 2> /dev/null
         aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
+    else
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/events/guardduty" --overwrite
     fi
     
     if  [ ! -z "$securityhubgroupname" ] ; then
-        echo "    - /org/member/SecLog_securityhub-groupname"
-        aws --profile $CLIENT ssm delete-parameter --name /org/member/SecLog_securityhub-groupname 2> /dev/null
         aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite
+    else
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/events/securityhub" --overwrite
     fi
 
     if  [ ! -z "$configgroupname" ] ; then
-        echo "    - /org/member/SecLog_config-groupname"
-        aws --profile $CLIENT ssm delete-parameter --name /org/member/SecLog_config-groupname 2> /dev/null
         aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite
+    else
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/events/config" --overwrite
     fi
 
     #   Create ExecRole
