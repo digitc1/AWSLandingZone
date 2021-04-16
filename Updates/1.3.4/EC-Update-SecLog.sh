@@ -394,6 +394,19 @@ EOM
     echo "-----------------------------------------------------------"
     echo ""
 
+    aws cloudformation update-stack \
+    --stack-name 'SECLZ-LogShipper-Lambdas-Bucket' \
+    --template-body file://$CFN_LAMBDAS_BUCKET_TEMPLATE \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --profile $seclogprofile
+    
+    StackName=SECLZ-LogShipper-Lambdas-Bucket
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+
+
     SECLOG_ACCOUNT_ID=`aws --profile $seclogprofile sts get-caller-identity --query 'Account' --output text`
     REPO="lambda-artefacts-$SECLOG_ACCOUNT_ID"
 
