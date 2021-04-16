@@ -31,6 +31,21 @@ Parameters:
     Type: Number
     Default: 30
 
+  lambdaCloudTrailLogGroup:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: CloudTrail Insights CloudWatch LogGroup name
+    Default: "/org/member/SecLog_cloudtrail-groupname"
+  
+  lambdaInsightLogGroup:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: CloudTrail Insights CloudWatch LogGroup name
+    Default: "/org/member/SecLog_insight-groupname"
+
+  lambdaConfigLogGroup:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: '/org/member/SecLog_config-groupname'
+    Description: AWS config CloudWatch LogGroup name  
+
 
 Resources:
 
@@ -141,6 +156,8 @@ Resources:
           Variables:
             LOG_LEVEL: !Ref lambdaLogLevel
             MAX_TRY: !Ref lambdaMaxRetry
+            CLOUDTRAIL_LOG_GROUP: !Ref lambdaCloudTrailLogGroup
+            INSIGHT_LOG_GROUP: !Ref lambdaInsightLogGroup
 
     CloudTrailLogShipperLogGroup:
       Type: AWS::Logs::LogGroup
@@ -186,6 +203,7 @@ Resources:
           Variables:
             LOG_LEVEL: !Ref lambdaLogLevel
             MAX_TRY: !Ref lambdaMaxRetry
+            CONFIG_LOG_GROUP: !Ref lambdaConfigLogGroup
 
     ConfigLogShipperLogGroup:
       Type: AWS::Logs::LogGroup

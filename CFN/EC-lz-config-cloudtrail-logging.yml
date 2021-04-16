@@ -88,21 +88,21 @@ Parameters:
     Description: "Frequency of config snapshots being delivered to SecLog account"
     Default: Six_Hours
   CloudTrailInsightsLogsGroupName:
-    Type: String
-    Default: '/aws/cloudtrail/insight'
-    Description: CloudTrail Insights Log Group name.
-  CloudWatchLogsGroupName:
-    Type: String
-    Default: '/aws/cloudtrail'
-    Description: CloudWatchLogs Group name.
-  AwsConfigLogsGroupName:
-    Type: String
-    Default: /aws/events/config
-    Description: CloudWatch LogGroup name for AWS config cloudwatch events
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: CloudTrail Insights CloudWatch LogGroup name
+    Default: "/org/member/SecLog_insight-groupname"
+  CloudTrailLogGroupName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: '/org/member/SecLog_cloudtrail-groupname'
+    Description: Cloudtrail CloudWatch LogGroup name
+  AwsConfigLogGroupName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: '/org/member/SecLog_config-groupname'
+    Description: AWS config CloudWatch LogGroup name
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain CloudTrail log events in the CloudWatch Logs.'
     Type: Number
-    Default: 90
+    Default: 60
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
   FirehoseDestinationArn:
     Type: String
@@ -196,8 +196,9 @@ Resources:
 
   TrailLogGroup:
     Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Retain
     Properties:
-      LogGroupName: !Ref CloudWatchLogsGroupName
+      LogGroupName: !Ref CloudTrailLogGroupName
       RetentionInDays: !Ref LogsRetentionInDays
 
   TrailSubscriptionFilter:
@@ -215,6 +216,7 @@ Resources:
   
   TrailInsightsLogGroup:
     Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Retain
     Properties:
       LogGroupName: !Ref CloudTrailInsightsLogsGroupName
       RetentionInDays: !Ref LogsRetentionInDays
@@ -293,9 +295,10 @@ Resources:
   
   AwsConfigLogGroup:
     Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Retain
     Condition: IsSecLogMasterAccount
     Properties:
-      LogGroupName: !Ref AwsConfigLogsGroupName
+      LogGroupName: !Ref AwsConfigLogGroupName
       RetentionInDays: !Ref LogsRetentionInDays
 
   AwsConfigSubscriptionFilter:

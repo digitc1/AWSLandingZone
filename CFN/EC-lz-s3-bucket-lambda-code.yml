@@ -36,12 +36,35 @@ Resources:
                 Ref: LambdaArtefactsBucket
             PolicyDocument:
                 Statement:
+                Statement:
                  -
-                   Sid: "CloudformationPermissions"
+                   Sid: "CloudformationPermissions1"
                    Effect: "Allow"
-                   Action: "s3:*"
                    Principal:
                     Service:
                      - "cloudformation.amazonaws.com"
+                   Action:
+                    - "s3:GetBucketAcl"
+                    - "s3:ListBucket"
                    Resource: !GetAtt LambdaArtefactsBucket.Arn
+
+                 -
+                   Sid: "CloudformationPermissions2"
+                   Effect: "Allow"
+                   Principal:
+                    Service:
+                     - "cloudformation.amazonaws.com"
+                   Action:
+                    - "s3:GetObject"
+                    - "s3:GetObjectAcl"
+                    - "s3:GetObjectVersion"
+                    - "s3:PutObject"
+                    - "s3:PutObjectAcl"
+                   Resource:
+                     Fn::Join:
+                       - ""
+                       -
+                         - !GetAtt LambdaArtefactsBucket.Arn
+                         - "/*"
+                 
         

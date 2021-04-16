@@ -84,7 +84,7 @@ intro() {
 #   The command line help
 #   ---------------------
 display_help() {
-    echo "Usage: $0 [--organisation <Org. Acc. Profile>] --clientaccprofile <Client Acc. Profile> --seclogprofile <Seclog. Acc. Profile>  [--clientaccountemail <root account email>] [--batch <true|false>]" >&2
+    echo "Usage: $0 <params>"
     echo ""
     echo "   Provide "
     echo "   --organisation       : The orgnisation account as configured in your AWS profile (optional)"
