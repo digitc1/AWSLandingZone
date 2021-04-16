@@ -212,7 +212,7 @@ configure_seclog() {
     echo "    - /org/member/SecLog_securityhub-groupname"
     echo "    - /org/member/SecLog_config-groupname"
 
-
+    for region in $(aws --profile $PROFILE ec2 describe-regions --output text --query "sRegions[?RegionName!='ap-northeast-3'].[RegionName]"); do
     if  [ ! -z "$cloudtrailgroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite
     else
@@ -230,15 +230,17 @@ configure_seclog() {
             aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value "/aws/cloudtrail/insight" --overwrite
         fi
     fi
-    
-    if  [ ! -z "$guarddutygroupname" ] ; then
-        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
-    else
-        prevguarddutygroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_guardduty-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
-        if  [ -z "$prevguarddutygroupname" ] ; then
-            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value "/aws/events/guardduty" --overwrite
+
+    for region in $(aws --profile $seclogprofile ec2 describe-regions --output text --query 'Regions[?RegionName!="ap-northeast-3"].[RegionName]'); do
+        if  [ ! -z "$guarddutygroupname" ] ; then
+            aws --profile $seclogprofile --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
+        else
+            prevguarddutygroupname=`aws --profile $seclogprofile --region $region ssm get-parameter --name "/org/member/SecLog_guardduty-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
+            if  [ -z "$prevguarddutygroupname" ] ; then
+                aws --profile $seclogprofile --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value "/aws/events/guardduty" --overwrite
+            fi
         fi
-    fi
+    done
     
     if  [ ! -z "$securityhubgroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite
@@ -678,7 +680,6 @@ EOM
     --accounts $SECLOG_ACCOUNT_ID \
     --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration \
     --operation-preferences FailureToleranceCount=9,MaxConcurrentCount=10,RegionConcurrencyType=PARALLEL \
-
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
     --profile $seclogprofile
 

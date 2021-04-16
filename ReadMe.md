@@ -41,6 +41,11 @@ To configure the SecLog account that you just created, we'll need to run the *EC
 * --cloudtrailintegration  : Flag to enable or disable CloudTrail seclog integration. Default: true (optional)
 * --guarddutyintegration   : Flag to enable or disable GuardDuty seclog integration. Default: true (optional)
 * --securityhubintegration : Flag to enable or disable SecurityHub seclog integration. Default: true (optional)
+* --cloudtrailgroupname          : The custom name for CloudTrail Cloudwatch loggroup name (optional)
+* --insightgroupname             : The custom name for CloudTrail Insight Cloudwatch loggroup name (optional)
+* --guarddutygroupname           : The custom name for GuardDuty Cloudwatch loggroup name (optional)
+* --securityhubgroupname         : The custom name for SecurityHub Cloudwatch loggroup name (optional)
+* --configgroupname              : The custom name for AWSConfig Cloudwatch loggroup name (optional)
 * --batch                  : Flag to enable or disable batch execution mode. Default: false (optional)
 
 Run the script
@@ -98,6 +103,7 @@ The script will output the following help message:
 Usage: ./EC-Update-SecLog.sh --seclogprofile <SecLog Profile>
    Provide 
    --seclogprofile: The profile of the seclog account as configured in your AWS profile"
+   ...
 ```
 
 So in this case, to execute the update script, run the following:

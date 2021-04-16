@@ -98,11 +98,13 @@ update_client() {
         aws --profile $clientaccprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail/insight" --overwrite
     fi
     
-    if  [ ! -z "$guarddutygroupname" ] ; then
-        aws --profile $clientaccprofile ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
-    else
-        aws --profile $clientaccprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/events/guardduty" --overwrite
-    fi
+    for region in $(aws --profile $CLIENT ec2 describe-regions --output text --query 'Regions[?RegionName!="ap-northeast-3"].[RegionName]'); do
+        if  [ ! -z "$guarddutygroupname" ] ; then
+            aws --profile $clientaccprofile --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
+        else
+            aws --profile $clientaccprofile --region $region ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/events/guardduty" --overwrite
+        fi
+    done
     
     if  [ ! -z "$securityhubgroupname" ] ; then
         aws --profile $clientaccprofile ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite
