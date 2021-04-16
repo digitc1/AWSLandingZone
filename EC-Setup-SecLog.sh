@@ -212,7 +212,7 @@ configure_seclog() {
     echo "    - /org/member/SecLog_securityhub-groupname"
     echo "    - /org/member/SecLog_config-groupname"
 
-    for region in $(aws --profile $PROFILE ec2 describe-regions --output text --query "sRegions[?RegionName!='ap-northeast-3'].[RegionName]"); do
+
     if  [ ! -z "$cloudtrailgroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite
     else
@@ -230,8 +230,8 @@ configure_seclog() {
             aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value "/aws/cloudtrail/insight" --overwrite
         fi
     fi
-
-    for region in $(aws --profile $seclogprofile ec2 describe-regions --output text --query 'Regions[?RegionName!="ap-northeast-3"].[RegionName]'); do
+    
+    for region in $(aws --profile $seclogprofile ec2 describe-regions --output text --query "Regions[?RegionName!='ap-northeast-3'].[RegionName]"); do
         if  [ ! -z "$guarddutygroupname" ] ; then
             aws --profile $seclogprofile --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
         else

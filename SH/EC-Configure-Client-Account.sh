@@ -133,7 +133,7 @@ configure_client() {
         aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail/insight" --overwrite
     fi
     
-    for region in $(aws --profile $CLIENT ec2 describe-regions --output text --query 'Regions[?RegionName!="ap-northeast-3"].[RegionName]'); do
+    for region in $(aws --profile $CLIENT ec2 describe-regions --output text --query "Regions[?RegionName!='ap-northeast-3'].[RegionName]"); do
         if  [ ! -z "$guarddutygroupname" ] ; then
             aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
         else

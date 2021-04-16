@@ -87,7 +87,7 @@ create_stackset_instances_client() {
     --parameter-overrides ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ID \
     --operation-preferences FailureToleranceCount=9,MaxConcurrentCount=10,RegionConcurrencyType=PARALLEL \
     --regions $ALL_REGIONS_EXCEPT_IRELAND \
-    --profile $SECLOG_PROFILEs
+    --profile $SECLOG_PROFILE
 
 }
 
