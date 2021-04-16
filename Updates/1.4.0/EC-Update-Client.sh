@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #   --------------------------------------------------------
-#   Updates/1.3.4/EC-Update-Client.sh
+#   Updates/1.4.0/EC-Update-Client.sh
 #   
 #   v1.0.0    J. Silva          Initial version.
 #   --------------------------------------------------------

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #   --------------------------------------------------------
-#   Updates/1.3.4/EC-Update-SecLog.sh
+#   Updates/1.4.0/EC-Update-SecLog.sh
 #   
 #   v1.0.0    J. Silva          Initial version.
 #   --------------------------------------------------------
