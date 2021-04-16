@@ -14,9 +14,10 @@ Description: >-
 
 Parameters:
   LogGroupName:
-    Type: String
-    Default: '/aws/cloudtrail'
-    Description: Enter CloudWatch Logs log group name. Default is '/aws/cloudtrail'
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: '/org/member/SecLog_cloudtrail-groupname'
+    Description: Cloudtrail CloudWatch LogGroup name
+    
   EnableSecurityGroupChangeAlarm:
     Type: String
     Description: "Enable alarm for security group changes?"
@@ -203,7 +204,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableSecurityGroupChange
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: "{ ($.eventName = AuthorizeSecurityGroupIngress) || ($.eventName
         = AuthorizeSecurityGroupEgress) || ($.eventName = RevokeSecurityGroupIngress)
@@ -234,7 +235,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableNetworkAclChange
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: "{ ($.eventName = CreateNetworkAcl) || ($.eventName = CreateNetworkAclEntry)
         || ($.eventName = DeleteNetworkAcl) || ($.eventName = DeleteNetworkAclEntry)
@@ -266,7 +267,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableGatewayChange
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: "{ ($.eventName = CreateCustomerGateway) || ($.eventName = DeleteCustomerGateway)
         || ($.eventName = AttachInternetGateway) || ($.eventName = CreateInternetGateway)
@@ -298,7 +299,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableVpcChange
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: "{ ($.eventName = CreateVpc) || ($.eventName = DeleteVpc) ||
         ($.eventName = ModifyVpcAttribute) || ($.eventName = AcceptVpcPeeringConnection)
@@ -332,7 +333,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableEc2InstanceChange
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: "{ ($.eventName = RunInstances) || ($.eventName = RebootInstances)
         || ($.eventName = StartInstances) || ($.eventName = StopInstances) || ($.eventName
@@ -363,7 +364,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: S3BucketPolicyChange
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: "{ ($.eventSource = s3.amazonaws.com) && (($.eventName = PutBucketAcl)
       || ($.eventName = PutBucketPolicy) || ($.eventName = PutBucketCors)
@@ -395,7 +396,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableEc2LargeInstanceChange
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: "{ (($.eventName = RunInstances) || ($.eventName = RebootInstances)
         || ($.eventName = StartInstances) || ($.eventName = StopInstances) || ($.eventName
@@ -434,7 +435,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableConfigChange
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: "{($.eventSource=config.amazonaws.com) && (($.eventName=StopConfigurationRecorder)
         || ($.eventName=DeleteDeliveryChannel) || ($.eventName=PutDeliveryChannel)
@@ -464,7 +465,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableCloudTrailChange
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: "{ ($.eventName = CreateTrail) || ($.eventName = UpdateTrail)
         || ($.eventName = DeleteTrail) || ($.eventName = StartLogging) || ($.eventName
@@ -494,7 +495,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableConsoleSignInFailure
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: '{ ($.eventName = ConsoleLogin) && ($.errorMessage = "Failed
         authentication") }'
@@ -524,7 +525,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableAuthorizationFailure
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: '{ ($.errorCode = "*UnauthorizedOperation") || ($.errorCode =
         "AccessDenied*") }'
@@ -553,7 +554,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableIamPolicyChanges
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: "{($.eventName=DeleteGroupPolicy)||($.eventName=DeleteRolePolicy)||($.eventName=DeleteUserPolicy)||($.eventName=PutGroupPolicy)||($.eventName=PutRolePolicy)||($.eventName=PutUserPolicy)||($.eventName=CreatePolicy)||($.eventName=DeletePolicy)||($.eventName=CreatePolicyVersion)||($.eventName=DeletePolicyVersion)||($.eventName=AttachRolePolicy)||($.eventName=DetachRolePolicy)||($.eventName=AttachUserPolicy)||($.eventName=DetachUserPolicy)||($.eventName=AttachGroupPolicy)||($.eventName=DetachGroupPolicy)}"
       MetricTransformations:
@@ -581,7 +582,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableRootLogin
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: '{ $.userIdentity.type = "Root" && $.userIdentity.invokedBy NOT EXISTS && $.eventType != "AwsServiceEvent" }'
       MetricTransformations:
@@ -609,7 +610,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableMFALogin
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: '{($.eventName="ConsoleLogin") && ($.additionalEventData.MFAUsed !="Yes")}'
       MetricTransformations:
@@ -637,7 +638,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableRouteTableChange
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: '{($.eventName=CreateRoute) || ($.eventName=CreateRouteTable) ||
         ($.eventName=ReplaceRoute) || ($.eventName=ReplaceRouteTableAssociation) ||
@@ -667,7 +668,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableCMKdeletion
     Properties:
-      LogGroupName:
+      LogGroupName: 
         Ref: LogGroupName
       FilterPattern: '{ ($.eventSource = kms.amazonaws.com) &&  (($.eventName=DisableKey) ||
         ($.eventName=ScheduleKeyDeletion)) }'

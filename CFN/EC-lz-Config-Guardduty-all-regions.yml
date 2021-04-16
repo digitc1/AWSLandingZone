@@ -23,14 +23,12 @@ Parameters:
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain CloudTrail log events in the CloudWatch Logs.'
     Type: Number
-    Default: 90
+    Default: 60
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
   AwsGuardDutyGroupName:
-    Type: String
-    Default: /aws/events/guardduty
-    Description: CloudWatch LogGroup name for AWS GuardDuty cloudwatch events
-
-  
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/org/member/SecLog_guardduty-groupname"
+    Description: GuardDuty CloudWatch LogGroup name  
   SecLogMasterAccountId:
     Type: String
     Description: "Contains account id of SecLogMaster"
@@ -82,6 +80,7 @@ Resources:
 
   GuardDutyLogGroup:
     Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Retain
     Condition: IsSecLogMasterAccount
     Properties:
       LogGroupName: !Ref AwsGuardDutyGroupName

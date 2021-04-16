@@ -75,6 +75,13 @@ configure_client() {
 
     # Getting KMS key encryption arn
     KMS_KEY_ARN=`aws --profile $SECLOG ssm get-parameter --name "/org/member/KMSCloudtrailKey_arn" --output text --query 'Parameter.Value'`
+    
+    cloudtrailgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_cloudtrail-groupname" --output text --query 'Parameter.Value'`
+    insightgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_insight-groupname" --output text --query 'Parameter.Value'`
+    guarddutygroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_guardduty-groupname" --output text --query 'Parameter.Value'`
+    securityhubgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_securityhub-groupname" --output text --query 'Parameter.Value'`
+    configgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_config-groupname" --output text --query 'Parameter.Value'`
+    
 
     echo ""
     echo "   Executing Configure Client account script"
@@ -102,12 +109,49 @@ configure_client() {
     echo "    - /org/member/SecLogOU"
     echo "    - /org/member/KMSCloudtrailKey_arn"
     echo "    - /org/member/SecLogVersion"
+    echo "    - /org/member/SecLog_cloudtrail-groupname"
+    echo "    - /org/member/SecLog_insight-groupname"
+    echo "    - /org/member/SecLog_guardduty-groupname"
+    echo "    - /org/member/SecLog_securityhub-groupname"
+    echo "    - /org/member/SecLog_config-groupname"
     aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value "SeeSecLog@seclogaccount" --overwrite
     aws --profile $CLIENT ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $AWS_ACC_NUM --overwrite
     aws --profile $CLIENT ssm put-parameter --name /org/member/SecLogOU --type String --value $OrgOuId --overwrite
     aws --profile $CLIENT ssm put-parameter --name /org/member/KMSCloudtrailKey_arn --type String --value $KMS_KEY_ARN --overwrite
     aws --profile $CLIENT ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite
 
+
+    if  [ ! -z "$cloudtrailgroupname" ] ; then
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite
+    else
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail" --overwrite
+    fi
+    
+    if  [ ! -z "$insightgroupname" ] ; then
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite
+    else
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail/insight" --overwrite
+    fi
+    
+    for region in $(aws --profile $CLIENT ec2 describe-regions --output text --query "Regions[?RegionName!='ap-northeast-3'].[RegionName]"); do
+        if  [ ! -z "$guarddutygroupname" ] ; then
+            aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
+        else
+            aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/events/guardduty" --overwrite
+        fi
+    done
+    
+    if  [ ! -z "$securityhubgroupname" ] ; then
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite
+    else
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/events/securityhub" --overwrite
+    fi
+
+    if  [ ! -z "$configgroupname" ] ; then
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite
+    else
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/events/config" --overwrite
+    fi
 
     #   Create ExecRole
     #   -------------------
