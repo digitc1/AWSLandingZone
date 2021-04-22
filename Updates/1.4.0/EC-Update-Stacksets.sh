@@ -23,6 +23,10 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+# Script Spinner waiting for cloudformation completion
+export i=1
+export sp="/-\|"
+
 
 #   --------------------
 #       Templates
