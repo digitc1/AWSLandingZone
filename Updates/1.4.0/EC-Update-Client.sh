@@ -180,6 +180,21 @@ update_client() {
     aws --profile $clientaccprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
 
+    echo "---------------------------------------------------------------------------------------------------------"
+    echo "|                                         ATTENTION PLEASE:                                             |"
+    echo "---------------------------------------------------------------------------------------------------------"
+    echo "|                                                                                                       |"
+    echo "|  To finalise the LZ upgrade, when finished with the installation of ALL CLIENT ACCOUNTS associated    |"
+    echo "|  with this seclog account ($seclogprofile), please execute the last stage of the LZ installation      |"
+    echo "|  running the following command:                                                                       |"
+    echo "|                                                                                                       |"
+    echo "|               sh ./EC-Update-Stacksets.sh --seclogprofile $seclogprofile                              |"
+    echo "|                                                                                                       |"
+    echo "|  Also check if the seclog account requires or not cloudtrail integration. In the case of no           |"
+    echo "|  integration, add the following parameter to the call: '--guarddutyintegration false'                 |"
+    echo "|                                                                                                       |"
+    echo "---------------------------------------------------------------------------------------------------------"
+
 }
 
 
