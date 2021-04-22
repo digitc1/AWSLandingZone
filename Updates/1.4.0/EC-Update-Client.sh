@@ -184,7 +184,7 @@ update_client() {
     echo "|                                         ATTENTION PLEASE:                                             |"
     echo "---------------------------------------------------------------------------------------------------------"
     echo "|                                                                                                       |"
-    echo "|  To finalise the LZ upgrade, when finished with the installation of all client accounts associated    |"
+    echo "|  To finalise the LZ upgrade, when finished with the installation of ALL CLIENT ACCOUNTS associated    |"
     echo "|  with this seclog account ($seclogprofile), please execute the last stage of the LZ installation      |"
     echo "|  running the following command:                                                                       |"
     echo "|                                                                                                       |"
