@@ -49,7 +49,6 @@ CFN_TAGS_PARAMS_FILE='../../CFN/EC-lz-TAGS-params.json'
 CFN_GUARDDUTY_DETECTOR_TEMPLATE='../../CFN/EC-lz-guardDuty-detector.yml'
 CFN_SECURITYHUB_LOG_TEMPLATE='../../CFN/EC-lz-config-securityhub-logging.yml'
 CFN_LOG_TEMPLATE='../../CFN/EC-lz-config-cloudtrail-logging.yml'
-CFN_GUARDDUTY_TEMPLATE_GLOBAL='../../CFN/EC-lz-Config-Guardduty-all-regions.yml'
 
 CFN_LAMBDAS_BUCKET_TEMPLATE='../../CFN/EC-lz-s3-bucket-lambda-code.yml'
 CFN_LAMBDAS_TEMPLATE='../../CFN/EC-lz-logshipper-lambdas.yml'
@@ -103,6 +102,30 @@ update_seclog() {
 
         # Extract select Log destination details
         FIREHOSE_ARN=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .arn'`
+        FIREHOSE_DESTINATION_NAME=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .destinationName'`
+        FIREHOSE_ACCESS_POLICY=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .accessPolicy'`
+
+        IS_ACCOUNT_ALLOWED=`echo $FIREHOSE_ACCESS_POLICY | jq '.Statement[0].Principal.AWS | if type == "array" and index( "'$SECLOG_ID'" ) then true else false end'`
+        if [ "$IS_ACCOUNT_ALLOWED" == "false" ]; then
+
+            echo ""
+            echo "- Creates a policy that defines write access to the log destination"
+            echo "--------------------------------------------------"
+            echo ""
+
+            ORG_ACCOUNT_ID='246933597933'
+
+            echo $FIREHOSE_ACCESS_POLICY | jq '.Statement[0].Principal.AWS = (.Statement[0].Principal.AWS | if type == "array" then . += ["'$SECLOG_ACCOUNT_ID'", "'$ORG_ACCOUNT_ID'"] else [.,"'$SECLOG_ACCOUNT_ID'", "'$ORG_ACCOUNT_ID'"] end)' > ./SecLogAccessPolicy.json  
+
+            aws logs put-destination-policy \
+            --destination-name $FIREHOSE_DESTINATION_NAME \
+            --profile $splunkprofile \
+            --access-policy file://./SecLogAccessPolicy.json
+
+            rm -f ./SecLogAccessPolicy.json
+
+        fi
+
     fi
 
 
@@ -320,25 +343,6 @@ update_seclog() {
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
     while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "UPDATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-
-
-    #   ------------------------------------
-    #    Update cloudtrail globally using stacksets
-    #   ------------------------------------
-
-
-    echo ""
-    echo "-  update cloudtrail globally"
-    echo "--------------------------------------------------"
-    echo ""
-
-    # Create StackSet (Enable Guardduty globally)
-    aws cloudformation  update-stack-set \
-    --stack-set-name 'SECLZ-Enable-Guardduty-Globally' \
-    --parameters ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration \
-    --template-body file://$CFN_GUARDDUTY_TEMPLATE_GLOBAL \
-    --capabilities CAPABILITY_IAM \
-    --profile $seclogprofile
 
 
     #   ------------------------------------
