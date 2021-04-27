@@ -12,6 +12,7 @@ from json import dumps
 from datetime import datetime
 from botocore.exceptions import ClientError
 import sys
+import urllib.parse
 
 # initialise logger
 LOGGER = logging.getLogger()
@@ -40,7 +41,7 @@ def lambda_handler(event, context):
   loggroup = get_config_logggroup()
   account = sts.get_caller_identity()
   for record in event['Records']:
-    filename = record['s3']['object']['key']
+    filename = urllib.parse.unquote(record['s3']['object']['key'])
     LOGGER.info('S3 object detected: ' + filename)
     pattern = 'AWSLogs/\d+/Config/'
     result = re.match(pattern, filename)
