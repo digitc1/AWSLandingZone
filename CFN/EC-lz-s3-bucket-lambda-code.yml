@@ -36,7 +36,6 @@ Resources:
                 Ref: LambdaArtefactsBucket
             PolicyDocument:
                 Statement:
-                Statement:
                  -
                    Sid: "CloudformationPermissions1"
                    Effect: "Allow"
