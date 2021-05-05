@@ -28,7 +28,7 @@ export sp="/-\|"
 
 
 CFN_LAMBDAS_BUCKET_TEMPLATE='../../CFN/EC-lz-s3-bucket-lambda-code.yml'
-
+CFN_LAMBDAS_TEMPLATE='../../CFN/EC-lz-logshipper-lambdas.yml'
 #   ---------------------
 #   The command line help
 #   ---------------------
