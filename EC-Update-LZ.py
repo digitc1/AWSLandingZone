@@ -23,7 +23,7 @@ def main(argv):
         if opt == '-h':
             display_help()
             sys.exit()
-        elif opt in ("-m", "--manigest"):
+        elif opt in ("-m", "--manifest"):
             manifest = arg
         elif opt in ("-o", "--org"):
             orgprofile = arg
