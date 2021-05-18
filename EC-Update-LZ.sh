@@ -8,9 +8,9 @@
 RED=`tput setaf 1`
 GREEN=`tput setaf 2`
 NC=`tput sgr0`
+EL=`tput el`
 
-
-venv='.python'
+venv='.venv'
 
 #   --------------------
 #       Parameters
@@ -36,12 +36,6 @@ done
 export i=1
 export sp="/-\|"
 
-PROFILE=''
-
-    if [ -n "$seclog"] ; then
-        PROFILE='--profile $seclog'
-    fi
-
 
 #   ---------------------
 #   The command line help
@@ -60,7 +54,7 @@ display_help() {
 #   ---------------------
 #   Environment setup
 #   ---------------------
-setup_environment() {
+update() {
 
     echo 'Checking environment...'
     echo ''
@@ -73,57 +67,63 @@ setup_environment() {
         exit 1
     fi
     
-    #pip3
-    if [[ "$(pip3 -V)" =~ "pip 20" ]] ; then
+    #venv
+    if [[ "$(env |grep VIRTUAL_ENV |wc -l)" == '1' ]] ; then
+        echo "${GREEN}✔${NC} Python running on venv" 
+    else
+        echo -ne "  Virtual virtual environment installing... \033[0K\r"
+        
+        virtualenv $venv &> /dev/null
+        source $venv/bin/activate
+        
+        if [[ "$(env |grep VIRTUAL_ENV |wc -l)" == '1' ]] ; then
+            echo "${EL}${GREEN}✔${NC} Virtual environment configured"
+        else
+            echo "${EL}${RED}✘${NC} Virtual environment not configured... exiting"
+            exit
+        
+        fi
+    fi
+    
+     #pip3
+    if [[ "$(pip3 -V)" =~ "pip" ]] ; then
         echo "${GREEN}✔${NC} PIP 3 is installed" 
     else
         echo "${RED}✘${NC} PIP 3 is not installed... exiting"
         exit 1
     fi
     
-    #venv
-    if python -c 'import sys; print(sys.prefix != sys.base_prefix)' == 'False' &> /dev/null ; then
-        echo "${GREEN}✔${NC} Python running on venv" 
-    else
-        tput sc
-        echo "   Python not running on venv... installing"
-        
-        python3 -m venv $venv &> /dev/null
-        source $venv/bin/activate
-        tput rc
-        tput ed
-        if python -c 'import sys; print(sys.prefix != sys.base_prefix)' == 'False' &> /dev/null ; then
-            echo "${GREEN}✔${NC} Python venv configured" 
-        else
-            echo "${RED}✘${NC} Python not running on venv... exiting"
-            exit
-        
-        fi
-    fi
-    
-    DEPENDENCIES=(boto3)
+    DEPENDENCIES=(boto3 json)
     
     #python dependencies
     for dep in "${DEPENDENCIES[@]}" 
-    do
-        if python -c 'import pkgutil; print(not pkgutil.find_loader("$dep"))' == 'True' &> /dev/null; then
+        do
+        if [[ "$(python3 -c 'import sys, pkgutil; print(True) if pkgutil.find_loader(sys.argv[1]) else print(False)' $dep)" == "True" ]] ; then
             echo "${GREEN}✔${NC} $dep is installed" 
         else
-            tput sc
-            echo "   $dep is not installed... installing"
+            
+            echo -ne "  $dep is not installed... installing \033[0K\r"
            
             pip3 install $dep &> /dev/null;
-            tput rc
-            tput ed
-            if python -c 'import pkgutil; print(not pkgutil.find_loader("$dep"))' == 'True' &> /dev/null; then
-                echo " ${GREEN}✔${NC} $dep installed" 
+            if [[ "$(python3 -c 'import sys, pkgutil; print(True) if pkgutil.find_loader(sys.argv[1]) else print(False)' $dep)" == "True" ]] ; then
+                echo "${EL}${GREEN}✔${NC} $dep installed" 
             else
-                echo " ${RED}✘${NC} $dep is not installed... exiting"
+                echo "${EL}${RED}✘${NC} $dep is not installed... exiting"
                 exit 1
             fi
             
         fi
     done
+
+#run python update script
+echo ''
+echo 'Starting update...'
+echo ''
+
+python3 ./EC-Update-LZ.py -m $manifest -o $org -s $seclog
+
+#deactivating pyton runtime environment
+deactivate
 }
 
 
@@ -138,4 +138,4 @@ if  [ -z "$manifest" ] ; then
     exit 0
 fi
 
-setup_environment
+update

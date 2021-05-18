@@ -3,16 +3,13 @@
 import sys, getopt
 import subprocess, pkg_resources
 import os
+import boto3
+import json
 
 def main(argv):
     manifest = ''
     orgprofile = ''
     seclogprofile = ''
-    
-    setup_environment()
-    
-    import boto3
-    
     try:
         opts, args = getopt.getopt(argv,"hms:o:",["manifest=", "seclog=", "org="])
     except getopt.GetoptError:
@@ -30,35 +27,49 @@ def main(argv):
         elif opt in ("-s", "--seclog"):
             seclogprofile = arg
     
-    print('Seclog Profile "', seclogprofile)
     print('Manifest "', manifest)
 
-    if orgprofile.len == 0:
+    if seclogprofile != '':
+        print('SECLOG Profile "', seclogprofile)
+        boto3.setup_default_session(profile_name=seclogprofile)
+        
+    if orgprofile != '':
         print('Organisation Profile "', orgprofile)
+        
+        
+        
+    linked_accounts = get_linked_accounts()
 
 def display_help():
     print('EC-Update-LZ.py -m <manifest> -s <seclogprofile> -o <orgprofile>')
 
-def setup_environment():
+def get_account_id():
+    """Return string
+    
+    AccountId of the account defined in the profile
+    """
+    client = boto3.client('sts')
+    data = client.get_caller_identity()
+    return data['Account']
 
-    is_windows = sys.platform.startswith('win')
+def get_linked_accounts():
+    """Return list
 
-    # Setup virtual environment
-    python = sys.executable
-    subprocess.check_call([python, '-m', 'venv', './.python'], stdout=subprocess.DEVNULL)
-    if is_windows:
-        subprocess.check_call(['./.python/bin/activate'], stdout=subprocess.DEVNULL)
-    else:
-        subprocess.check_call(['source', './bin/activate'], stdout=subprocess.DEVNULL)
+    Linked accounts from a SECLOG account
+    """
+    linked = []
+    accountId = get_account_id()
+    client = boto3.client('guardduty')
+    data0 = client.list_detectors()
+    if data0['DetectorIds'][0] != '':
+        data1 = client.list_members(DetectorId=data0['DetectorIds'][0])
+        
+        for member in data1['Members']:
+            if member['RelationshipStatus'] == 'ENABLED':
+                linked.append(member['AccoundId'])
+    
+    return linked
 
-    # Install dependencies
-    required = {'boto3'}
-    installed = {pkg.key for pkg in pkg_resources.working_set}
-    missing = required - installed
-
-    if missing:
-        print('Installing required python modules')
-        subprocess.check_call([python, '-m', 'pip', 'install', *missing], stdout=subprocess.DEVNULL)
     
 
 if __name__ == "__main__":
