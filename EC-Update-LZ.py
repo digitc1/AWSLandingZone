@@ -6,10 +6,14 @@ import os
 import boto3
 import json
 
+accountId = ''
+
 def main(argv):
+
     manifest = ''
     orgprofile = ''
     seclogprofile = ''
+
     try:
         opts, args = getopt.getopt(argv,"hms:o:",["manifest=", "seclog=", "org="])
     except getopt.GetoptError:
@@ -41,16 +45,20 @@ def main(argv):
     linked_accounts = get_linked_accounts()
 
 def display_help():
-    print('EC-Update-LZ.py -m <manifest> -s <seclogprofile> -o <orgprofile>')
+    print('python EC-Update-LZ.py -m <manifest> -s <seclogprofile> -o <orgprofile>')
 
-def get_account_id():
+def get_account_id(force = False):
     """Return string
     
     AccountId of the account defined in the profile
     """
-    client = boto3.client('sts')
-    data = client.get_caller_identity()
-    return data['Account']
+    global accountId
+
+    if accountId == '' or force == True:
+        client = boto3.client('sts')
+        data = client.get_caller_identity()
+        accountId = data['Account']
+    return accountId
 
 def get_linked_accounts():
     """Return list
