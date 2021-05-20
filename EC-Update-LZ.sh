@@ -117,7 +117,7 @@ update() {
 
 #run python update script
 echo ''
-echo 'Starting update...'
+echo 'Starting the update...'
 echo ''
 
 python3 ./EC-Update-LZ.py -m $manifest -o $org -s $seclog
