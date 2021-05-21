@@ -67,13 +67,22 @@ update() {
         exit 1
     fi
     
+    #pip3
+    if [[ "$(pip3 -V)" =~ "pip" ]] ; then
+        echo "${GREEN}✔${NC} PIP 3 is installed" 
+    else
+        echo "${RED}✘${NC} PIP 3 is not installed... exiting"
+        exit 1
+    fi
+    
+   
     #venv
     if [[ "$(env |grep VIRTUAL_ENV |wc -l)" == '1' ]] ; then
         echo "${GREEN}✔${NC} Python running on venv" 
     else
         echo -ne "  Virtual virtual environment installing... \033[0K\r"
         
-        virtualenv $venv &> /dev/null
+        python3 -m venv $venv &> /dev/null
         source $venv/bin/activate
         
         if [[ "$(env |grep VIRTUAL_ENV |wc -l)" == '1' ]] ; then
@@ -85,15 +94,9 @@ update() {
         fi
     fi
     
-     #pip3
-    if [[ "$(pip3 -V)" =~ "pip" ]] ; then
-        echo "${GREEN}✔${NC} PIP 3 is installed" 
-    else
-        echo "${RED}✘${NC} PIP 3 is not installed... exiting"
-        exit 1
-    fi
     
-    DEPENDENCIES=(boto3 json)
+    
+    DEPENDENCIES=(boto3 botocore json)
     
     #python dependencies
     for dep in "${DEPENDENCIES[@]}" 
@@ -120,7 +123,15 @@ echo ''
 echo 'Starting update...'
 echo ''
 
-python3 ./EC-Update-LZ.py -m $manifest -o $org -s $seclog
+params="-m $manifest"
+if  [ ! -z "$seclog" ] ; then
+    params="$params -s $seclog"
+fi
+if  [ ! -z "$org" ] ; then
+    params="$params -o $org"
+fi
+
+python3 ./EC-Update-LZ.py $params
 
 #deactivating pyton runtime environment
 deactivate
