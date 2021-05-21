@@ -7,7 +7,7 @@ import logging
 import boto3
 import json
 
-logging.basicConfig(level=logging.DEBUG)
+
 
 account_id = ''
 
@@ -16,16 +16,17 @@ def main(argv):
     manifest = ''
     orgprofile = ''
     seclogprofile = ''
+    verbosity = logging.ERROR
 
     try:
-        opts, args = getopt.getopt(argv,"hms:o:",["manifest=", "seclog=", "org="])
+        opts, args = getopt.getopt(argv,"hms:ov:",["manifest", "seclog", "org", "verbose"])
     except getopt.GetoptError:
-        display_help()
+        usage()
         sys.exit(2)
     
     for opt, arg in opts:
         if opt == '-h':
-            display_help()
+            usage()
             sys.exit()
         elif opt in ("-m", "--manifest"):
             manifest = arg
@@ -33,21 +34,29 @@ def main(argv):
             orgprofile = arg
         elif opt in ("-s", "--seclog"):
             seclogprofile = arg
+        elif opt in ("-v", "--verbose"):
+            verbosity = logging.DEBUG
     
-    print('Manifest "', manifest)
+    logging.basicConfig(level=verbosity)
+    
 
     if seclogprofile != '':
         print('SECLOG Profile "', seclogprofile)
         boto3.setup_default_session(profile_name=seclogprofile)
-        
-    if orgprofile != '':
-        print('Organisation Profile "', orgprofile)
-        
-        
-        
+   
+    
+    print("Checking account...")
+    if (is_seclog() == False):
+        print(f"\033[F\033[{20}G Not a SECLOG account. Exiting.")
+        sys.exit(1)
+    
+    print(f"\033[F\033[{20}G SECLOG account identified.")    
     linked_accounts = get_linked_accounts()
 
-def display_help():
+def usage():
+    """
+    This function prints the usage
+    """
     print('python EC-Update-LZ.py -m <manifest> -s <seclogprofile> -o <orgprofile>')
 
 def get_account_id(force = False):
@@ -61,7 +70,7 @@ def get_account_id(force = False):
     if account_id == '' or force == True:
         client = boto3.client('sts')
         data = client.get_caller_identity()
-        account_id = data['Account']
+        seclog_account_id = data['Account']
         
     logging.debug("Account Id : {}".format(account_id))
     return account_id
@@ -84,6 +93,19 @@ def get_linked_accounts():
                 
     logging.debug("Linked accounts : {}".format(linked_accounts))
     return linked_accounts
+
+def is_seclog():
+    """
+    Function that checks if the account is a seclog account
+        :return: true or false
+    """
+    client = boto3.client('ssm')
+    seclog_account_id = get_account_id()
+    response = client.get_parameter(Name='/org/member/SecLogMasterAccountId')
+    if not 'Value' in response or seclog_account_id != response['Value']:
+        return False
+    
+    return True
 
     
 
