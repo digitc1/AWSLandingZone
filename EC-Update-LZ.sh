@@ -96,7 +96,7 @@ update() {
     
     
     
-    DEPENDENCIES=(boto3 botocore json)
+    DEPENDENCIES=(boto3 botocore time json)
     
     #python dependencies
     for dep in "${DEPENDENCIES[@]}" 

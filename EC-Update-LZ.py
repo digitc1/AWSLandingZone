@@ -4,10 +4,11 @@ import sys, getopt
 import subprocess, pkg_resources
 import os
 import logging
+import time
 import boto3
 import json
 
-from botocore.exceptions import ClientError
+from botocore.exceptions import BotoCoreError, ClientError
 
 
 account_id = ''
@@ -50,14 +51,22 @@ def main(argv):
     
     print(f"\033[F\033[{20}G SECLOG account identified.")    
     
+    update_seclog_KMS_key_for_cloudtrail_encryption()
     
 
 def usage():
     """
-    This function prints the usage
+    This function prints the script usage
     """
     print('Usage:')
-    print('python EC-Update-LZ.py -m <manifest> -s <seclogprofile> -o <orgprofile>')
+    print('')
+    print('python EC-Update-LZ.py -m <manifest> [-s <seclogprofile>] [-o <orgprofile>] [-v]')
+    print('')
+    print('   Provide ')
+    print('   -m --manifext         : The manifest for the LZ update')
+    print('   -s --seclog           : The AWS profile of the SECLOG account - optional')
+    print('   -o --org              : The AWS profile of the Organisation account - optional')
+    print('   -v --verbose          : Debug mode - optional')
 
 def get_account_id(Force = False):
     """
@@ -110,7 +119,7 @@ def update_seclog_KMS_key_for_cloudtrail_encryption():
         :return: true or false
     """
     stack_name='SECLZ-Cloudtrail-KMS'
-    template='./EC/EC-lz-Cloudtrail-kms-key.yml'
+    template='CFN/EC-lz-Cloudtrail-kms-key.yml'
     updated=False
     
     try:
@@ -118,8 +127,14 @@ def update_seclog_KMS_key_for_cloudtrail_encryption():
         template_body=f.read()
         print("Updating stack : {}".format(stack_name))
         client = boto3.client('cloudformation')
-        stack_id = client.update_stack(StackName=stack_name, TemplateBody=template_body)
-        
+
+        response = client.describe_stacks(StackName=stack_name)
+        if response['Stacks'][0]['StackStatus'] not in ('CREATE_COMPLETE', 'UPDATE_COMPLETE'):
+            print("\rCannot update stack {}. Current status is : {}".format(stack_name,response['Stacks'][0]['StackStatus']))
+            return False
+            
+        client.update_stack(StackName=stack_name, TemplateBody=template_body)
+       
         while updated == False:
             response = client.describe_stacks(StackName=stack_name)
             if response['Stacks'][0]['StackStatus'] == 'UPDATE_COMPLETE':
@@ -129,11 +144,15 @@ def update_seclog_KMS_key_for_cloudtrail_encryption():
             elif response['Stacks'][0]['StackStatus'] == 'ERROR':
                 print("\rUpdating stack : {} failed".format(stack_name))
                 return False
+            time.sleep(0.75)
+
         
+        return True
         
     except FileNotFoundError as err:
         logging.error("Template not found : {}".format(err.strerror))
-            
+    except ClientError as err:
+        logging.error("Update not required for stack : {}".format(stack_name))
     
 
 if __name__ == "__main__":
