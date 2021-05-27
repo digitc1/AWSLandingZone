@@ -12,6 +12,13 @@ from botocore.exceptions import BotoCoreError, ClientError
 
 
 account_id = ''
+stacks = [
+    {
+        'Name': 'SECLZ-Cloudtrail-KMS',
+        'Template': 'CFN/EC-lz-Cloudtrail-kms-key.yml'
+    }
+]
+
 
 def main(argv):
 
@@ -26,6 +33,9 @@ def main(argv):
         usage()
         sys.exit(2)
     
+    print("#######")
+    print("####### AWS Landing Zone update script")
+
     # Parsing script parameters
     for opt, arg in opts:
         if opt == '-h':
@@ -36,25 +46,50 @@ def main(argv):
         elif opt in ("-o", "--org"):
             orgprofile = arg
         elif opt in ("-s", "--seclog"):
-            print("Using AWS profile : {}".format(arg))
+            print("####### Using AWS profile : {}".format(arg))
             boto3.setup_default_session(profile_name=arg)
         elif opt in ("-v", "--verbose"):
             verbosity = logging.DEBUG
     
     logging.basicConfig(level=verbosity)
-    
-    print("#######")
-    print("####### AWS Landing Zone update script")
-    print("#######")
 
+    print("")
+    if (manifest == ''):
+        print("#######")
+        print("####### Manifest has not been provided. [\033[0;31;4mFAIL\033[0;37;4m]")
+        print("Exiting...")
+        sys.exit(1)
+    else:
+        try:
+            f=open(manifest, "r")
+            manifest_body=f.read()
+        except FileNotFoundError as err:
+            print("#######")
+            print("####### Manifest file not found : {} [\033[0;31;4mFAIL\033[0;37;4m]".format(err.strerror))
+            print("Exiting...")
+            sys.exit(1)
+    
+
+    print("#######")
     print("####### Checking account...")
     if (is_seclog() == False):
-        print(f"\033[F\033[{20}G Not a SECLOG account. Exiting.")
+        print("####### Not a SECLOG account. [\033[0;31;4mFAIL\033[0;37;4m]")
+        print("Exiting...")
         sys.exit(1)
     
-    print(f"\033[F\033[{20}G SECLOG account identified.")    
+    print("####### SECLOG account identified. [\033[0;32;4mOK\033[0;37;4m]")
+
+    print("")
+    print("#######")
+    print("####### Updating SECLOG Account")
+    print("#######")
+
+    #update_seclog_KMS_key_for_cloudtrail_encryption
     
-    update_seclog_KMS_key_for_cloudtrail_encryption()
+    
+    if (update_stack(stacks[0]) == False):
+        print("Exiting...")
+        sys.exit(1)
     
 
 def usage():
@@ -116,24 +151,25 @@ def is_seclog():
         return False
     return True
 
-def update_seclog_KMS_key_for_cloudtrail_encryption():
+def update_stack(params):
     """
     Function that installs the KMS key for cloudtrail stack
         :return: true or false
     """
-    stack_name='SECLZ-Cloudtrail-KMS'
-    template='CFN/EC-lz-Cloudtrail-kms-key.yml'
+   
+    template = params['Template']
+    stack_name = params['Name']
     updated=False
     
     try:
         f=open(template, "r")
         template_body=f.read()
-        print("Updating stack : {}".format(stack_name))
+        print("### Updating stack : {}".format(stack_name))
         client = boto3.client('cloudformation')
 
         response = client.describe_stacks(StackName=stack_name)
         if response['Stacks'][0]['StackStatus'] not in ('CREATE_COMPLETE', 'UPDATE_COMPLETE'):
-            print("\rCannot update stack {}. Current status is : {}".format(stack_name,response['Stacks'][0]['StackStatus']))
+            print("#### Cannot update stack {}. Current status is : {} [\033[0;31;4mFAIL\033[0;37;4m]".format(stack_name,response['Stacks'][0]['StackStatus']))
             return False
             
         client.update_stack(StackName=stack_name, TemplateBody=template_body)
@@ -141,11 +177,11 @@ def update_seclog_KMS_key_for_cloudtrail_encryption():
         while updated == False:
             response = client.describe_stacks(StackName=stack_name)
             if 'COMPLETE' in response['Stacks'][0]['StackStatus'] :
-                print("\rUpdating stack : {} complete".format(stack_name))
+                print("### Updating stack : {} complete [\033[0;32;4mOK\033[0;37;4m]".format(stack_name))
                 updated=True
                 break
             elif 'FAILED' in response['Stacks'][0]['StackStatus'] :
-                print("\rUpdating stack : {} failed. Reason {}".format(stack_name, response['Stacks'][0]['StackStatusReason']))
+                print("### Updating stack : {} failed. Reason {} [\033[0;31;4mFAIL\033[0;37;4m]".format(stack_name, response['Stacks'][0]['StackStatusReason']))
                 return False
             time.sleep(1)
 
@@ -153,9 +189,15 @@ def update_seclog_KMS_key_for_cloudtrail_encryption():
         return True
         
     except FileNotFoundError as err:
-        logging.error("Template not found : {}".format(err.strerror))
+        print("### Template not found : {} [\033[0;31;4mFAIL\033[0;37;4m]".format(err.strerror))
     except ClientError as err:
-        logging.error("Update not required for stack : {}".format(stack_name))
+        if err.response['Error']['Code'] == 'AmazonCloudFormationException':
+            print("### Stack {} not found : {} [\033[0;31;4mFAIL\033[0;37;4m]".format(err.response['Error']['Message']))
+        elif err.response['Error']['Code'] == 'ValidationError' and err.response['Error']['Message'] == 'No updates are to be performed.':
+            print("### Update not required for stack : {} [\033[0;33;4mNO ACTION\033[0;37;4m]".format(stack_name))
+            return True
+        else:
+            print("### Updating stack {} failed. Reason : {} [\033[0;31;4mFAIL\033[0;37;4m]".format(err.response['Error']['Message']))
     
     return False
     

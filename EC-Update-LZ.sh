@@ -56,7 +56,7 @@ display_help() {
 #   ---------------------
 update() {
 
-
+    echo "" 
     echo "#######"
     echo "####### AWS Landing Zone update script environment configuration"
     echo "####### Checking environment..."
