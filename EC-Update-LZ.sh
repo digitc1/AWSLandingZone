@@ -56,39 +56,46 @@ display_help() {
 #   ---------------------
 update() {
 
-    echo 'Checking environment...'
-    echo ''
+
+    echo "#######"
+    echo "####### AWS Landing Zone update script environment configuration"
+    echo "####### Checking environment..."
+    echo "#######"
+    echo ""
     
     #python 3
     if [[ "$(python3 -V)" =~ "Python 3" ]] ; then
-        echo "${GREEN}✔${NC} Python 3 is installed" 
+        echo "####### Python 3 installed [${GREEN}OK${NC}]"
     else
-        echo "${RED}✘${NC} Python 3 is not installed... exiting"
+        echo "####### Python 3 installed [${RED}FAIL${NC}]"
+        echo "####### Exiting..."
         exit 1
     fi
     
     #pip3
     if [[ "$(pip3 -V)" =~ "pip" ]] ; then
-        echo "${GREEN}✔${NC} PIP 3 is installed" 
+        echo "####### PIP 3 installed [${GREEN}OK${NC}]"
     else
-        echo "${RED}✘${NC} PIP 3 is not installed... exiting"
+        echo "####### PIP 3 installed [${RED}FAIL${NC}]"
+        echo "####### Exiting..."
         exit 1
     fi
     
    
     #venv
     if [[ "$(env |grep VIRTUAL_ENV |wc -l)" == '1' ]] ; then
-        echo "${GREEN}✔${NC} Python running on venv" 
+        echo "####### Python running on venv [${GREEN}OK${NC}]"
     else
-        echo -ne "  Virtual virtual environment installing... \033[0K\r"
+        echo -ne "####### Virtual virtual environment installing... \033[0K\r"
         
         python3 -m venv $venv &> /dev/null
         source $venv/bin/activate
         
         if [[ "$(env |grep VIRTUAL_ENV |wc -l)" == '1' ]] ; then
-            echo "${EL}${GREEN}✔${NC} Virtual environment configured"
+            echo "${EL}####### Virtual environment configured [${GREEN}OK${NC}]"
         else
-            echo "${EL}${RED}✘${NC} Virtual environment not configured... exiting"
+            echo "${EL}####### Virtual environment configured [${RED}FAIL${NC}]"
+            echo "####### Exiting..."
             exit
         
         fi
@@ -102,16 +109,16 @@ update() {
     for dep in "${DEPENDENCIES[@]}" 
         do
         if [[ "$(python3 -c 'import sys, pkgutil; print(True) if pkgutil.find_loader(sys.argv[1]) else print(False)' $dep)" == "True" ]] ; then
-            echo "${GREEN}✔${NC} $dep is installed" 
+            echo "####### $dep installed [${GREEN}OK${NC}]"
         else
-            
-            echo -ne "  $dep is not installed... installing \033[0K\r"
+            echo -ne "####### Installing $dep... \033[0K\r"
            
             pip3 install $dep &> /dev/null;
             if [[ "$(python3 -c 'import sys, pkgutil; print(True) if pkgutil.find_loader(sys.argv[1]) else print(False)' $dep)" == "True" ]] ; then
-                echo "${EL}${GREEN}✔${NC} $dep installed" 
+                echo ${EL}"####### $dep installed [${GREEN}OK${NC}]"
             else
-                echo "${EL}${RED}✘${NC} $dep is not installed... exiting"
+                echo "${EL}####### $dep installed [${RED}FAIL${NC}]"
+                echo "####### Exiting..."
                 exit 1
             fi
             
@@ -119,9 +126,9 @@ update() {
     done
 
 #run python update script
-echo ''
-echo 'Starting update...'
-echo ''
+echo ""
+echo "####### Environment is in good shape. Starting update script..."
+echo ""
 
 params="-m $manifest"
 if  [ ! -z "$seclog" ] ; then

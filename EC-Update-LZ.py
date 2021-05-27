@@ -43,8 +43,11 @@ def main(argv):
     
     logging.basicConfig(level=verbosity)
     
+    print("#######")
+    print("####### AWS Landing Zone update script")
+    print("#######")
 
-    print("Checking account...")
+    print("####### Checking account...")
     if (is_seclog() == False):
         print(f"\033[F\033[{20}G Not a SECLOG account. Exiting.")
         sys.exit(1)
@@ -137,14 +140,14 @@ def update_seclog_KMS_key_for_cloudtrail_encryption():
        
         while updated == False:
             response = client.describe_stacks(StackName=stack_name)
-            if response['Stacks'][0]['StackStatus'] == 'UPDATE_COMPLETE':
+            if 'COMPLETE' in response['Stacks'][0]['StackStatus'] :
                 print("\rUpdating stack : {} complete".format(stack_name))
                 updated=True
                 break
-            elif response['Stacks'][0]['StackStatus'] == 'ERROR':
-                print("\rUpdating stack : {} failed".format(stack_name))
+            elif 'FAILED' in response['Stacks'][0]['StackStatus'] :
+                print("\rUpdating stack : {} failed. Reason {}".format(stack_name, response['Stacks'][0]['StackStatusReason']))
                 return False
-            time.sleep(0.75)
+            time.sleep(1)
 
         
         return True
@@ -153,6 +156,8 @@ def update_seclog_KMS_key_for_cloudtrail_encryption():
         logging.error("Template not found : {}".format(err.strerror))
     except ClientError as err:
         logging.error("Update not required for stack : {}".format(stack_name))
+    
+    return False
     
 
 if __name__ == "__main__":
