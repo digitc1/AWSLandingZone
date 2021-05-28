@@ -1,0 +1,20 @@
+{
+    "stacks" : [ 
+        {
+            "SECLZ-Cloudtrail-KMS" : {
+                "update" : true
+            } 
+        },
+        {
+            "SECLZ-Iam-Password-Policy" : {
+                "update"  :true
+            }  
+        },
+        {
+            "SECLZ-Central-Buckets" : {
+                "update" : true
+            } 
+        }
+    ],
+    "stacksets" : []
+}
