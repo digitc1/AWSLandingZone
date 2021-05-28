@@ -13,29 +13,26 @@ from botocore.exceptions import BotoCoreError, ClientError
 
 account_id = ''
 
-stacks = [
-    { 'SECLZ-Cloudtrail-KMS' : { 'Template' : 'CFN/EC-lz-Cloudtrail-kms-key.yml' } },
-    { 'SECLZ-LogShipper-Lambdas-Bucket' : { 'Template' : 'CFN/EC-lz-s3-bucket-lambda-code.yml' } },
-    { 'SECLZ-LogShipper-Lambdas' : { 'Template' : 'CFN/EC-lz-logshipper-lambdas.yml' } },
-    { 'SECLZ-Central-Buckets' : { 'Template' : 'CFN/EC-lz-s3-buckets.yml' , "Params" : 'CFN/EC-lz-TAGS-params.json'} },
-    { 'SECLZ-Iam-Password-Policy' : { 'Template' : 'CFN/EC-lz-iam-setting_password_policy.yml', 'Client':True } },
-    { 'SECLZ-config-cloudtrail-SNS' : { 'Template' : 'CFN/EC-lz-config-cloudtrail-logging.yml', 'Client':True } },
-    { 'SECLZ-Guardduty-detector' : { 'Template' : 'CFN/EC-lz-guardDuty-detector.yml', 'Client':True } },
-    { 'SECLZ-SecurityHub' : { 'Template' : 'CFN/EC-lz-securityHub.yml', 'Client':True } },
-    { 'SECLZ-Notifications-Cloudtrail' : { 'Template' : 'CFN/EC-lz-notifications.yml', 'Client':True } },
-    { 'SECLZ-CloudwatchLogs-SecurityHub' : { 'Template' : 'CFN/EC-lz-config-securityhub-logging.yml' } },
-    { 'SECLZ-local-SNS-topic' : { 'Template' : 'CFN/EC-lz-local-config-SNS.yml', 'Client':True} }
-]
+stacks = { 'SECLZ-Cloudtrail-KMS' : { 'Template' : 'CFN/EC-lz-Cloudtrail-kms-key.yml' } ,
+     'SECLZ-LogShipper-Lambdas-Bucket' : { 'Template' : 'CFN/EC-lz-s3-bucket-lambda-code.yml' } ,
+     'SECLZ-LogShipper-Lambdas' : { 'Template' : 'CFN/EC-lz-logshipper-lambdas.yml' } ,
+     'SECLZ-Central-Buckets' : { 'Template' : 'CFN/EC-lz-s3-buckets.yml' , "Params" : 'CFN/EC-lz-TAGS-params.json'} ,
+     'SECLZ-Iam-Password-Policy' : { 'Template' : 'CFN/EC-lz-iam-setting_password_policy.yml', 'Client':True } ,
+     'SECLZ-config-cloudtrail-SNS' : { 'Template' : 'CFN/EC-lz-config-cloudtrail-logging.yml', 'Client':True } ,
+     'SECLZ-Guardduty-detector' : { 'Template' : 'CFN/EC-lz-guardDuty-detector.yml', 'Client':True } ,
+     'SECLZ-SecurityHub' : { 'Template' : 'CFN/EC-lz-securityHub.yml', 'Client':True } ,
+     'SECLZ-Notifications-Cloudtrail' : { 'Template' : 'CFN/EC-lz-notifications.yml', 'Client':True } ,
+     'SECLZ-CloudwatchLogs-SecurityHub' : { 'Template' : 'CFN/EC-lz-config-securityhub-logging.yml' } ,
+     'SECLZ-local-SNS-topic' : { 'Template' : 'CFN/EC-lz-local-config-SNS.yml', 'Client':True} }
 
-stacksets = [
-    { 'SECLZ-Enable-Config-SecurityHub-Globally' :  { 'Template' : 'CFN/EC-lz-Config-SecurityHub-all-regions.yml' } },
-    { 'SECLZ-Enable-Guardduty-Globally' :  { 'Template' : 'CFN/EC-lz-Config-Guardduty-all-regions.yml' } }
-]
+
+stacksets = { 'SECLZ-Enable-Config-SecurityHub-Globally' :  { 'Template' : 'CFN/EC-lz-Config-SecurityHub-all-regions.yml' } ,
+     'SECLZ-Enable-Guardduty-Globally' :  { 'Template' : 'CFN/EC-lz-Config-Guardduty-all-regions.yml' } }
+
 
 def main(argv):
 
     manifest = ''
-    manifest_data = ''
     orgprofile = ''
     seclogprofile = ''
     verbosity = logging.ERROR
@@ -63,9 +60,8 @@ def main(argv):
                 sys.exit(1)
             else:
                 try:
-                    f=open(arg, "r")
-                    manifest=f.read()
-                    manifest_data = json.load(manifest)
+                    with open(arg) as f:
+                        manifest = json.load(f)
                 except FileNotFoundError as err:
                     print("####### Manifest file not found : {} [\033[0;31;4mFAIL\033[0;37;4m]".format(err.strerror))
                     print("Exiting...")
@@ -103,11 +99,12 @@ def main(argv):
     print("#######")
 
     #update seclog stacks
-    for key, val in manifest_data['stacks'].items():
-        if val['update'] == True:
-            if update_stack(key, stacks[key]) == False:
-                print("Exiting...")
-                sys.exit(1)
+    for entry in manifest['stacks']:
+        for key in entry:
+            if entry[key]['update'] == True:
+                if update_stack(key, stacks[key]) == False:
+                    print("Exiting...")
+                    sys.exit(1)
     
 
 def usage():
@@ -183,12 +180,13 @@ def update_stack(stack, template_data, params=[]):
 
     try:
         if  'Params' in template_data:
-            f=open(template_data['Params'], "r")
-            params = f.read()
+            with open(template_data['Params']) as f:
+                params = json.load(f)
+           
     
         f=open(template, "r")
         template_body=f.read()
-        print("### Updating stack : {}".format(stack))
+        print("### Updating stack : {}. ".format(stack), end="")
         client = boto3.client('cloudformation')
 
         response = client.describe_stacks(StackName=stack)
@@ -196,18 +194,18 @@ def update_stack(stack, template_data, params=[]):
             print("#### Cannot update stack {}. Current status is : {} [\033[0;31;4mFAIL\033[0;37;4m]".format(stack,response['Stacks'][0]['StackStatus']))
             return False
         
-        print("### Updating stack {} in progress ...".format(stack), end="")
-        client.update_stack(StackName=stack, TemplateBody=template_body, Parameters=params)
+        print("in progress ...".format(stack), end="")
+        client.update_stack(StackName=stack, TemplateBody=template_body, Parameters=params, Capabilities=response['Stacks'][0]['Capabilities'])
         updated=False
         
         while updated == False:
             response = client.describe_stacks(StackName=stack)
             if 'COMPLETE' in response['Stacks'][0]['StackStatus'] :
-                print("### Updating stack {} complete [\033[0;32;4mOK\033[0;37;4m]".format(stack))
+                print("\r### Updating stack {} complete [\033[0;32;4mOK\033[0;37;4m]".format(stack))
                 updated=True
                 break
             elif 'FAILED' in response['Stacks'][0]['StackStatus'] :
-                print("### Updating stack {} failed. Reason {} [\033[0;31;4mFAIL\033[0;37;4m]".format(stack, response['Stacks'][0]['StackStatusReason']))
+                print("\r### Updating stack {} failed. Reason {} [\033[0;31;4mFAIL\033[0;37;4m]".format(stack, response['Stacks'][0]['StackStatusReason']))
                 return False
             time.sleep(1)
 
@@ -218,12 +216,12 @@ def update_stack(stack, template_data, params=[]):
         print("### Template not found : {} [\033[0;31;4mFAIL\033[0;37;4m]".format(err.strerror))
     except ClientError as err:
         if err.response['Error']['Code'] == 'AmazonCloudFormationException':
-            print("### Stack {} not found : {} [\033[0;31;4mFAIL\033[0;37;4m]".format(err.response['Error']['Message']))
+            print("\r### Stack {} not found : {} [\033[0;31;4mFAIL\033[0;37;4m]".format(err.response['Error']['Message']))
         elif err.response['Error']['Code'] == 'ValidationError' and err.response['Error']['Message'] == 'No updates are to be performed.':
-            print("### Update not required for stack : {} [\033[0;33;4mNO ACTION\033[0;37;4m]".format(stack))
+            print("\r### Update not required for stack : {} [\033[0;33;4mNO ACTION\033[0;37;4m]".format(stack))
             return True
         else:
-            print("### Updating stack {} failed. Reason : {} [\033[0;31;4mFAIL\033[0;37;4m]".format(err.response['Error']['Message']))
+            print("\r### Updating stack {} failed. Reason : {} [\033[0;31;4mFAIL\033[0;37;4m]".format(err.response['Error']['Message']))
     
     return False
     

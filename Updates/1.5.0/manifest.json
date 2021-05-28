@@ -7,7 +7,7 @@
         },
         {
             "SECLZ-Iam-Password-Policy" : {
-                "update"  :true
+                "update" : true
             }  
         },
         {
