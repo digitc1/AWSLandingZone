@@ -1,20 +1,36 @@
 {
-    "stacks" : [ 
-        {
-            "SECLZ-Cloudtrail-KMS" : {
-                "update" : true
-            } 
+    "stacks" : {
+        "SECLZ-Cloudtrail-KMS" : {
+            "update" : true
         },
-        {
-            "SECLZ-Iam-Password-Policy" : {
-                "update" : true
-            }  
+        "SECLZ-LogShipper-Lambdas-Bucket" : {
+            "update" : true
         },
-        {
-            "SECLZ-Central-Buckets" : {
-                "update" : true
-            } 
-        }
-    ],
-    "stacksets" : []
+        "SECLZ-LogShipper-Lambdas" : {
+            "update" : true
+        },
+        "SECLZ-Central-Buckets" : {
+            "update" : true
+        },
+        "SECLZ-Iam-Password-Policy" : {
+            "update" : true
+        },
+        "SECLZ-config-cloudtrail-SNS" : {
+            "update" : true
+        },
+        "SECLZ-Guardduty-detector" : {
+            "update" : true
+        },
+        "SECLZ-SecurityHub" : {
+            "update" : true
+         },
+        "SECLZ-Notifications-Cloudtrail" : {
+            "update" : true
+        },
+        "SECLZ-CloudwatchLogs-SecurityHub" : {
+            "update" : true
+        } 
+    },
+    "logdestination" : "dgtest",
+    "stacksets" : {}
 }
