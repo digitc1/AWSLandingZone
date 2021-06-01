@@ -9,8 +9,8 @@ import boto3
 import json
 
 
-
-from botocore.exceptions import BotoCoreError, ClientError
+from enum import Enum
+from botocore.exceptions import BotoCoreError, ClientError, ProfileNotFound
 
 
 account_id = ''
@@ -35,9 +35,11 @@ stacksets = { 'SECLZ-Enable-Config-SecurityHub-Globally' :  { 'Template' : 'CFN/
 def main(argv):
     start_time = time.time()
     manifest = ''
-    orgprofile = ''
-    seclogprofile = ''
+    profile = ''
+    org_account='246933597933'
+    has_profile = False
     verbosity = logging.ERROR
+
 
     try:
         opts, args = getopt.getopt(argv,"hvm:s:o:",["manifest", "seclog", "org", "verbose"])
@@ -73,11 +75,21 @@ def main(argv):
                     print("Exiting...")
                     sys.exit(1)
         elif opt in ("-o", "--org"):
-            orgprofile = arg
+            print("Using Organization account : {}".format(arg))
+            org_account = arg
         elif opt in ("-s", "--seclog"):
-            print("Using AWS profile : {}".format(arg))
+            try:
+                profile = arg
+                boto3.setup_default_session(profile_name=profile)
+            except ProfileNotFound as err:
+                print("{} [\033[0;31;40mFAIL\033[0;37;40m]".format(err))
+                print("Exiting...")
+                sys.exit(1)
 
-            boto3.setup_default_session(profile_name=arg)
+            print("Using AWS profile : {}".format(arg))
+            has_profile = True
+
+
         elif opt in ("-v", "--verbose"):
             verbosity = logging.DEBUG
     
@@ -90,77 +102,199 @@ def main(argv):
         sys.exit(1)
     
     print("SECLOG account identified. [\033[0;32;40mOK\033[0;37;40m]")
-    print("Updating account...")
+
+    linked_accounts = get_linked_accounts()
+    print("Identifying linked accounts... ", end="")
+    print("{}".format(linked_accounts))
+    if has_profile:
+        
+        sts = boto3.client('sts')
+        assumedRole = sts.assume_role(
+            RoleArn="arn:aws:iam::{}:role/AccountManagerRole".format(org_account),
+            RoleSessionName='AccountManagerRole'
+        )
+        credentials = assumedRole['Credentials']
+        accessKey = credentials['AccessKeyId']
+        secretAccessKey = credentials['SecretAccessKey']
+        sessionToken = credentials['SessionToken']
+
+        organisation = boto3.client('organizations',
+            aws_access_key_id=accessKey,
+            aws_secret_access_key=secretAccessKey, 
+            aws_session_token=sessionToken)
+
+        ou_children = organisation.list_children(
+                            ParentId='string',
+                            ChildType='ACCOUNT',
+                        )
+
+        print({}.format(ou_children))
+        sys.exit(1)
+
+        
+        for linked in linked_accounts:
+            response = organisation.describe_organizational_unit(OrganizationalUnitId='string')
+
+
+
     print("")
-
     #update seclog stacks
+    
+    print("Updating SECLOG account...")
+    print("")
     stack_actions = manifest['stacks']
-
+    cfn = boto3.client('cloudformation', region_name=os.environ['AWS_DEFAULT_REGION'])
+    seclog_status = Status.NO_ACTION
+    
     if 'SECLZ-Cloudtrail-KMS' in stack_actions and stack_actions['SECLZ-Cloudtrail-KMS']['update'] == True:
-        if update_stack('SECLZ-Cloudtrail-KMS', stacks) == False:
-            print("Exiting...")
-            sys.exit(1)
-        else:
+        result = update_stack(cfn, 'SECLZ-Cloudtrail-KMS', stacks)
+        if result != Status.NO_ACTION:
+            seclog_status = result
+        elif result == Status.OK :
             print("SSM parameter /org/member/KMSCloudtrailKey_arn update in progress...", end="")
             client = boto3.client('ssm')
             response = client.get_parameter(Name='/org/member/KMSCloudtrailKey_arn')
             response = client.put_parameter(Name='/org/member/KMSCloudtrailKey_arn', Value=response['Parameter']['Value'], Type=response['Parameter']['Type'], Overwrite=True)
             print("\rSSM parameter /org/member/KMSCloudtrailKey_arn updated with version [\033[0;32;40mOK\033[0;37;40m]".format(response['Version']))
 
-    if 'SECLZ-LogShipper-Lambdas-Bucket' in stack_actions and stack_actions['SECLZ-LogShipper-Lambdas-Bucket']['update'] == True:
-        if update_stack('SECLZ-LogShipper-Lambdas-Bucket', stacks) == False:
-            print("Exiting...")
-            sys.exit(1)
+    if seclog_status != Status.FAIL and 'SECLZ-LogShipper-Lambdas-Bucket' in stack_actions and stack_actions['SECLZ-LogShipper-Lambdas-Bucket']['update'] == True:
+        result = update_stack(cfn, 'SECLZ-LogShipper-Lambdas-Bucket', stacks)
+        if result != Status.NO_ACTION:
+            seclog_status = result
 
-    if 'SECLZ-LogShipper-Lambdas' in stack_actions and stack_actions['SECLZ-LogShipper-Lambdas']['update'] == True:
+    if seclog_status != Status.FAIL and 'SECLZ-LogShipper-Lambdas' in stack_actions and stack_actions['SECLZ-LogShipper-Lambdas']['update'] == True:
         #TODO
         print("")
     
-    if 'SECLZ-Central-Buckets' in stack_actions and stack_actions['SECLZ-Central-Buckets']['update'] == True:
-        if update_stack('SECLZ-Central-Buckets', stacks) == False:
-            print("Exiting...")
-            sys.exit(1)
+    if seclog_status != Status.FAIL and 'SECLZ-Central-Buckets' in stack_actions and stack_actions['SECLZ-Central-Buckets']['update'] == True:
+        result = update_stack(cfn, 'SECLZ-Central-Buckets', stacks)
+        if result != Status.NO_ACTION:
+            seclog_status = result
     
-    if 'SECLZ-Iam-Password-Policy' in stack_actions and stack_actions['SECLZ-Iam-Password-Policy']['update'] == True:
-        if update_stack('SECLZ-Iam-Password-Policy', stacks) == False:
-            print("Exiting...")
-            sys.exit(1)
+    if seclog_status != Status.FAIL and 'SECLZ-Iam-Password-Policy' in stack_actions and stack_actions['SECLZ-Iam-Password-Policy']['update'] == True:
+        result = update_stack(cfn, 'SECLZ-Iam-Password-Policy', stacks)
+        if result != Status.NO_ACTION:
+            seclog_status = result
 
-    if 'SECLZ-config-cloudtrail-SNS' in stack_actions and stack_actions['SECLZ-config-cloudtrail-SNS']['update'] == True:
-        if update_stack('SECLZ-config-cloudtrail-SNS', stacks) == False:
-            print("Exiting...")
-            sys.exit(1)
+    if seclog_status != Status.FAIL and 'SECLZ-config-cloudtrail-SNS' in stack_actions and stack_actions['SECLZ-config-cloudtrail-SNS']['update'] == True:
+        result = update_stack(cfn, 'SECLZ-config-cloudtrail-SNS', stacks)
+        if result != Status.NO_ACTION:
+            seclog_status = result
     
-    if 'SECLZ-Guardduty-detector' in stack_actions and stack_actions['SECLZ-Guardduty-detector']['update'] == True:
-        if update_stack('SECLZ-Guardduty-detector', stacks) == False:
-            print("Exiting...")
-            sys.exit(1)
+    if seclog_status != Status.FAIL and 'SECLZ-Guardduty-detector' in stack_actions and stack_actions['SECLZ-Guardduty-detector']['update'] == True:
+        result = update_stack(cfn, 'SECLZ-Guardduty-detector', stacks)
+        if result != Status.NO_ACTION:
+            seclog_status = result
     
-    if 'SECLZ-SecurityHub' in stack_actions and stack_actions['SECLZ-SecurityHub']['update'] == True:
-        if update_stack('SECLZ-SecurityHub', stacks) == False:
-            print("Exiting...")
-            sys.exit(1)
+    if seclog_status != Status.FAIL and 'SECLZ-SecurityHub' in stack_actions and stack_actions['SECLZ-SecurityHub']['update'] == True:
+        result = update_stack(cfn, 'SECLZ-SecurityHub', stacks)
+        if result != Status.NO_ACTION:
+            seclog_status = result
     
-    if 'SECLZ-Notifications-Cloudtrail' in stack_actions and stack_actions['SECLZ-Notifications-Cloudtrail']['update'] == True:
-        if update_stack('SECLZ-Notifications-Cloudtrail', stacks) == False:
-            print("Exiting...")
-            sys.exit(1)
+    if seclog_status != Status.FAIL and 'SECLZ-Notifications-Cloudtrail' in stack_actions and stack_actions['SECLZ-Notifications-Cloudtrail']['update'] == True:
+        result = update_stack(cfn, 'SECLZ-Notifications-Cloudtrail', stacks)
+        if result != Status.NO_ACTION:
+            seclog_status = result
     
-    if 'SECLZ-CloudwatchLogs-SecurityHub' in stack_actions and stack_actions['SECLZ-CloudwatchLogs-SecurityHub']['update'] == True:
-        if update_stack('SECLZ-CloudwatchLogs-SecurityHub', stacks) == False:
-            print("Exiting...")
-            sys.exit(1)
+    if seclog_status != Status.FAIL and 'SECLZ-CloudwatchLogs-SecurityHub' in stack_actions and stack_actions['SECLZ-CloudwatchLogs-SecurityHub']['update'] == True:
+        result = update_stack(cfn, 'SECLZ-CloudwatchLogs-SecurityHub', stacks)
+        if result != Status.NO_ACTION:
+            seclog_status = result
     
     print("")
-    print("SECLOG account updated [\033[0;32;40mOK\033[0;37;40m]")
+    print("SECLOG account update ", end="")
+    if seclog_status == Status.FAIL:
+        print("[\033[0;31;40mFAIL\033[0;37;40m]")
+        print("Exiting...")
+        sys.exit(1)
+    elif seclog_status == Status.OK:
+        print("[\033[0;32;40mOK\033[0;37;40m]")
+    else:
+        print("[\033[0;33;40mNO ACTION\033[0;37;40m]")
+
+    #update linked account stacks
+
+    for linked in linked_accounts:
+        credentials = ''
+        accessKey = ''
+        secretAccessKey = ''
+        sessionToken = ''
+
+        if has_profile:
+            sts = boto3.client('sts')
+            assumedRole = sts.assume_role(
+                RoleArn="arn:aws:iam::{}:role/BrokerAccessAdminNoMFARole".format(linked),
+                RoleSessionName='NoMFASession'
+            )
+            credentials = assumedRole['Credentials']
+            accessKey = credentials['AccessKeyId']
+            secretAccessKey = credentials['SecretAccessKey']
+            sessionToken = credentials['SessionToken']
+        else:
+            sts = boto3.client('sts')
+            assumedRole = sts.assume_role(
+                RoleArn="arn:aws:iam::{}:role/AWSCloudFormationStackSetExecutionRole".format(linked),
+                RoleSessionName='CloudFormationSession'
+            )
+            credentials = assumedRole['Credentials']
+            accessKey = credentials['AccessKeyId']
+            secretAccessKey = credentials['SecretAccessKey']
+            sessionToken = credentials['SessionToken']
+
+        cfn = boto3.client('cloudformation',  
+        region_name=os.environ['AWS_DEFAULT_REGION'], 
+            aws_access_key_id=accessKey,
+            aws_secret_access_key=secretAccessKey, 
+            aws_session_token=sessionToken)
+        
+        print("")
+        print("Updating linked account {}".format(linked))
+        print("")
+        linked_status = Status.NO_ACTION
+        if 'SECLZ-Iam-Password-Policy' in stack_actions and stack_actions['SECLZ-Iam-Password-Policy']['update'] == True:
+            s = update_stack(cfn, 'SECLZ-Iam-Password-Policy', stacks)
+            if s != Status.NO_ACTION:
+                linked_status = s
+                
+
+        if linked_status != Status.FAIL and 'SECLZ-config-cloudtrail-SNS' in stack_actions and stack_actions['SECLZ-config-cloudtrail-SNS']['update'] == True:
+            s = update_stack(cfn, 'SECLZ-config-cloudtrail-SNS', stacks)
+            if s != Status.NO_ACTION:
+                linked_status = s
+                
+        
+        if linked_status != Status.FAIL and 'SECLZ-SecurityHub' in stack_actions and stack_actions['SECLZ-SecurityHub']['update'] == True:
+            s = update_stack(cfn, 'SECLZ-SecurityHub', stacks)
+            if s != Status.NO_ACTION:
+                linked_status = s
+                
+    
+        if linked_status != Status.FAIL and 'SECLZ-Notifications-Cloudtrail' in stack_actions and stack_actions['SECLZ-Notifications-Cloudtrail']['update'] == True:
+            s = update_stack(cfn, 'SECLZ-Notifications-Cloudtrail', stacks)
+            if s != Status.NO_ACTION:
+                linked_status = s
+               
+        
+        if linked_status != Status.FAIL and 'SECLZ-local-SNS-topic' in stack_actions and stack_actions['SECLZ-local-SNS-topic']['update'] == True:
+            s = update_stack(cfn, 'SECLZ-local-SNS-topic', stacks)
+            if s != Status.NO_ACTION:
+                linked_status = s
+               
+
+        print("")
+        print("Linked account {} update ".format(linked), end="")
+        if linked_status == Status.FAIL:
+            print("[\033[0;31;40mFAIL\033[0;37;40m]")
+            print("Exiting...")
+            sys.exit(1)
+        elif linked_status == Status.OK:
+            print("[\033[0;32;40mOK\033[0;37;40m]")
+        else:
+            print("[\033[0;33;40mNO ACTION\033[0;37;40m]")
+    
 
     print("")
-    print("Identifying linked accounts...")
-    linked_accounts = get_linked_accounts()
-    print("{}".format(linked_accounts))
-    
-    print("")
-    print("####### AWS Landing Zone update script is done. Executed in {} seconds".format(time.time() - start_time))
+    print("####### AWS Landing Zone update script finished. Executed in {} seconds".format(time.time() - start_time))
     print("#######")
     print("")
 
@@ -175,7 +309,7 @@ def usage():
     print('   Provide ')
     print('   -m --manifext         : The manifest for the LZ update')
     print('   -s --seclog           : The AWS profile of the SECLOG account - optional')
-    print('   -o --org              : The AWS profile of the Organisation account - optional')
+    print('   -o --org              : The AWS ID of the Organisation account - optional')
     print('   -v --verbose          : Debug mode - optional')
 
 def get_account_id(Force = False):
@@ -206,8 +340,8 @@ def get_linked_accounts():
         data = client.list_members(DetectorId=response['DetectorIds'][0])
         
         for member in data['Members']:
-            if member['relationshipStatus'] == 'ENABLED':
-                linked_accounts.append(member['accountId'])
+            if member['RelationshipStatus'] == 'Enabled':
+                linked_accounts.append(member['AccountId'])
                 
     return linked_accounts
 
@@ -223,7 +357,7 @@ def is_seclog():
         return False
     return True
 
-def update_stack(stack, templates, params=[]):
+def update_stack(client, stack, templates, params=[]):
     """
     Function that updates a stack defined in the parameters
         :stack:         The stack name
@@ -235,21 +369,21 @@ def update_stack(stack, templates, params=[]):
     capabilities=[]
 
     try:
-        
-    
+
         f=open(template, "r")
         template_body=f.read()
         print("Updating stack : {}. ".format(stack), end="")
-        client = boto3.client('cloudformation')
+        
 
         response = client.describe_stacks(StackName=stack)
 
-        if 'Params' in templates[stack]:
-            with open(templates[stack]['Params']) as f:
-                params = json.load(f)
-        else: 
-            if 'Parameters' in response['Stacks'][0]:
-                params = response['Stacks'][0]['Parameters']
+        if not params: 
+            if 'Params' in templates[stack]:
+                with open(templates[stack]['Params']) as f:
+                    params = json.load(f)
+            else: 
+                if 'Parameters' in response['Stacks'][0]:
+                    params = response['Stacks'][0]['Parameters']
         
         
         if 'Capabilities' in response['Stacks'][0]:
@@ -268,30 +402,37 @@ def update_stack(stack, templates, params=[]):
         while updated == False:
             response = client.describe_stacks(StackName=stack)
             if 'COMPLETE' in response['Stacks'][0]['StackStatus'] :
-                print("\rUpdating stack {} complete [\033[0;32;40mOK\033[0;37;40m]".format(stack))
+                print("\033[2K\033[1GStack {} update [\033[0;32;40mOK\033[0;37;40m]".format(stack))
                 updated=True
                 break
             elif 'FAILED' in response['Stacks'][0]['StackStatus'] :
-                print("\rUpdating stack {} failed. Reason {} [\033[0;31;40mFAIL\033[0;37;40m]".format(stack, response['Stacks'][0]['StackStatusReason']))
-                return False
+                print("\033[2K\033[1GStack {} update failed. Reason {} [\033[0;31;40mFAIL\033[0;37;40m]".format(stack, response['Stacks'][0]['StackStatusReason']))
+                return Status.FAIL
             time.sleep(1)
 
         
-        return True
+        return Status.OK
         
     except FileNotFoundError as err:
-        print("Template not found : {} [\033[0;31;40mFAIL\033[0;37;40m]".format(err.strerror))
+        print("\033[2K\033[1GTemplate not found : {} [\033[0;31;40mFAIL\033[0;37;40m]".format(err.strerror))
     except ClientError as err:
         if err.response['Error']['Code'] == 'AmazonCloudFormationException':
-            print("\rStack {} not found : {} [\033[0;31;40mFAIL\033[0;37;40m]".format(err.response['Error']['Message']))
+            print("\033[2K\033[1GStack {} not found : {} [\033[0;31;40mFAIL\033[0;37;40m]".format(err.response['Error']['Message']))
         elif err.response['Error']['Code'] == 'ValidationError' and err.response['Error']['Message'] == 'No updates are to be performed.':
-            print("\rStack {} update not required [\033[0;33;40mNO ACTION\033[0;37;40m]".format(stack))
-            return True
+            print("\033[2K\033[1GStack {} update [\033[0;33;40mNO ACTION\033[0;37;40m]".format(stack))
+            return Status.NO_ACTION
         else:
-            print("\rStack {} update failed. Reason : {} [\033[0;31;40mFAIL\033[0;37;40m]".format(err.response['Error']['Message']))
+            print("\033[2K\033[1GStack {} update failed. Reason : {} [\033[0;31;40mFAIL\033[0;37;40m]".format(err.response['Error']['Message']))
     
-    return False
+    return Status.FAIL
     
+
+class Status(Enum):
+    FAIL = -1
+    OK = 0
+    NO_ACTION = 2
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+
+
