@@ -102,7 +102,7 @@ update() {
     
     
     
-    DEPENDENCIES=(boto3 botocore time json)
+    DEPENDENCIES=(boto3 botocore time json colorama)
     
     #python dependencies
     for dep in "${DEPENDENCIES[@]}" 
