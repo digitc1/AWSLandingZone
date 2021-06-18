@@ -23,7 +23,7 @@ stacks = { 'SECLZ-Cloudtrail-KMS' : { 'Template' : 'CFN/EC-lz-Cloudtrail-kms-key
      'SECLZ-Iam-Password-Policy' : { 'Template' : 'CFN/EC-lz-iam-setting_password_policy.yml', 'Linked':True } ,
      'SECLZ-config-cloudtrail-SNS' : { 'Template' : 'CFN/EC-lz-config-cloudtrail-logging.yml', 'Linked':True } ,
      'SECLZ-Guardduty-detector' : { 'Template' : 'CFN/EC-lz-guardDuty-detector.yml', 'Linked':True } ,
-     'SECLZ-SecurityHub' : { 'Template' : 'CFN/EC-lz-securityHub.yml', 'Linked':True } ,
+     'SECLZ-SecurityHub' : { 'Template' : 'CFN/EC-lz-securityHub.yml', "Params" : 'CFN/EC-lz-TAGS-params.json', 'Linked':True } ,
      'SECLZ-Notifications-Cloudtrail' : { 'Template' : 'CFN/EC-lz-notifications.yml', 'Linked':True } ,
      'SECLZ-CloudwatchLogs-SecurityHub' : { 'Template' : 'CFN/EC-lz-config-securityhub-logging.yml' } ,
      'SECLZ-local-SNS-topic' : { 'Template' : 'CFN/EC-lz-local-config-SNS.yml', 'Linked':True} }
@@ -252,7 +252,7 @@ def main(argv):
             print("")
             print("Linked account {} update ".format(linked), end="")
             if linked_status == Execution.FAIL:
-                print("[{}]".format(Status.NO_ACTION.value))
+                print("[{}]".format(Status.FAIL.value))
                 print("Exiting...")
                 sys.exit(1)
             elif linked_status == Execution.OK:
@@ -370,7 +370,7 @@ def update_stack(client, stack, templates, params=[]):
 
         if response['Stacks'][0]['StackStatus'] not in ('CREATE_COMPLETE', 'UPDATE_COMPLETE'):
             print("Cannot update stack {}. Current status is : {} [{}]".format(stack,response['Stacks'][0]['StackStatus'],Status.FAIL.value ))
-            return False
+            return Execution.FAIL
         
         print("in progress ... ".format(stack), end="")
         client.update_stack(StackName=stack, TemplateBody=template_body, Parameters=params, Capabilities=capabilities)

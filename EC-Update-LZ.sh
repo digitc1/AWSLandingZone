@@ -32,11 +32,6 @@ while [ $# -gt 0 ]; do
 done
 
 
-# Script Spinner waiting for cloudformation completion
-export i=1
-export sp="/-\|"
-
-
 #   ---------------------
 #   The command line help
 #   ---------------------
@@ -62,7 +57,7 @@ update() {
     echo "####### Checking environment..."
     echo ""
     
-    #python 3
+    #installing python 3
     if [[ "$(python3 -V)" =~ "Python 3" ]] ; then
         echo "Python 3 installed [${GREEN}OK${NC}]"
     else
@@ -71,7 +66,7 @@ update() {
         exit 1
     fi
     
-    #pip3
+    #installing pip3
     if [[ "$(pip3 -V)" =~ "pip" ]] ; then
         echo "PIP 3 installed [${GREEN}OK${NC}]"
     else
@@ -81,7 +76,7 @@ update() {
     fi
     
    
-    #venv
+    #setting up venv
     if [[ "$(env |grep VIRTUAL_ENV |wc -l)" == '1' ]] ; then
         echo "Python running on venv [${GREEN}OK${NC}]"
     else
@@ -104,7 +99,7 @@ update() {
     
     DEPENDENCIES=(boto3 botocore time json colorama)
     
-    #python dependencies
+    #installing python dependencies
     for dep in "${DEPENDENCIES[@]}" 
         do
         if [[ "$(python3 -c 'import sys, pkgutil; print(True) if pkgutil.find_loader(sys.argv[1]) else print(False)' $dep)" == "True" ]] ; then
@@ -145,10 +140,6 @@ deactivate
 }
 
 
-# ---------------------------------------------
-# Check if correct options are given
-# on the commandline and start configurations
-# ---------------------------------------------
 
 # Check to validate number of parameters entered
 if  [ -z "$manifest" ] ; then
