@@ -135,47 +135,49 @@ def main(argv):
         if 'ssm' in manifest: 
             ssm_actions = manifest['ssm']
 
-        cfn = boto3.client('cloudformation')
         seclog_status = Execution.NO_ACTION
+        
+        if ssm_actions:
+            #update SSM parameters
+            if account_id:
+                result=update_ssm_parameter('/org/member/SecLogMasterAccountId', account_id)
+                if result != Execution.NO_ACTION:
+                    seclog_status = result  
+            if 'seclog-ou' in ssm_actions and seclog_status != Execution.FAIL:
+                result=update_ssm_parameter('/org/member/SecLogOU', ssm_actions['seclog-ou'])
+                if result != Execution.NO_ACTION:
+                    seclog_status = result     
+            if 'notification-mail' in ssm_actions and seclog_status != Execution.FAIL:
+                result=update_ssm_parameter('/org/member/SecLog_notification-mail', ssm_actions['notification-mail'])
+                if result != Execution.NO_ACTION:
+                    seclog_status = result     
+            if 'version' in manifest and seclog_status != Execution.FAIL:
+                result=update_ssm_parameter('/org/member/SecLogVersion', manifest['version'])
+                if result != Execution.NO_ACTION:
+                    seclog_status = result  
+            if 'cloudtrail-groupname' in ssm_actions and seclog_status != Execution.FAIL:
+                result=update_ssm_parameter('/org/member/SecLog_cloudtrail-groupname', ssm_actions['cloudtrail-groupname'])
+                if result != Execution.NO_ACTION:
+                    seclog_status = result  
+            if 'insight-groupname' in ssm_actions and seclog_status != Execution.FAIL:
+                result=update_ssm_parameter('/org/member/SecLog_insight-groupname', ssm_actions['insight-groupname'])
+                if result != Execution.NO_ACTION:
+                    seclog_status = result  
+            if 'guardduty-groupname' in ssm_actions and seclog_status != Execution.FAIL:
+                result=update_ssm_parameter('/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname'])
+                if result != Execution.NO_ACTION:
+                    seclog_status = result  
+            if 'securityhub-groupname' in ssm_actions and seclog_status != Execution.FAIL:
+                result=update_ssm_parameter('/org/member/SecLog_securityhub-groupname', ssm_actions['securityhub-groupname'])
+                if result != Execution.NO_ACTION:
+                    seclog_status = result  
+            if 'config-groupname' in ssm_actions and seclog_status != Execution.FAIL:
+                result=update_ssm_parameter('/org/member/SecLog_config-groupname', ssm_actions['config-groupname'])
+                if result != Execution.NO_ACTION:
+                    seclog_status = result
 
-        #update SSM parameters
-        if account_id:
-            result=update_ssm_parameter('/org/member/SecLogMasterAccountId', account_id)
-            if result != Execution.NO_ACTION:
-                seclog_status = result  
-        if 'seclog-ou' in ssm_actions and seclog_status != Execution.FAIL:
-            result=update_ssm_parameter('/org/member/SecLogOU', ssm_actions['seclog-ou'])
-            if result != Execution.NO_ACTION:
-                seclog_status = result     
-        if 'notification-mail' in ssm_actions and seclog_status != Execution.FAIL:
-            result=update_ssm_parameter('/org/member/SecLog_notification-mail', ssm_actions['notification-mail'])
-            if result != Execution.NO_ACTION:
-                seclog_status = result     
-        if 'version' in manifest and seclog_status != Execution.FAIL:
-            result=update_ssm_parameter('/org/member/SecLogVersion', manifest['version'])
-            if result != Execution.NO_ACTION:
-                seclog_status = result  
-        if 'cloudtrail-groupname' in ssm_actions and seclog_status != Execution.FAIL:
-            result=update_ssm_parameter('/org/member/SecLog_cloudtrail-groupname', ssm_actions['cloudtrail-groupname'])
-            if result != Execution.NO_ACTION:
-                seclog_status = result  
-        if 'insight-groupname' in ssm_actions and seclog_status != Execution.FAIL:
-            result=update_ssm_parameter('/org/member/SecLog_insight-groupname', ssm_actions['insight-groupname'])
-            if result != Execution.NO_ACTION:
-                seclog_status = result  
-        if 'guardduty-groupname' in ssm_actions and seclog_status != Execution.FAIL:
-            result=update_ssm_parameter('/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname'])
-            if result != Execution.NO_ACTION:
-                seclog_status = result  
-        if 'securityhub-groupname' in ssm_actions and seclog_status != Execution.FAIL:
-            result=update_ssm_parameter('/org/member/SecLog_securityhub-groupname', ssm_actions['securityhub-groupname'])
-            if result != Execution.NO_ACTION:
-                seclog_status = result  
-        if 'config-groupname' in ssm_actions and seclog_status != Execution.FAIL:
-            result=update_ssm_parameter('/org/member/SecLog_config-groupname', ssm_actions['config-groupname'])
-            if result != Execution.NO_ACTION:
-                seclog_status = result
-
+        cfn = boto3.client('cloudformation')
+        
 
         #KMS template
         if seclog_status != Execution.FAIL and 'SECLZ-Cloudtrail-KMS' in stack_actions and stack_actions['SECLZ-Cloudtrail-KMS']['update'] == True:            
@@ -310,8 +312,8 @@ def main(argv):
             print("[{}]".format(Status.NO_ACTION.value))
 
         #update linked account stacks
-        if seclog_status == Execution.FAIL and linked_accounts.count() > 0:
-            print("Skipping linked account update")
+        if seclog_status == Execution.FAIL and len(linked_accounts) > 0:
+            print("Skipping linked accounts update")
         else:
             for linked in linked_accounts:
                 
@@ -334,43 +336,45 @@ def main(argv):
                 print("Updating linked account {}".format(linked))
                 print("")
                 linked_status = Execution.NO_ACTION
-                #update SSM parameters
-                if account_id:
-                    result=update_ssm_parameter('/org/member/SecLogMasterAccountId', account_id)
-                    if result != Execution.NO_ACTION:
-                        linked_status = result  
-                if 'seclog-ou' in ssm_actions and linked_status != Execution.FAIL:
-                    result=update_ssm_parameter('/org/member/SecLogOU', ssm_actions['seclog-ou'])
-                    if result != Execution.NO_ACTION:
-                        linked_status = result     
-                if 'notification-mail' in ssm_actions and linked_status != Execution.FAIL:
-                    result=update_ssm_parameter('/org/member/SecLog_notification-mail', ssm_actions['notification-mail'])
-                    if result != Execution.NO_ACTION:
-                        linked_status = result     
-                if 'version' in manifest and linked_status != Execution.FAIL:
-                    result=update_ssm_parameter('/org/member/SecLogVersion', manifest['version'])
-                    if result != Execution.NO_ACTION:
-                        linked_status = result  
-                if 'cloudtrail-groupname' in ssm_actions and linked_status != Execution.FAIL:
-                    result=update_ssm_parameter('/org/member/SecLog_cloudtrail-groupname', ssm_actions['cloudtrail-groupname'])
-                    if result != Execution.NO_ACTION:
-                        linked_status = result  
-                if 'insight-groupname' in ssm_actions and linked_status != Execution.FAIL:
-                    result=update_ssm_parameter('/org/member/SecLog_insight-groupname', ssm_actions['insight-groupname'])
-                    if result != Execution.NO_ACTION:
-                        linked_status = result  
-                if 'guardduty-groupname' in ssm_actions and linked_status != Execution.FAIL:
-                    result=update_ssm_parameter('/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname'])
-                    if result != Execution.NO_ACTION:
-                        linked_status = result  
-                if 'securityhub-groupname' in ssm_actions and linked_status != Execution.FAIL:
-                    result=update_ssm_parameter('/org/member/SecLog_securityhub-groupname', ssm_actions['securityhub-groupname'])
-                    if result != Execution.NO_ACTION:
-                        linked_status = result  
-                if 'config-groupname' in ssm_actions and linked_status != Execution.FAIL:
-                    result=update_ssm_parameter('/org/member/SecLog_config-groupname', ssm_actions['config-groupname'])
-                    if result != Execution.NO_ACTION:
-                        linked_status = result
+
+                if ssm_actions:
+                    #update SSM parameters
+                    if account_id:
+                        result=update_ssm_parameter('/org/member/SecLogMasterAccountId', account_id)
+                        if result != Execution.NO_ACTION:
+                            linked_status = result  
+                    if 'seclog-ou' in ssm_actions and linked_status != Execution.FAIL:
+                        result=update_ssm_parameter('/org/member/SecLogOU', ssm_actions['seclog-ou'])
+                        if result != Execution.NO_ACTION:
+                            linked_status = result     
+                    if 'notification-mail' in ssm_actions and linked_status != Execution.FAIL:
+                        result=update_ssm_parameter('/org/member/SecLog_notification-mail', ssm_actions['notification-mail'])
+                        if result != Execution.NO_ACTION:
+                            linked_status = result     
+                    if 'version' in manifest and linked_status != Execution.FAIL:
+                        result=update_ssm_parameter('/org/member/SecLogVersion', manifest['version'])
+                        if result != Execution.NO_ACTION:
+                            linked_status = result  
+                    if 'cloudtrail-groupname' in ssm_actions and linked_status != Execution.FAIL:
+                        result=update_ssm_parameter('/org/member/SecLog_cloudtrail-groupname', ssm_actions['cloudtrail-groupname'])
+                        if result != Execution.NO_ACTION:
+                            linked_status = result  
+                    if 'insight-groupname' in ssm_actions and linked_status != Execution.FAIL:
+                        result=update_ssm_parameter('/org/member/SecLog_insight-groupname', ssm_actions['insight-groupname'])
+                        if result != Execution.NO_ACTION:
+                            linked_status = result  
+                    if 'guardduty-groupname' in ssm_actions and linked_status != Execution.FAIL:
+                        result=update_ssm_parameter('/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname'])
+                        if result != Execution.NO_ACTION:
+                            linked_status = result  
+                    if 'securityhub-groupname' in ssm_actions and linked_status != Execution.FAIL:
+                        result=update_ssm_parameter('/org/member/SecLog_securityhub-groupname', ssm_actions['securityhub-groupname'])
+                        if result != Execution.NO_ACTION:
+                            linked_status = result  
+                    if 'config-groupname' in ssm_actions and linked_status != Execution.FAIL:
+                        result=update_ssm_parameter('/org/member/SecLog_config-groupname', ssm_actions['config-groupname'])
+                        if result != Execution.NO_ACTION:
+                            linked_status = result
 
                 #password policy
                 if linked_status != Execution.FAIL and 'SECLZ-Iam-Password-Policy' in stack_actions and stack_actions['SECLZ-Iam-Password-Policy']['update'] == True:
@@ -534,10 +538,11 @@ def update_stack(client, stack, templates, params=[]):
 
         if not params: 
             if 'Params' in templates[stack]:
-                with open(templates[stack]['Params']) as f:
-                    params = json.load(f)
+                with open(templates[stack]['Params']) as file:
+                    params = json.load(file)
             else: 
                 if 'Parameters' in response['Stacks'][0]:
+                    print (response['Stacks'][0])
                     params = response['Stacks'][0]['Parameters']
         
         
