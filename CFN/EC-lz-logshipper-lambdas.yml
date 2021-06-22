@@ -191,11 +191,16 @@ Resources:
             CLOUDTRAIL_LOG_GROUP: !Ref lambdaCloudTrailLogGroup
             INSIGHT_LOG_GROUP: !Ref lambdaInsightLogGroup
         Tags:
-          "Project": !Ref Project
-          "Owner": !Ref Owner
-          "Environment": !Ref Environment
-          "Criticity": !Ref Criticity
-          "DataClassification": !Ref DataClassification
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Criticity
+          Value: !Ref Criticity
+        - Key: Project
+          Value: !Ref Project
+        - Key: DataClassification
+          Value: !Ref DataClassification
 
     CloudTrailLogShipperLogGroup:
       Type: AWS::Logs::LogGroup
@@ -243,11 +248,16 @@ Resources:
             MAX_TRY: !Ref lambdaMaxRetry
             CONFIG_LOG_GROUP: !Ref lambdaConfigLogGroup
         Tags:
-          "Project": !Ref Project
-          "Owner": !Ref Owner
-          "Environment": !Ref Environment
-          "Criticity": !Ref Criticity
-          "DataClassification": !Ref DataClassification
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Criticity
+          Value: !Ref Criticity
+        - Key: Project
+          Value: !Ref Project
+        - Key: DataClassification
+          Value: !Ref DataClassification
 
     ConfigLogShipperLogGroup:
       Type: AWS::Logs::LogGroup
@@ -282,12 +292,18 @@ Resources:
                   KeyType: RANGE
             TableName: SECLZSyncLogs
             Tags:
-              "Project": !Ref Project
-              "Owner": !Ref Owner
-              "Environment": !Ref Environment
-              "Criticity": !Ref Criticity
-              "DataClassification": !Ref DataClassification
-              "Name": SECLZSynclogs
+            - Key: Owner
+              Value: !Ref Owner
+            - Key: Environment
+              Value: !Ref Environment
+            - Key: Criticity
+              Value: !Ref Criticity
+            - Key: Project
+              Value: !Ref Project
+            - Key: DataClassification
+              Value: !Ref DataClassification
+            - Key: Name
+              Value: SECLZSynclogs
             TimeToLiveSpecification:
                 AttributeName: TTL
                 Enabled: True
