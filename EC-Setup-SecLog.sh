@@ -302,6 +302,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Cloudtrail-KMS' \
     --template-body file://$CFN_CLOUDTRAIL_KMS \
+    --parameters file://$CFN_TAGS_PARAMS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -335,6 +336,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-LogShipper-Lambdas-Bucket' \
     --template-body file://$CFN_LAMBDAS_BUCKET_TEMPLATE \
+    --parameters file://$CFN_TAGS_PARAMS_FILE \
     --capabilities CAPABILITY_NAMED_IAM \
     --enable-termination-protection \
     --profile $seclogprofile
@@ -414,6 +416,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Iam-Password-Policy' \
     --template-body file://$CFN_IAM_PWD_POLICY \
+    --parameters file://$CFN_TAGS_PARAMS_FILE \
     --capabilities CAPABILITY_IAM \
     --enable-termination-protection \
     --profile $seclogprofile
@@ -466,6 +469,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-config-cloudtrail-SNS' \
     --template-body file://$CFN_LOG_TEMPLATE \
+    --parameters file://$CFN_TAGS_PARAMS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile \

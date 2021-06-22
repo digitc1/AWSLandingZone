@@ -23,35 +23,35 @@ Metadata:
         Label:
           default: "Tags"
         Parameters:
-          - owner
-          - project
-          - environment
-          - criticity
-          - dataClassification
+          - Owner
+          - Project
+          - Environment
+          - Criticity
+          - DataClassification
           - lambdaStack
 
 Parameters:
-    owner:
+    Owner:
         Description: "Tag: owner. Creator or responsible for the project"
         Type: String
         Default: ''
 
-    environment:
+    Environment:
         Description: "Tag: environment. Environnement of the resource (Dev, test, prod etc.)"
         Type: String
         Default: ''
 
-    criticity:
+    Criticity:
         Description: "Tag: criticity. Criticity of the application"
         Type: String
         Default: ''
 
-    project:
+    Project:
         Description: "Tag: project. Name of the application or project"
         Type: String
-        Default: 'Landing Zone'
+        Default: 'secLZ'
 
-    dataClassification:
+    DataClassification:
         Description: "Tag: data-classification. Level of criticality of the stored data"
         Type: String
         Default: ''
@@ -123,16 +123,16 @@ Resources:
             VersioningConfiguration:
                 Status: Enabled
             Tags:
-            - Key: owner
-              Value: !Ref owner
-            - Key: environment
-              Value: !Ref environment
-            - Key: criticity
-              Value: !Ref criticity
-            - Key: project
-              Value: !Ref project
-            - Key: data-classification
-              Value: !Ref dataClassification
+            - Key: Owner
+              Value: !Ref Owner
+            - Key: Environment
+              Value: !Ref Environment
+            - Key: Criticity
+              Value: !Ref Criticity
+            - Key: Project
+              Value: !Ref Project
+            - Key: DataClassification
+              Value: !Ref DataClassification
 
     CloudTrailBucketPolicy:
         Type: AWS::S3::BucketPolicy
@@ -238,16 +238,16 @@ Resources:
               IgnorePublicAcls: true
               RestrictPublicBuckets: true
             Tags:
-            - Key: owner
-              Value: !Ref owner
-            - Key: environment
-              Value: !Ref environment
-            - Key: criticity
-              Value: !Ref criticity
-            - Key: project
-              Value: !Ref project
-            - Key: data-classification
-              Value: !Ref dataClassification
+            - Key: Owner
+              Value: !Ref Owner
+            - Key: Environment
+              Value: !Ref Environment
+            - Key: Criticity
+              Value: !Ref Criticity
+            - Key: Project
+              Value: !Ref Project
+            - Key: DataClassification
+              Value: !Ref DataClassification
 
     ConfigBucketPolicy:
         Type: AWS::S3::BucketPolicy
@@ -318,16 +318,16 @@ Resources:
               - "-do-not-delete"
           AccessControl: LogDeliveryWrite
           Tags:
-          - Key: owner
-            Value: !Ref owner
-          - Key: environment
-            Value: !Ref environment
-          - Key: criticity
-            Value: !Ref criticity
-          - Key: project
-            Value: !Ref project
-          - Key: data-classification
-            Value: !Ref dataClassification
+          - Key: Owner
+            Value: !Ref Owner
+          - Key: Environment
+            Value: !Ref Environment
+          - Key: Criticity
+            Value: !Ref Criticity
+          - Key: Project
+            Value: !Ref Project
+          - Key: DataClassification
+            Value: !Ref DataClassification
           PublicAccessBlockConfiguration:
             BlockPublicAcls: true
             BlockPublicPolicy: true

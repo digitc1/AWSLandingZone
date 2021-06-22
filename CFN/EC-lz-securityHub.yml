@@ -16,34 +16,34 @@ Metadata:
         Label:
           default: "Tags"
         Parameters:
-          - owner
-          - project
-          - environment
-          - criticity
-          - dataClassification
+          - Owner
+          - Project
+          - Environment
+          - Criticity
+          - DataClassification
 
 Parameters:
-    owner:
+    Owner:
         Description: "Tag: owner. Creator or responsible for the project"
         Type: String
         Default: ''
 
-    environment:
+    Environment:
         Description: "Tag: environment. Environnement of the resource (Dev, test, prod etc.)"
         Type: String
         Default: ''
 
-    criticity:
+    Criticity:
         Description: "Tag: criticity. Criticity of the application"
         Type: String
         Default: ''
 
-    project:
+    Project:
         Description: "Tag: project. Name of the application or project"
         Type: String
-        Default: 'Landing Zone'
+        Default: 'secLZ'
 
-    dataClassification:
+    DataClassification:
         Description: "Tag: data-classification. Level of criticality of the stored data"
         Type: String
         Default: ''
@@ -53,11 +53,16 @@ Resources:
     Type: "AWS::SecurityHub::Hub"
     Properties:
       Tags:
-        "project": !Ref project
-        "owner": !Ref owner
-        "environment": !Ref environment
-        "criticity": !Ref criticity
-        "dataClassification": !Ref dataClassification
+      - Key: Owner
+        Value: !Ref Owner
+      - Key: Environment
+        Value: !Ref Environment
+      - Key: Criticity
+        Value: !Ref Criticity
+      - Key: Project
+        Value: !Ref Project
+      - Key: DataClassification
+        Value: !Ref DataClassification
 
 Outputs:
   HubArn:

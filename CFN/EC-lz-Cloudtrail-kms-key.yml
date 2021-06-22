@@ -14,17 +14,12 @@ Metadata:
     ParameterGroups:
       -
         Label:
-          default: "General"
-        Parameters:
-          - KeyDescription
-          - KeyAlias
-      -
-        Label:
           default: "Tags"
         Parameters:
-          - DirectorateGeneral
-          - BusinessUnit
-          - OwnerId
+          - Owner
+          - Project
+          - Environment
+          - Criticity
           - DataClassification
 
 Parameters:
@@ -33,30 +28,36 @@ Parameters:
         Description: 'A brief descrition of why this key is required'
         Type: String
         Default: 'KMS key for cloudtrail'
+
     KeyAlias:
         Description: 'A short friendly name for the key'
         Type: String
         Default: 'SECLZ-Cloudtrail-encryption-key'
 
-    DirectorateGeneral:
-        Description: ''
+    Owner:
+        Description: "Tag: owner. Creator or responsible for the project"
         Type: String
-        Default: 'n/a'
+        Default: ''
 
-    BusinessUnit:
-        Description: ''
+    Environment:
+        Description: "Tag: environment. Environnement of the resource (Dev, test, prod etc.)"
         Type: String
-        Default: 'n/a'
+        Default: ''
 
-    OwnerId:
-        Description: ''
+    Criticity:
+        Description: "Tag: criticity. Criticity of the application"
         Type: String
-        Default: 'n/a'
+        Default: ''
+
+    Project:
+        Description: "Tag: project. Name of the application or project"
+        Type: String
+        Default: 'secLZ'
 
     DataClassification:
-        Description: ''
+        Description: "Tag: data-classification. Level of criticality of the stored data"
         Type: String
-        Default: 'n/a'
+        Default: ''
 
 Mappings: {}
 
@@ -208,12 +209,14 @@ Resources:
       Tags:
       - Key: Name
         Value: !Ref KeyAlias
-      - Key: DirectorateGeneral
-        Value: !Ref DirectorateGeneral
-      - Key: BusinessUnit
-        Value: !Ref BusinessUnit
-      - Key: OwnerId
-        Value: !Ref OwnerId
+      - Key: Owner
+        Value: !Ref Owner
+      - Key: Environment
+        Value: !Ref Environment
+      - Key: Criticity
+        Value: !Ref Criticity
+      - Key: Project
+        Value: !Ref Project
       - Key: DataClassification
         Value: !Ref DataClassification
 

@@ -48,7 +48,7 @@ Parameters:
     project:
         Description: "Tag: project. Name of the application or project"
         Type: String
-        Default: 'Landing Zone'
+        Default: 'secLZ'
 
     dataClassification:
         Description: "Tag: data-classification. Level of criticality of the stored data"

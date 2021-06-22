@@ -215,6 +215,7 @@ configure_client() {
     aws cloudformation create-stack \
     --stack-name $StackName \
     --template-body file://$CFN_LOG_TEMPLATE \
+    --parameters file://$CFN_TAGS_PARAMS_FILE \
     --capabilities CAPABILITY_NAMED_IAM \
     --enable-termination-protection \
     --profile $CLIENT
@@ -249,6 +250,7 @@ configure_client() {
     aws cloudformation create-stack \
     --stack-name $StackName \
     --template-body file://$CFN_LOCAL_SNS_TEMPLATE \
+    --parameters file://$CFN_TAGS_PARAMS_FILE \
     --capabilities CAPABILITY_NAMED_IAM \
     --enable-termination-protection \
     --profile $CLIENT
@@ -295,6 +297,7 @@ configure_client() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Iam-Password-Policy' \
     --template-body  file://$CFN_IAM_PWD_POLICY \
+    --parameters file://$CFN_TAGS_PARAMS_FILE \
     --capabilities CAPABILITY_IAM \
     --enable-termination-protection \
     --profile $CLIENT
