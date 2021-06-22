@@ -1,4 +1,13 @@
-{
+{   "version" : "1.5.0",
+    "ssm" : {
+        "seclog-ou" : "",
+        "notification-mail" : "",
+        "cloudtrail-groupname" : "",
+        "insight-groupname" : "",
+        "guardduty-groupname" : "",
+        "securityhub-groupname" : "",
+        "config-groupname" : ""
+    },
     "stacks" : {
         "SECLZ-Cloudtrail-KMS" : {
             "update" : true
