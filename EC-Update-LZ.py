@@ -16,6 +16,7 @@ from datetime import datetime
 from enum import Enum
 from colorama import Fore, Back, Style
 from botocore.exceptions import BotoCoreError, ClientError, ProfileNotFound
+
  
  
 
@@ -143,35 +144,35 @@ def main(argv):
                 result=update_ssm_parameter('/org/member/SecLogMasterAccountId', account_id)
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
-            if 'seclog-ou' in ssm_actions and seclog_status != Execution.FAIL:
+            if not null_empty(ssm_actions, 'seclog-ou') and seclog_status != Execution.FAIL:
                 result=update_ssm_parameter('/org/member/SecLogOU', ssm_actions['seclog-ou'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result     
-            if 'notification-mail' in ssm_actions and seclog_status != Execution.FAIL:
+            if not null_empty(ssm_actions, 'notification-mail') and seclog_status != Execution.FAIL:
                 result=update_ssm_parameter('/org/member/SecLog_notification-mail', ssm_actions['notification-mail'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result     
-            if 'version' in manifest and seclog_status != Execution.FAIL:
-                result=update_ssm_parameter('/org/member/SecLogVersion', manifest['version'])
+            if not null_empty(manifest, 'version') and seclog_status != Execution.FAIL:
+                result=update_ssm_parameter('/org/member/SLZVersion', manifest['version'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
-            if 'cloudtrail-groupname' in ssm_actions and seclog_status != Execution.FAIL:
+            if not null_empty(ssm_actions, 'cloudtrail-groupname') and seclog_status != Execution.FAIL:
                 result=update_ssm_parameter('/org/member/SecLog_cloudtrail-groupname', ssm_actions['cloudtrail-groupname'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
-            if 'insight-groupname' in ssm_actions and seclog_status != Execution.FAIL:
+            if not null_empty(ssm_actions, 'insight-groupname') and seclog_status != Execution.FAIL:
                 result=update_ssm_parameter('/org/member/SecLog_insight-groupname', ssm_actions['insight-groupname'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
-            if 'guardduty-groupname' in ssm_actions and seclog_status != Execution.FAIL:
+            if not null_empty(ssm_actions, 'guardduty-groupname') and seclog_status != Execution.FAIL:
                 result=update_ssm_parameter('/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
-            if 'securityhub-groupname' in ssm_actions and seclog_status != Execution.FAIL:
+            if not null_empty(ssm_actions, 'securityhub-groupname') and seclog_status != Execution.FAIL:
                 result=update_ssm_parameter('/org/member/SecLog_securityhub-groupname', ssm_actions['securityhub-groupname'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
-            if 'config-groupname' in ssm_actions and seclog_status != Execution.FAIL:
+            if not null_empty(ssm_actions, 'config-groupname') and seclog_status != Execution.FAIL:
                 result=update_ssm_parameter('/org/member/SecLog_config-groupname', ssm_actions['config-groupname'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result
@@ -490,6 +491,15 @@ def is_seclog():
         return False
     return True
 
+def null_empty(dict, key):
+    """
+    Function that checks if the a key exists in the dict and the value is not empty
+        :return: true or false
+    """
+    if key in dict and dict[key]:
+        return False
+    else: return True
+
 def update_ssm_parameter(parameter, value):
     """
     Function used to update an SSM parameter if the value is different
@@ -499,9 +509,9 @@ def update_ssm_parameter(parameter, value):
     """
     client = boto3.client('ssm')
     print(f"SSM parameter {parameter} update", end="")
-    response = client.get_parameter(Name=parameter)
-    if not 'Value' not in response or value != response['Parameter']['Value']:
-        try:
+    try:
+        response = client.get_parameter(Name=parameter)
+        if not 'Value' not in response or value != response['Parameter']['Value']:
             response = client.put_parameter(
                 Name=parameter,
                 Value=value,
@@ -510,10 +520,12 @@ def update_ssm_parameter(parameter, value):
             if response['Version']:
                 print(" [{}]".format(Status.OK.value))
                 return Execution.OK
-            
-        except Exception as err:
-            print(" failed. Reason {}  [{}]".format(err.response, Status.FAIL.value))
-            return Execution.FAIL
+    except client.exceptions.ParameterNotFound as err:
+        print(" failed. Reason {}  [{}]".format(err, Status.FAIL.value))
+        return Execution.FAIL
+    except Exception as err:
+        print(" failed. Reason {}  [{}]".format(err.response['Error']['Message'], Status.FAIL.value))
+        return Execution.FAIL
     
     print(" [{}]".format(Status.NO_ACTION.value))
     return Execution.NO_ACTION
@@ -542,7 +554,6 @@ def update_stack(client, stack, templates, params=[]):
                     params = json.load(file)
             else: 
                 if 'Parameters' in response['Stacks'][0]:
-                    print (response['Stacks'][0])
                     params = response['Stacks'][0]['Parameters']
         
         
