@@ -53,11 +53,16 @@ Resources:
     Type: "AWS::SecurityHub::Hub"
     Properties:
       Tags:
-        "Project": !Ref Project
-        "Owner": !Ref Owner
-        "Environment": !Ref Environment
-        "Criticity": !Ref Criticity
-        "DataClassification": !Ref DataClassification
+      - Key: Owner
+        Value: !Ref Owner
+      - Key: Environment
+        Value: !Ref Environment
+      - Key: Criticity
+        Value: !Ref Criticity
+      - Key: Project
+        Value: !Ref Project
+      - Key: DataClassification
+        Value: !Ref DataClassification
 
 Outputs:
   HubArn:
