@@ -302,6 +302,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Cloudtrail-KMS' \
     --template-body file://$CFN_CLOUDTRAIL_KMS \
+    --parameters file://$CFN_TAGS_PARAMS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile

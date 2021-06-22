@@ -1,22 +1,22 @@
 [
     {
-        "ParameterKey": "owner",
+        "ParameterKey": "Owner",
         "ParameterValue": "DG_owner"
     },
     {
-        "ParameterKey": "environment",
+        "ParameterKey": "Environment",
         "ParameterValue": "prod"
     },
     {
-        "ParameterKey": "criticity",
+        "ParameterKey": "Criticity",
         "ParameterValue": "high"
     },
     {
-        "ParameterKey": "project",
+        "ParameterKey": "Project",
         "ParameterValue": "secLZ"
     },
     {
-        "ParameterKey": "dataClassification",
+        "ParameterKey": "DataClassification",
         "ParameterValue": "high"
     }
 ]
