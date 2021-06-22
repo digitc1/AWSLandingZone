@@ -16,16 +16,16 @@ from datetime import datetime
 from enum import Enum
 from colorama import Fore, Back, Style
 from botocore.exceptions import BotoCoreError, ClientError, ProfileNotFound
-
-
+ 
+ 
 
 account_id = ''
 
-stacks = { 'SECLZ-Cloudtrail-KMS' : { 'Template' : 'CFN/EC-lz-Cloudtrail-kms-key.yml' } ,
-     'SECLZ-LogShipper-Lambdas-Bucket' : { 'Template' : 'CFN/EC-lz-s3-bucket-lambda-code.yml' } ,
-     'SECLZ-LogShipper-Lambdas' : { 'Template' : 'CFN/EC-lz-logshipper-lambdas.yml' } ,
+stacks = { 'SECLZ-Cloudtrail-KMS' : { 'Template' : 'CFN/EC-lz-Cloudtrail-kms-key.yml' , "Params" : 'CFN/EC-lz-TAGS-params.json' } ,
+     'SECLZ-LogShipper-Lambdas-Bucket' : { 'Template' : 'CFN/EC-lz-s3-bucket-lambda-code.yml' , "Params" : 'CFN/EC-lz-TAGS-params.json' } ,
+     'SECLZ-LogShipper-Lambdas' : { 'Template' : 'CFN/EC-lz-logshipper-lambdas.yml' , "Params" : 'CFN/EC-lz-TAGS-params.json' } ,
      'SECLZ-Central-Buckets' : { 'Template' : 'CFN/EC-lz-s3-buckets.yml' , "Params" : 'CFN/EC-lz-TAGS-params.json'} ,
-     'SECLZ-Iam-Password-Policy' : { 'Template' : 'CFN/EC-lz-iam-setting_password_policy.yml', 'Linked':True } ,
+     'SECLZ-Iam-Password-Policy' : { 'Template' : 'CFN/EC-lz-iam-setting_password_policy.yml' , "Params" : 'CFN/EC-lz-TAGS-params.json', 'Linked':True } ,
      'SECLZ-config-cloudtrail-SNS' : { 'Template' : 'CFN/EC-lz-config-cloudtrail-logging.yml', 'Linked':True } ,
      'SECLZ-Guardduty-detector' : { 'Template' : 'CFN/EC-lz-guardDuty-detector.yml', 'Linked':True } ,
      'SECLZ-SecurityHub' : { 'Template' : 'CFN/EC-lz-securityHub.yml', "Params" : 'CFN/EC-lz-TAGS-params.json', 'Linked':True } ,
