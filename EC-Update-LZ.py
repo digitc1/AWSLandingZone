@@ -51,6 +51,9 @@ def main(argv):
     ssm_actions = []
     stack_actions = []
 
+    
+    sys.stdout = Unbuffered(sys.stdout)
+
     try:
         opts, args = getopt.getopt(argv,"hvm:s:o:",["manifest", "seclog", "org", "verbose"])
     except getopt.GetoptError:
@@ -216,15 +219,15 @@ def main(argv):
                 try:
                     template = stacks['SECLZ-LogShipper-Lambdas']['Template']
                     
-                    f=open(template, "r")
-                    template_body=f.read()
-                    f.close()
+                    with open(template, "r") as f:
+                        template_body=f.read()
+                 
                     template_body.replace('##cloudtrailCodeURI##',cloudtrail_lambda).replace('##configCodeURI##',config_lambda)
 
                     template = f'EC-lz-logshipper-lambdas-{now}.yml'
-                    f=open(template, "w")
-                    f.write(template_body)
-                    f.close()
+                    with open(template, "w") as f:
+                        f.write(template_body)
+                    
                     
 
                     print(" [{}]".format(Status.OK.value))
@@ -342,37 +345,37 @@ def main(argv):
                     #update SSM parameters
                     if account_id:
                         result=update_ssm_parameter('/org/member/SecLogMasterAccountId', account_id)
-                        if result != Execution.NO_ACTION:
-                            linked_status = result  
-                    if 'seclog-ou' in ssm_actions and linked_status != Execution.FAIL:
+                    if result != Execution.NO_ACTION:
+                        linked_status = result  
+                    if not null_empty(ssm_actions, 'seclog-ou') and linked_status != Execution.FAIL:
                         result=update_ssm_parameter('/org/member/SecLogOU', ssm_actions['seclog-ou'])
                         if result != Execution.NO_ACTION:
                             linked_status = result     
-                    if 'notification-mail' in ssm_actions and linked_status != Execution.FAIL:
+                    if not null_empty(ssm_actions, 'notification-mail') and linked_status != Execution.FAIL:
                         result=update_ssm_parameter('/org/member/SecLog_notification-mail', ssm_actions['notification-mail'])
                         if result != Execution.NO_ACTION:
                             linked_status = result     
-                    if 'version' in manifest and linked_status != Execution.FAIL:
-                        result=update_ssm_parameter('/org/member/SecLogVersion', manifest['version'])
+                    if not null_empty(manifest, 'version') and linked_status != Execution.FAIL:
+                        result=update_ssm_parameter('/org/member/SLZVersion', manifest['version'])
                         if result != Execution.NO_ACTION:
                             linked_status = result  
-                    if 'cloudtrail-groupname' in ssm_actions and linked_status != Execution.FAIL:
+                    if not null_empty(ssm_actions, 'cloudtrail-groupname') and linked_status != Execution.FAIL:
                         result=update_ssm_parameter('/org/member/SecLog_cloudtrail-groupname', ssm_actions['cloudtrail-groupname'])
                         if result != Execution.NO_ACTION:
                             linked_status = result  
-                    if 'insight-groupname' in ssm_actions and linked_status != Execution.FAIL:
+                    if not null_empty(ssm_actions, 'insight-groupname') and linked_status != Execution.FAIL:
                         result=update_ssm_parameter('/org/member/SecLog_insight-groupname', ssm_actions['insight-groupname'])
                         if result != Execution.NO_ACTION:
                             linked_status = result  
-                    if 'guardduty-groupname' in ssm_actions and linked_status != Execution.FAIL:
+                    if not null_empty(ssm_actions, 'guardduty-groupname') and linked_status != Execution.FAIL:
                         result=update_ssm_parameter('/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname'])
                         if result != Execution.NO_ACTION:
                             linked_status = result  
-                    if 'securityhub-groupname' in ssm_actions and linked_status != Execution.FAIL:
+                    if not null_empty(ssm_actions, 'securityhub-groupname') and linked_status != Execution.FAIL:
                         result=update_ssm_parameter('/org/member/SecLog_securityhub-groupname', ssm_actions['securityhub-groupname'])
                         if result != Execution.NO_ACTION:
                             linked_status = result  
-                    if 'config-groupname' in ssm_actions and linked_status != Execution.FAIL:
+                    if not null_empty(ssm_actions, 'config-groupname') and linked_status != Execution.FAIL:
                         result=update_ssm_parameter('/org/member/SecLog_config-groupname', ssm_actions['config-groupname'])
                         if result != Execution.NO_ACTION:
                             linked_status = result
@@ -542,34 +545,48 @@ def update_stack(client, stack, templates, params=[]):
     capabilities=[]
 
     print("Updating stack : {}. ".format(stack), end="")
+    
     try:
-
-        f=open(template, "r")
-        template_body=f.read()
+        with open(template, "r") as f:
+            template_body=f.read()
         response = client.describe_stacks(StackName=stack)
+    except FileNotFoundError as err:
+        print("\033[2K\033[Template file not found : {} [{}]".format(err.strerror,Status.FAIL.value))
+        return Execution.FAIL
+    except ClientError as err:
+        if err.response['Error']['Code'] == 'AmazonCloudFormationException':
+            print("\033[2K\033[1GStack {} not found : {} [{}]".format(stack,err.response['Error']['Message'],Status.FAIL.value))
+        else:
+            print("\033[2K\033[1GStack {} update failed. Reason : {} [{}]".format(stack,err.response['Error']['Message'],Status.FAIL.value))
+    
 
-        if not params: 
-            if 'Params' in templates[stack]:
-                with open(templates[stack]['Params']) as file:
-                    params = json.load(file)
-            else: 
-                if 'Parameters' in response['Stacks'][0]:
-                    params = response['Stacks'][0]['Parameters']
-        
-        
-        if 'Capabilities' in response['Stacks'][0]:
-            capabilities = response['Stacks'][0]['Capabilities']
-        
+    if not params: 
+        if not null_empty(templates[stack], 'Params'):
+            try:
+                with open(templates[stack]['Params']) as f:
+                    params = json.load(f)
+            except FileNotFoundError as err:
+                print("\033[2K\033[1GParameter file not found : {} [{}]".format(err.strerror,Status.FAIL.value))
+                Execution.FAIL
+        else: 
+            if not null_empty(response['Stacks'][0], 'Parameters'):
+                params = response['Stacks'][0]['Parameters']
+    
+    
+    if not null_empty(response['Stacks'][0], 'Capabilities'):
+        capabilities = response['Stacks'][0]['Capabilities']
+    
 
 
-        if response['Stacks'][0]['StackStatus'] not in ('CREATE_COMPLETE', 'UPDATE_COMPLETE'):
-            print("Cannot update stack {}. Current status is : {} [{}]".format(stack,response['Stacks'][0]['StackStatus'],Status.FAIL.value ))
-            return Execution.FAIL
-        
-        print("in progress ... ".format(stack), end="")
+    if response['Stacks'][0]['StackStatus'] not in ('CREATE_COMPLETE', 'UPDATE_COMPLETE'):
+        print("Cannot update stack {}. Current status is : {} [{}]".format(stack,response['Stacks'][0]['StackStatus'],Status.FAIL.value ))
+        return Execution.FAIL
+    
+    print("in progress ... ".format(stack), end="")
+    try:
         client.update_stack(StackName=stack, TemplateBody=template_body, Parameters=params, Capabilities=capabilities)
         updated=False
-        
+    
         while updated == False:
             response = client.describe_stacks(StackName=stack)
             if 'COMPLETE' in response['Stacks'][0]['StackStatus'] :
@@ -584,8 +601,7 @@ def update_stack(client, stack, templates, params=[]):
         
         return Execution.OK
         
-    except FileNotFoundError as err:
-        print("\033[2K\033[1GTemplate not found : {} [{}]".format(err.strerror,Status.FAIL.value))
+    
     except ClientError as err:
         if err.response['Error']['Code'] == 'AmazonCloudFormationException':
             print("\033[2K\033[1GStack {} not found : {} [{}]".format(stack,err.response['Error']['Message'],Status.FAIL.value))
@@ -607,6 +623,18 @@ class Status(Enum):
     FAIL = Fore.RED + "FAIL" + Style.RESET_ALL
     OK = Fore.GREEN + "OK" + Style.RESET_ALL
     NO_ACTION = Fore.YELLOW + "NO ACTION" + Style.RESET_ALL
+
+class Unbuffered(object):
+   def __init__(self, stream):
+       self.stream = stream
+   def write(self, data):
+       self.stream.write(data)
+       self.stream.flush()
+   def writelines(self, datas):
+       self.stream.writelines(datas)
+       self.stream.flush()
+   def __getattr__(self, attr):
+       return getattr(self.stream, attr)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
