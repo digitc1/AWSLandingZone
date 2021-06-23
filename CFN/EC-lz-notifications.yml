@@ -221,8 +221,6 @@ Resources:
       AlarmName: VPCSecurityGroupChanges
       AlarmDescription: Alarms when an API call is made to create, update or delete
         a Security Group.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: SecurityGroupEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -253,8 +251,6 @@ Resources:
       AlarmName: CloudTrailNetworkAclChanges
       AlarmDescription: Alarms when an API call is made to create, update or delete
         a Network ACL.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: NetworkAclEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -285,8 +281,6 @@ Resources:
       AlarmName: CloudTrailGatewayChanges
       AlarmDescription: Alarms when an API call is made to create, update or delete
         a Customer or Internet Gateway.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: GatewayEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -319,8 +313,6 @@ Resources:
       AlarmName: CloudTrailVpcChanges
       AlarmDescription: Alarms when an API call is made to create, update or delete
         a VPC, VPC peering connection or VPC connection to classic.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: VpcEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -350,8 +342,6 @@ Resources:
       AlarmName: CloudTrailEC2InstanceChanges
       AlarmDescription: Alarms when an API call is made to create, terminate, start,
         stop or reboot an EC2 instance.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: EC2InstanceEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -382,8 +372,6 @@ Resources:
       AlarmName: CloudTrailS3BucketPolicyChanges
       AlarmDescription: Alarms when an API call is made to PUT or DELETE bucket policy,
           bucket lifecycle, bucket replication, or to PUT a bucket ACL
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: S3BucketPolicyEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -421,8 +409,6 @@ Resources:
       AlarmName: CloudTrailEC2LargeInstanceChanges
       AlarmDescription: Alarms when an API call is made to create, terminate, start,
         stop or reboot a 4x, 8x, 9x, 10x, 12x, 16x, 18x, 24x, 32x-large EC2 instance.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: EC2LargeInstanceEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -451,8 +437,6 @@ Resources:
       AlarmName: ConfigChanges
       AlarmDescription: Alarms when an API call is made to create, update or delete
         a config rule change.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: ConfigChangeEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -481,8 +465,6 @@ Resources:
       AlarmName: CloudTrailChanges
       AlarmDescription: Alarms when an API call is made to create, update or delete
         a CloudTrail trail, or to start or stop logging to a trail.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: CloudTrailEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -511,8 +493,6 @@ Resources:
       AlarmName: CloudTrailConsoleSignInFailures
       AlarmDescription: Alarms when an unauthenticated API call is made to sign into
         the console.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: ConsoleSignInFailureCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -540,8 +520,6 @@ Resources:
     Properties:
       AlarmName: CloudTrailAuthorizationFailures
       AlarmDescription: Alarms when an unauthorized API call is made.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: AuthorizationFailureCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -568,8 +546,6 @@ Resources:
     Properties:
       AlarmName: IAMPolicyChanges
       AlarmDescription: Alarms when IAM policy changes are made.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: IAMPolicyEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -596,8 +572,6 @@ Resources:
     Properties:
       AlarmName: RootLogin
       AlarmDescription: Alarms when the root user logs in.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: RootLoginEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -624,8 +598,6 @@ Resources:
     Properties:
       AlarmName: ConsoleMFALogin
       AlarmDescription: Alarms when user login to the console without MFA.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: ConsoleMFALoginEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -654,8 +626,6 @@ Resources:
     Properties:
       AlarmName: RouteTableChange
       AlarmDescription: Alarms when changes are made to routing tables.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: RouteTableChangeEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -682,8 +652,6 @@ Resources:
     Properties:
       AlarmName: CMKdeletion
       AlarmDescription: Alarms when CMK is deleted.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: CMKdeletionEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
