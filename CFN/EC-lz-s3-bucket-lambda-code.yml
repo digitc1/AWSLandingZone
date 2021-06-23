@@ -90,7 +90,7 @@ Resources:
                   Sid: "CloudformationPermissions1"
                   Effect: "Allow"
                   Principal:
-                  Service:
+                    Service:
                     - "cloudformation.amazonaws.com"
                   Action:
                   - "s3:GetBucketAcl"
@@ -101,7 +101,7 @@ Resources:
                   Sid: "CloudformationPermissions2"
                   Effect: "Allow"
                   Principal:
-                  Service:
+                    Service:
                     - "cloudformation.amazonaws.com"
                   Action:
                   - "s3:GetObject"

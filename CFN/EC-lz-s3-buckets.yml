@@ -144,7 +144,7 @@ Resources:
                   Sid: "CloudTrailBucketPolicyDelivery1"
                   Effect: "Allow"
                   Principal:
-                  Service:
+                    Service:
                     - "cloudtrail.amazonaws.com"
                   Action:
                   - "s3:GetBucketAcl"
@@ -154,7 +154,7 @@ Resources:
                   Sid: "CloudTrailBucketPolicyDelivery2"
                   Effect: "Allow"
                   Principal:
-                  Service:
+                    Service:
                     - "cloudtrail.amazonaws.com"
                   Action:
                   - "s3:PutObject"
@@ -165,13 +165,13 @@ Resources:
                         - !GetAtt CloudTrailBucket.Arn
                         - "/*"
                   Condition:
-                  StringEquals:
+                    StringEquals:
                       "s3:x-amz-acl": "bucket-owner-full-control"
                 -
                   Sid: "AWSCloudTrailgBucketSSL"
                   Action: s3:*
                   Principal:
-                  Service: cloudtrail.amazonaws.com
+                    Service: cloudtrail.amazonaws.com
                   Effect: Deny
                   Resource:
                     - Fn::Join:
@@ -259,7 +259,7 @@ Resources:
                   Sid: "AWSConfigBucketPermissionsCheck"
                   Effect: "Allow"
                   Principal:
-                  Service:
+                    Service:
                     - "config.amazonaws.com"
                   Action:
                   - "s3:GetBucketAcl"
@@ -269,7 +269,7 @@ Resources:
                   Sid: "AWSConfigBucketDelivery"
                   Effect: "Allow"
                   Principal:
-                  Service:
+                    Service:
                     - "config.amazonaws.com"
                   Action:
                   - "s3:PutObject"
@@ -280,13 +280,13 @@ Resources:
                         - !GetAtt ConfigBucket.Arn
                         - "/*"
                   Condition:
-                  StringEquals:
+                    StringEquals:
                       "s3:x-amz-acl": "bucket-owner-full-control"
                 -
                   Sid: "AWSConfigBucketSSL"
                   Action: "s3:*"
                   Principal:
-                  Service: config.amazonaws.com
+                    Service: config.amazonaws.com
                   Effect: Deny
                   Resource:
                     - Fn::Join:
@@ -299,8 +299,8 @@ Resources:
                         - !GetAtt ConfigBucket.Arn
                         - "/*"
                   Condition:
-                  Bool:
-                    "aws:SecureTransport": "false"
+                    Bool:
+                      "aws:SecureTransport": "false"
 
   #   -------------------
   #   AccessLogs Bucket
@@ -351,7 +351,7 @@ Resources:
                   Action: "s3:*"
                   Effect: Deny
                   Principal:
-                  Service: cloudwatch.amazonaws.com
+                    Service: cloudwatch.amazonaws.com
                   Resource:
                     - Fn::Join:
                       - ""
@@ -363,8 +363,8 @@ Resources:
                         - !GetAtt AccessLogsBucket.Arn
                         - "/*"
                   Condition:
-                  Bool:
-                    "aws:SecureTransport": "false"
+                    Bool:
+                      "aws:SecureTransport": "false"
 
     
 Outputs:

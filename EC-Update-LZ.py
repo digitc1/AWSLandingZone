@@ -150,11 +150,11 @@ def main(argv):
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
             if will_update(ssm_actions, 'seclog-ou') and seclog_status != Execution.FAIL:
-                result=update_ssm_parameter('/org/member/SecLogOU', ssm_actions['seclog-ou'])
+                result=update_ssm_parameter('/org/member/SecLogOU', ssm_actions['seclog-ou']['value'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result     
             if will_update(ssm_actions, 'notification-mail') and seclog_status != Execution.FAIL:
-                result=update_ssm_parameter('/org/member/SecLog_notification-mail', ssm_actions['notification-mail'])
+                result=update_ssm_parameter('/org/member/SecLog_notification-mail', ssm_actions['notification-mail']['value'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result     
             if will_update(manifest, 'version') and seclog_status != Execution.FAIL:
@@ -162,23 +162,23 @@ def main(argv):
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
             if will_update(ssm_actions, 'cloudtrail-groupname') and seclog_status != Execution.FAIL:
-                result=update_ssm_parameter('/org/member/SecLog_cloudtrail-groupname', ssm_actions['cloudtrail-groupname'])
+                result=update_ssm_parameter('/org/member/SecLog_cloudtrail-groupname', ssm_actions['cloudtrail-groupname']['value'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
             if  will_update(ssm_actions, 'insight-groupname') and seclog_status != Execution.FAIL:
-                result=update_ssm_parameter('/org/member/SecLog_insight-groupname', ssm_actions['insight-groupname'])
+                result=update_ssm_parameter('/org/member/SecLog_insight-groupname', ssm_actions['insight-groupname']['value'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
             if  will_update(ssm_actions, 'guardduty-groupname') and seclog_status != Execution.FAIL:
-                result=update_ssm_parameter('/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname'])
+                result=update_ssm_parameter('/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname']['value'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
             if  will_update(ssm_actions, 'securityhub-groupname') and seclog_status != Execution.FAIL:
-                result=update_ssm_parameter('/org/member/SecLog_securityhub-groupname', ssm_actions['securityhub-groupname'])
+                result=update_ssm_parameter('/org/member/SecLog_securityhub-groupname', ssm_actions['securityhub-groupname']['value'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
             if  will_update(ssm_actions, 'config-groupname') and seclog_status != Execution.FAIL:
-                result=update_ssm_parameter('/org/member/SecLog_config-groupname', ssm_actions['config-groupname'])
+                result=update_ssm_parameter('/org/member/SecLog_config-groupname', ssm_actions['config-groupname']['value'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result
 
@@ -351,11 +351,11 @@ def main(argv):
                         if result != Execution.NO_ACTION:
                             linked_status = result  
                     if will_update(ssm_actions, 'seclog-ou') and linked_status != Execution.FAIL:
-                        result=update_ssm_parameter('/org/member/SecLogOU', ssm_actions['seclog-ou'])
+                        result=update_ssm_parameter('/org/member/SecLogOU', ssm_actions['seclog-ou']['value'])
                         if result != Execution.NO_ACTION:
                             linked_status = result     
                     if will_update(ssm_actions, 'notification-mail') and linked_status != Execution.FAIL:
-                        result=update_ssm_parameter('/org/member/SecLog_notification-mail', ssm_actions['notification-mail'])
+                        result=update_ssm_parameter('/org/member/SecLog_notification-mail', ssm_actions['notification-mail']['value'])
                         if result != Execution.NO_ACTION:
                             linked_status = result     
                     if will_update(manifest, 'version') and linked_status != Execution.FAIL:
@@ -363,23 +363,23 @@ def main(argv):
                         if result != Execution.NO_ACTION:
                             linked_status = result  
                     if will_update(ssm_actions, 'cloudtrail-groupname') and linked_status != Execution.FAIL:
-                        result=update_ssm_parameter('/org/member/SecLog_cloudtrail-groupname', ssm_actions['cloudtrail-groupname'])
+                        result=update_ssm_parameter('/org/member/SecLog_cloudtrail-groupname', ssm_actions['cloudtrail-groupname']['value'])
                         if result != Execution.NO_ACTION:
                             linked_status = result  
                     if  will_update(ssm_actions, 'insight-groupname') and linked_status != Execution.FAIL:
-                        result=update_ssm_parameter('/org/member/SecLog_insight-groupname', ssm_actions['insight-groupname'])
+                        result=update_ssm_parameter('/org/member/SecLog_insight-groupname', ssm_actions['insight-groupname']['value'])
                         if result != Execution.NO_ACTION:
                             linked_status = result  
                     if  will_update(ssm_actions, 'guardduty-groupname') and linked_status != Execution.FAIL:
-                        result=update_ssm_parameter('/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname'])
+                        result=update_ssm_parameter('/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname']['value'])
                         if result != Execution.NO_ACTION:
                             linked_status = result  
                     if  will_update(ssm_actions, 'securityhub-groupname') and linked_status != Execution.FAIL:
-                        result=update_ssm_parameter('/org/member/SecLog_securityhub-groupname', ssm_actions['securityhub-groupname'])
+                        result=update_ssm_parameter('/org/member/SecLog_securityhub-groupname', ssm_actions['securityhub-groupname']['value'])
                         if result != Execution.NO_ACTION:
                             linked_status = result  
                     if  will_update(ssm_actions, 'config-groupname') and linked_status != Execution.FAIL:
-                        result=update_ssm_parameter('/org/member/SecLog_config-groupname', ssm_actions['config-groupname'])
+                        result=update_ssm_parameter('/org/member/SecLog_config-groupname', ssm_actions['config-groupname']['value'])
                         if result != Execution.NO_ACTION:
                             seclog_status = result
 
@@ -502,18 +502,17 @@ def null_empty(dict, key):
     Function that checks if the a key exists in the dict and the value is not empty
         :return: true or false
     """
-    try:
-        if key in dict and dict[key]:
-            return False
-    finally:
-        return True
+   
+    if key in dict:
+        return False
+    return True
 
 def will_update(dict, key):
     """
     Function that checks if the a key exists in the dict and the value is not empty
         :return: true or false
     """
-    if not null_empty(dict, key) and update in dict[key] and dict[key]['update'] == True:
+    if not null_empty(dict, key) and 'update' in dict[key] and dict[key]['update'] == True:
         return True
     else: return False
 
@@ -611,11 +610,8 @@ def update_stack(client, stack, templates, params=[]):
                 elif 'FAILED' in response['Stacks'][0]['StackStatus'] :
                     print("\033[2K\033[1GStack {} update failed. Reason {} [{}]".format(stack, response['Stacks'][0]['StackStatusReason'],Status.FAIL.value))
                     return Execution.FAIL
-                time.sleep(1)
 
-            
             return Execution.OK
-            
         
         except ClientError as err:
             if err.response['Error']['Code'] == 'AmazonCloudFormationException':
