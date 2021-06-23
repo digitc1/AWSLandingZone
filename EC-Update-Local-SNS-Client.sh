@@ -77,7 +77,7 @@ update_client(){
     aws cloudformation create-stack \
       --stack-name $StackName \
       --template-body file://./CFN/EC-lz-local-config-SNS.yml \
-      --tags file://$CFN_TAGS_PARAMS_FILE \
+      --tags file://$CFN_TAGS_FILE \
       --capabilities CAPABILITY_NAMED_IAM \
       --enable-termination-protection \
       --profile $CLIENT
