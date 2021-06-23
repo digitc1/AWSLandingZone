@@ -166,6 +166,7 @@ configure_client() {
     aws cloudformation create-stack \
     --stack-name $StackName \
     --template-body file://$CFN_STACKSET_EXEC_ROLE \
+    --tags file://$CFN_TAGS_PARAMS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $CLIENT
@@ -216,6 +217,7 @@ configure_client() {
     --stack-name $StackName \
     --template-body file://$CFN_LOG_TEMPLATE \
     --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --tags file://$CFN_TAGS_PARAMS_FILE \
     --capabilities CAPABILITY_NAMED_IAM \
     --enable-termination-protection \
     --profile $CLIENT
@@ -251,6 +253,7 @@ configure_client() {
     --stack-name $StackName \
     --template-body file://$CFN_LOCAL_SNS_TEMPLATE \
     --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --tags file://$CFN_TAGS_PARAMS_FILE \
     --capabilities CAPABILITY_NAMED_IAM \
     --enable-termination-protection \
     --profile $CLIENT
@@ -269,6 +272,7 @@ configure_client() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Guardduty-detector' \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
+    --tags file://$CFN_TAGS_PARAMS_FILE \
     --capabilities CAPABILITY_NAMED_IAM \
     --enable-termination-protection \
     --profile $CLIENT
@@ -284,6 +288,7 @@ configure_client() {
     --stack-name 'SECLZ-SecurityHub' \
     --template-body file://$CFN_SECURITYHUB_TEMPLATE \
     --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --tags file://$CFN_TAGS_PARAMS_FILE \
     --enable-termination-protection \
     --profile $CLIENT
 
@@ -298,6 +303,7 @@ configure_client() {
     --stack-name 'SECLZ-Iam-Password-Policy' \
     --template-body  file://$CFN_IAM_PWD_POLICY \
     --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --tags file://$CFN_TAGS_PARAMS_FILE \
     --capabilities CAPABILITY_IAM \
     --enable-termination-protection \
     --profile $CLIENT
@@ -313,6 +319,7 @@ configure_client() {
     aws cloudformation create-stack \
     --stack-name $StackName \
     --template-body file://$CFN_NOTIFICATIONS_CT_TEMPLATE \
+    --tags file://$CFN_TAGS_PARAMS_FILE \
     --enable-termination-protection \
     --profile $CLIENT
 
