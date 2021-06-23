@@ -23,30 +23,30 @@ Metadata:
           - DataClassification
 
 Parameters:
-    Owner:
-        Description: "Tag: owner. Creator or responsible for the project"
-        Type: String
-        Default: ''
+  Owner:
+      Description: "Tag: owner. Creator or responsible for the project"
+      Type: String
+      Default: ''
 
-    Environment:
-        Description: "Tag: environment. Environnement of the resource (Dev, test, prod etc.)"
-        Type: String
-        Default: ''
+  Environment:
+      Description: "Tag: environment. Environnement of the resource (Dev, test, prod etc.)"
+      Type: String
+      Default: ''
 
-    Criticity:
-        Description: "Tag: criticity. Criticity of the application"
-        Type: String
-        Default: ''
+  Criticity:
+      Description: "Tag: criticity. Criticity of the application"
+      Type: String
+      Default: ''
 
-    Project:
-        Description: "Tag: project. Name of the application or project"
-        Type: String
-        Default: 'secLZ'
+  Project:
+      Description: "Tag: project. Name of the application or project"
+      Type: String
+      Default: 'secLZ'
 
-    DataClassification:
-        Description: "Tag: data-classification. Level of criticality of the stored data"
-        Type: String
-        Default: ''
+  DataClassification:
+      Description: "Tag: data-classification. Level of criticality of the stored data"
+      Type: String
+      Default: ''
 
 Resources:
   rSecHubWithTags:
