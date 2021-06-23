@@ -23,97 +23,97 @@ Metadata:
           - DataClassification
 
 Parameters:
-    Owner:
-        Description: "Tag: owner. Creator or responsible for the project"
-        Type: String
-        Default: ''
+  Owner:
+      Description: "Tag: owner. Creator or responsible for the project"
+      Type: String
+      Default: ''
 
-    Environment:
-        Description: "Tag: environment. Environnement of the resource (Dev, test, prod etc.)"
-        Type: String
-        Default: ''
+  Environment:
+      Description: "Tag: environment. Environnement of the resource (Dev, test, prod etc.)"
+      Type: String
+      Default: ''
 
-    Criticity:
-        Description: "Tag: criticity. Criticity of the application"
-        Type: String
-        Default: ''
+  Criticity:
+      Description: "Tag: criticity. Criticity of the application"
+      Type: String
+      Default: ''
 
-    Project:
-        Description: "Tag: project. Name of the application or project"
-        Type: String
-        Default: 'secLZ'
+  Project:
+      Description: "Tag: project. Name of the application or project"
+      Type: String
+      Default: 'secLZ'
 
-    DataClassification:
-        Description: "Tag: data-classification. Level of criticality of the stored data"
-        Type: String
-        Default: ''
+  DataClassification:
+      Description: "Tag: data-classification. Level of criticality of the stored data"
+      Type: String
+      Default: ''
     
 Resources:
 
-    #   -------------------
-    #   Code Repo Bucket
-    #   -------------------
+  #   -------------------
+  #   Code Repo Bucket
+  #   -------------------
 
-    LambdaArtefactsBucket:
-        Type: AWS::S3::Bucket
-        Properties:
-            BucketName:
-                Fn::Join:
-                - ""
-                - - "lambda-artefacts-"
-                  - Ref: AWS::AccountId
-            PublicAccessBlockConfiguration:
-              BlockPublicAcls: true
-              BlockPublicPolicy: true
-              IgnorePublicAcls: true
-              RestrictPublicBuckets: true
-            Tags:
-            - Key: Owner
-              Value: !Ref Owner
-            - Key: Environment
-              Value: !Ref Environment
-            - Key: Criticity
-              Value: !Ref Criticity
-            - Key: Project
-              Value: !Ref Project
-            - Key: DataClassification
-              Value: !Ref DataClassification
-    
-    LambdaArtefactBucketPolicy:
-        Type: AWS::S3::BucketPolicy
-        Properties:
-            Bucket:
-                Ref: LambdaArtefactsBucket
-            PolicyDocument:
-                Statement:
-                 -
-                   Sid: "CloudformationPermissions1"
-                   Effect: "Allow"
-                   Principal:
-                    Service:
-                     - "cloudformation.amazonaws.com"
-                   Action:
-                    - "s3:GetBucketAcl"
-                    - "s3:ListBucket"
-                   Resource: !GetAtt LambdaArtefactsBucket.Arn
+  LambdaArtefactsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+          BucketName:
+              Fn::Join:
+              - ""
+              - - "lambda-artefacts-"
+                - Ref: AWS::AccountId
+          PublicAccessBlockConfiguration:
+            BlockPublicAcls: true
+            BlockPublicPolicy: true
+            IgnorePublicAcls: true
+            RestrictPublicBuckets: true
+          Tags:
+          - Key: Owner
+            Value: !Ref Owner
+          - Key: Environment
+            Value: !Ref Environment
+          - Key: Criticity
+            Value: !Ref Criticity
+          - Key: Project
+            Value: !Ref Project
+          - Key: DataClassification
+            Value: !Ref DataClassification
+  
+  LambdaArtefactBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+          Bucket:
+              Ref: LambdaArtefactsBucket
+          PolicyDocument:
+              Statement:
+                -
+                  Sid: "CloudformationPermissions1"
+                  Effect: "Allow"
+                  Principal:
+                  Service:
+                    - "cloudformation.amazonaws.com"
+                  Action:
+                  - "s3:GetBucketAcl"
+                  - "s3:ListBucket"
+                  Resource: !GetAtt LambdaArtefactsBucket.Arn
 
-                 -
-                   Sid: "CloudformationPermissions2"
-                   Effect: "Allow"
-                   Principal:
-                    Service:
-                     - "cloudformation.amazonaws.com"
-                   Action:
-                    - "s3:GetObject"
-                    - "s3:GetObjectAcl"
-                    - "s3:GetObjectVersion"
-                    - "s3:PutObject"
-                    - "s3:PutObjectAcl"
-                   Resource:
-                     Fn::Join:
-                       - ""
-                       -
-                         - !GetAtt LambdaArtefactsBucket.Arn
-                         - "/*"
-                 
-        
+                -
+                  Sid: "CloudformationPermissions2"
+                  Effect: "Allow"
+                  Principal:
+                  Service:
+                    - "cloudformation.amazonaws.com"
+                  Action:
+                  - "s3:GetObject"
+                  - "s3:GetObjectAcl"
+                  - "s3:GetObjectVersion"
+                  - "s3:PutObject"
+                  - "s3:PutObjectAcl"
+                  Resource:
+                    Fn::Join:
+                      - ""
+                      -
+                        - !GetAtt LambdaArtefactsBucket.Arn
+                        - "/*"
+                
+      
