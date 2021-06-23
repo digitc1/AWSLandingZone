@@ -97,7 +97,7 @@ update() {
     
     
     
-    DEPENDENCIES=(boto3 botocore time json colorama zipfile shlex)
+    DEPENDENCIES=(boto3 botocore time json colorama zipfile shlex cursor)
     
     #installing python dependencies
     for dep in "${DEPENDENCIES[@]}" 

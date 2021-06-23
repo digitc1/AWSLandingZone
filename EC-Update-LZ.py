@@ -10,6 +10,8 @@ import time
 import boto3
 import json
 import zipfile
+import threading
+import cursor
 
 from zipfile import ZipFile
 from datetime import datetime
@@ -215,20 +217,20 @@ def main(argv):
             #update CFT file
             if seclog_status != Execution.FAIL:
                 template = stacks['SECLZ-LogShipper-Lambdas']['Template']
-                print("Update SECLZ-LogShipper-Lambdas template file", end="")
+                print("Template SECLZ-LogShipper-Lambdas update ", end="")
+
                 try:
                     template = stacks['SECLZ-LogShipper-Lambdas']['Template']
                     
                     with open(template, "r") as f:
                         template_body=f.read()
-                 
+                
                     template_body.replace('##cloudtrailCodeURI##',cloudtrail_lambda).replace('##configCodeURI##',config_lambda)
 
                     template = f'EC-lz-logshipper-lambdas-{now}.yml'
                     with open(template, "w") as f:
                         f.write(template_body)
-                    
-                    
+                
 
                     print(" [{}]".format(Status.OK.value))
                 except FileNotFoundError as err:
@@ -236,15 +238,16 @@ def main(argv):
                     seclog_status = Execution.FAIL
             
             #package stack
-            print("Package SECLZ-LogShipper-Lambdas template", end="")
+            print("Template SECLZ-LogShipper-Lambdas package ", end="")
             bucket=f'lambda-artefacts-{account_id}'
             if seclog_status != Execution.FAIL:
                 if has_profile:
                     prf = f'--profile {profile}'
-                cmd = f"aws cloudformation package --template-file {template} {prf} --s3-bucket {bucket} --output-template-file EC-lz-logshipper-lambdas-{now}.packaged.yml"
-                cmdarg = shlex.split(cmd)
-                proc = subprocess.Popen(cmdarg,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-                output, errors = proc.communicate()
+                with Spinner():
+                    cmd = f"aws cloudformation package --template-file {template} {prf} --s3-bucket {bucket} --output-template-file EC-lz-logshipper-lambdas-{now}.packaged.yml"
+                    cmdarg = shlex.split(cmd)
+                    proc = subprocess.Popen(cmdarg,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                    output, errors = proc.communicate()
                 
                 if len(errors) > 0:
                     print(" failed. Readon {} [{}]".format(errors, Status.FAIL.value))
@@ -544,8 +547,8 @@ def update_stack(client, stack, templates, params=[]):
     template = templates[stack]['Template']
     capabilities=[]
 
-    print("Updating stack : {}. ".format(stack), end="")
-    
+    print("Stack {} update ".format(stack), end="")
+
     try:
         with open(template, "r") as f:
             template_body=f.read()
@@ -581,37 +584,38 @@ def update_stack(client, stack, templates, params=[]):
     if response['Stacks'][0]['StackStatus'] not in ('CREATE_COMPLETE', 'UPDATE_COMPLETE'):
         print("Cannot update stack {}. Current status is : {} [{}]".format(stack,response['Stacks'][0]['StackStatus'],Status.FAIL.value ))
         return Execution.FAIL
-    
-    print("in progress ... ".format(stack), end="")
-    try:
-        client.update_stack(StackName=stack, TemplateBody=template_body, Parameters=params, Capabilities=capabilities)
-        updated=False
-    
-        while updated == False:
-            response = client.describe_stacks(StackName=stack)
-            if 'COMPLETE' in response['Stacks'][0]['StackStatus'] :
-                print("\033[2K\033[1GStack {} update [{}]".format(stack,Status.OK.value))
-                updated=True
-                break
-            elif 'FAILED' in response['Stacks'][0]['StackStatus'] :
-                print("\033[2K\033[1GStack {} update failed. Reason {} [{}]".format(stack, response['Stacks'][0]['StackStatusReason'],Status.FAIL.value))
-                return Execution.FAIL
-            time.sleep(1)
+        
+    print("in progress ".format(stack), end="")
+    with Spinner():
+        try:
+            client.update_stack(StackName=stack, TemplateBody=template_body, Parameters=params, Capabilities=capabilities)
+            updated=False
+        
+            while updated == False:
+                response = client.describe_stacks(StackName=stack)
+                if 'COMPLETE' in response['Stacks'][0]['StackStatus'] :
+                    print("\033[2K\033[1GStack {} update [{}]".format(stack,Status.OK.value))
+                    updated=True
+                    break
+                elif 'FAILED' in response['Stacks'][0]['StackStatus'] :
+                    print("\033[2K\033[1GStack {} update failed. Reason {} [{}]".format(stack, response['Stacks'][0]['StackStatusReason'],Status.FAIL.value))
+                    return Execution.FAIL
+                time.sleep(1)
 
+            
+            return Execution.OK
+            
         
-        return Execution.OK
+        except ClientError as err:
+            if err.response['Error']['Code'] == 'AmazonCloudFormationException':
+                print("\033[2K\033[1GStack {} not found : {} [{}]".format(stack,err.response['Error']['Message'],Status.FAIL.value))
+            elif err.response['Error']['Code'] == 'ValidationError' and err.response['Error']['Message'] == 'No updates are to be performed.':
+                print("\033[2K\033[1GStack {} update [{}]".format(stack,Status.NO_ACTION.value))
+                return Execution.NO_ACTION
+            else:
+                print("\033[2K\033[1GStack {} update failed. Reason : {} [{}]".format(stack,err.response['Error']['Message'],Status.FAIL.value))
         
-    
-    except ClientError as err:
-        if err.response['Error']['Code'] == 'AmazonCloudFormationException':
-            print("\033[2K\033[1GStack {} not found : {} [{}]".format(stack,err.response['Error']['Message'],Status.FAIL.value))
-        elif err.response['Error']['Code'] == 'ValidationError' and err.response['Error']['Message'] == 'No updates are to be performed.':
-            print("\033[2K\033[1GStack {} update [{}]".format(stack,Status.NO_ACTION.value))
-            return Execution.NO_ACTION
-        else:
-            print("\033[2K\033[1GStack {} update failed. Reason : {} [{}]".format(stack,err.response['Error']['Message'],Status.FAIL.value))
-    
-    return Execution.FAIL
+        return Execution.FAIL
     
 
 class Execution(Enum):
@@ -635,6 +639,42 @@ class Unbuffered(object):
        self.stream.flush()
    def __getattr__(self, attr):
        return getattr(self.stream, attr)
+
+
+class Spinner:
+    busy = False
+    delay = 0.1
+
+    @staticmethod
+    def spinning_cursor():
+        while 1: 
+            for cursor in '⠄⠆⠇⠋⠙⠸⠰⠠⠰⠸⠙⠋⠇⠆': yield cursor
+
+    def __init__(self, delay=None):
+        cursor.hide()
+        self.spinner_generator = self.spinning_cursor()
+        if delay and float(delay): self.delay = delay
+
+    def spinner_task(self):
+        
+        while self.busy:
+            sys.stdout.write(next(self.spinner_generator))
+            sys.stdout.flush()
+            time.sleep(self.delay)
+            sys.stdout.write('\b')
+            sys.stdout.flush()
+
+    def __enter__(self):
+        self.busy = True
+        threading.Thread(target=self.spinner_task).start()
+
+    def __exit__(self, exception, value, tb):
+        self.busy = False
+        time.sleep(self.delay)
+        cursor.show()
+        if exception is not None:
+            return False
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
