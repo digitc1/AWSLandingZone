@@ -50,13 +50,13 @@
             "update" : true
         },
         "SECLZ-config-cloudtrail-SNS" : {
-            "update" : true
+            "update" : false
         },
         "SECLZ-Guardduty-detector" : {
             "update" : true
         },
         "SECLZ-SecurityHub" : {
-            "update" : true
+            "update" : false
          },
         "SECLZ-Notifications-Cloudtrail" : {
             "update" : true
@@ -65,5 +65,12 @@
             "update" : true
         } 
     },
-    "stacksets" : {}
+    "stacksets" : {
+        "SECLZ-Enable-Config-SecurityHub-Globally" : {
+            "update" : true
+        },
+        "SECLZ-Enable-Guardduty-Globally" : {
+            "update" : true
+        }
+    }
 }

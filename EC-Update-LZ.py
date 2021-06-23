@@ -52,6 +52,7 @@ def main(argv):
     linked_accounts_doctored = []
     ssm_actions = []
     stack_actions = []
+    stacksets_actions = []
 
     
     sys.stdout = Unbuffered(sys.stdout)
@@ -136,9 +137,11 @@ def main(argv):
         print("Updating SECLOG account {}".format(account_id))
         print("")
  
-        if 'stacks' in manifest: 
+        if not null_empty(manifest, 'stacks'): 
             stack_actions = manifest['stacks']
-        if 'ssm' in manifest: 
+        if not null_empty(manifest, 'stacksets'):
+            stacksets_actions = manifest['stacksets']
+        if null_empty(manifest, 'ssm'):
             ssm_actions = manifest['ssm']
 
         seclog_status = Execution.NO_ACTION
@@ -313,6 +316,18 @@ def main(argv):
             if result != Execution.NO_ACTION:
                 seclog_status = result
         
+        #stackset Enable-Config-SecurityHub
+        if will_update(stacksets_actions, 'SECLZ-Enable-Config-SecurityHub-Globally') and seclog_status != Execution.FAIL:            
+            result = update_stackset(cfn, 'SECLZ-Enable-Config-SecurityHub-Globally', stacksets)
+            if result != Execution.NO_ACTION:
+                seclog_status = result
+        
+        #stackset Enable-Guardduty-Globally
+        if will_update(stacksets_actions, 'SECLZ-Enable-Guardduty-Globally') and seclog_status != Execution.FAIL:            
+            result = update_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', stacksets)
+            if result != Execution.NO_ACTION:
+                seclog_status = result
+
         print("")
         print("SECLOG account {} update ".format(account_id), end="")
         if seclog_status == Execution.FAIL:
@@ -428,6 +443,9 @@ def main(argv):
                     print("[{}]".format(Status.NO_ACTION.value))
                 print("")
     
+        
+                
+
     print("")
     print("####### AWS Landing Zone update script finished. Executed in {} seconds".format(time.time() - start_time))
     print("#######")
@@ -527,24 +545,27 @@ def update_ssm_parameter(parameter, value):
         :params:        the value to be updated
         :return: true or false
     """
+    exists = True
     client = boto3.client('ssm')
-    print(f"SSM parameter {parameter} update", end="")
+    print(f"SSM parameter {parameter} update ", end="")
     try:
         response = client.get_parameter(Name=parameter)
-        if not 'Value' not in response or value != response['Parameter']['Value']:
+    except client.exceptions.ParameterNotFound as err:
+        print("\033[2K\033[1GSSM parameter {} does not exist. Creating...".format(parameter), end="")
+        exists=False
+    try:
+        if exists == False or ('Value' in response['Parameter'] and value != response['Parameter']['Value']):
             response = client.put_parameter(
                 Name=parameter,
                 Value=value,
                 Type='String',
                 Overwrite=True|False)
             if response['Version']:
-                print(" [{}]".format(Status.OK.value))
+                print("\033[2K\033[1SSM parameter {parameter} update [{}]".format(parameter,Status.OK.value))
                 return Execution.OK
-    except client.exceptions.ParameterNotFound as err:
-        print(" failed. Reason {}  [{}]".format(err, Status.FAIL.value))
-        return Execution.FAIL
+    
     except Exception as err:
-        print(" failed. Reason {}  [{}]".format(err.response['Error']['Message'], Status.FAIL.value))
+        print("\033[2K\033[1SSM parameter {parameter} update failed. Reason {} [{}]".format(parameter,err.response['Error']['Message'], Status.FAIL.value))
         return Execution.FAIL
     
     print(" [{}]".format(Status.NO_ACTION.value))
@@ -568,7 +589,7 @@ def update_stack(client, stack, templates, params=[]):
             template_body=f.read()
         response = client.describe_stacks(StackName=stack)
     except FileNotFoundError as err:
-        print("\033[2K\033[Template file not found : {} [{}]".format(err.strerror,Status.FAIL.value))
+        print("\033[2K\033[Stack template file not found : {} [{}]".format(err.strerror,Status.FAIL.value))
         return Execution.FAIL
     except ClientError as err:
         if err.response['Error']['Code'] == 'AmazonCloudFormationException':
@@ -598,7 +619,7 @@ def update_stack(client, stack, templates, params=[]):
     
 
 
-    if response['Stacks'][0]['StackStatus'] not in ('CREATE_COMPLETE', 'UPDATE_COMPLETE'):
+    if response['Stacks'][0]['StackStatus'] not in ('CREATE_COMPLETE', 'UPDATE_COMPLETE','UPDATE_ROLLBACK_COMPLETE'):
         print("Cannot update stack {}. Current status is : {} [{}]".format(stack,response['Stacks'][0]['StackStatus'],Status.FAIL.value ))
         return Execution.FAIL
         
@@ -614,10 +635,10 @@ def update_stack(client, stack, templates, params=[]):
                     print("\033[2K\033[1GStack {} update [{}]".format(stack,Status.OK.value))
                     updated=True
                     break
-                elif 'FAILED' in response['Stacks'][0]['StackStatus'] :
+                elif 'FAILED' in response['Stacks'][0]['StackStatus'] or 'ROLLBACK' in response['Stacks'][0]['StackStatus'] :
                     print("\033[2K\033[1GStack {} update failed. Reason {} [{}]".format(stack, response['Stacks'][0]['StackStatusReason'],Status.FAIL.value))
                     return Execution.FAIL
-
+               
             return Execution.OK
         
         except ClientError as err:
@@ -628,6 +649,96 @@ def update_stack(client, stack, templates, params=[]):
                 return Execution.NO_ACTION
             else:
                 print("\033[2K\033[1GStack {} update failed. Reason : {} [{}]".format(stack,err.response['Error']['Message'],Status.FAIL.value))
+        
+        return Execution.FAIL
+
+def update_stackset(client, stackset, templates, params=[]):
+    """
+    Function that updates a stackset defined in the parameters
+        :stackset:         The stackset name
+        :template_data: dict holding CFT details
+        :params:        parameters to be passed to the stackset
+        :return:        True or False
+    """
+    template = templates[stackset]['Template']
+    capabilities=[]
+
+    print("StackSet {} update ".format(stackset), end="")
+
+    try:
+        with open(template, "r") as f:
+            template_body=f.read()
+        response = client.describe_stack_set(StackSetName=stackset)
+    except FileNotFoundError as err:
+        print("\033[2K\033[StackSet template file not found : {} [{}]".format(err.strerror,Status.FAIL.value))
+        return Execution.FAIL
+    except ClientError as err:
+        if err.response['Error']['Code'] == 'AmazonCloudFormationException':
+            print("\033[2K\033[1GStackSet {} not found : {} [{}]".format(stackset,err.response['Error']['Message'],Status.FAIL.value))
+        else:
+            print("\033[2K\033[1GStackSet {} update failed. Reason : {} [{}]".format(stackset,err.response['Error']['Message'],Status.FAIL.value))
+    
+
+    if not params: 
+        if not null_empty(templates[stackset], 'Params'):
+            try:
+                with open(templates[stackset]['Params']) as f:
+                    params = json.load(f)
+            except FileNotFoundError as err:
+                print("\033[2K\033[1GParameter file not found : {} [{}]".format(err.strerror,Status.FAIL.value))
+                Execution.FAIL
+            except json.decoder.JSONDecodeError as err:
+                print("\033[2K\033[1GParameter file problem : {} [{}]".format(err.strerror,Status.FAIL.value))
+                Execution.FAIL
+        else: 
+            if not null_empty(response['StackSet'], 'Parameters'):
+                params = response['StackSet']['Parameters']
+    
+    
+    if not null_empty(response['StackSet'], 'Capabilities'):
+        capabilities = response['StackSet']['Capabilities']
+    
+
+
+    if response['StackSet']['Status'] not in ('ACTIVE'):
+        print("Cannot update stackset {}. Current status is : {} [{}]".format(stackset,response['StackSet']['Status'],Status.FAIL.value ))
+        return Execution.FAIL
+        
+    print("in progress ".format(stackset), end="")
+    with Spinner():
+        try:
+            operationPreferences={
+                'RegionConcurrencyType': 'PARALLEL',
+                'FailureToleranceCount': 9,
+                'MaxConcurrentCount': 10,
+            }
+            client.update_stack_set(
+                StackSetName=stackset, 
+                TemplateBody=template_body, 
+                Parameters=params, 
+                Capabilities=capabilities,
+                OperationPreferences=operationPreferences
+                )
+           
+            updated=False
+        
+            while updated == False:
+                response = client.describe_stack_set(StackSetName=stackset)
+                if 'ACTIVE' in response['StackSet']['Status'] :
+                    print("\033[2K\033[1GStackSet {} update [{}]".format(stackset,Status.OK.value))
+                    updated=True
+                    break
+                
+            return Execution.OK
+        
+        except ClientError as err:
+            if err.response['Error']['Code'] == 'AmazonCloudFormationException':
+                print("\033[2K\033[1GStackSet {} not found : {} [{}]".format(stackset,err.response['Error']['Message'],Status.FAIL.value))
+            elif err.response['Error']['Code'] == 'ValidationError' and err.response['Error']['Message'] == 'No updates are to be performed.':
+                print("\033[2K\033[1GStackSet {} update [{}]".format(stackset,Status.NO_ACTION.value))
+                return Execution.NO_ACTION
+            else:
+                print("\033[2K\033[1GStackSet {} update failed. Reason : {} [{}]".format(stackset,err.response['Error']['Message'],Status.FAIL.value))
         
         return Execution.FAIL
     
