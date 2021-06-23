@@ -10,7 +10,7 @@
         },
         "cloudtrail-groupname" : {
             "value" : "",
-            "update" : true
+            "update" : false
         },
         "insight-groupname" : {
             "value" : "",
@@ -65,6 +65,5 @@
             "update" : true
         } 
     },
-    "logdestination" : "dgtest",
     "stacksets" : {}
 }

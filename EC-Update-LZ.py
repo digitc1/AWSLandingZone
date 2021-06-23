@@ -585,6 +585,9 @@ def update_stack(client, stack, templates, params=[]):
             except FileNotFoundError as err:
                 print("\033[2K\033[1GParameter file not found : {} [{}]".format(err.strerror,Status.FAIL.value))
                 Execution.FAIL
+            except json.decoder.JSONDecodeError as err:
+                print("\033[2K\033[1GParameter file problem : {} [{}]".format(err.strerror,Status.FAIL.value))
+                Execution.FAIL
         else: 
             if not null_empty(response['Stacks'][0], 'Parameters'):
                 params = response['Stacks'][0]['Parameters']
