@@ -100,7 +100,7 @@ Parameters:
     Default: '/org/member/SecLog_config-groupname'
     Description: AWS config CloudWatch LogGroup name
   CloudwatchAlarmsLogGroupName:
-    Type: AWS::SSM::Parameter::Value<String>
+    Type: String
     Default: '/aws/events/cloudwatch-alarms'
     Description: AWS CloudWatch Alarms LogGroup name
   LogsRetentionInDays:
