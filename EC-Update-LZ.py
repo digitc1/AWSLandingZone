@@ -149,35 +149,35 @@ def main(argv):
                 result=update_ssm_parameter('/org/member/SecLogMasterAccountId', account_id)
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
-            if not null_empty(ssm_actions, 'seclog-ou') and seclog_status != Execution.FAIL:
+            if will_update(ssm_actions, 'seclog-ou') and seclog_status != Execution.FAIL:
                 result=update_ssm_parameter('/org/member/SecLogOU', ssm_actions['seclog-ou'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result     
-            if not null_empty(ssm_actions, 'notification-mail') and seclog_status != Execution.FAIL:
+            if will_update(ssm_actions, 'notification-mail') and seclog_status != Execution.FAIL:
                 result=update_ssm_parameter('/org/member/SecLog_notification-mail', ssm_actions['notification-mail'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result     
-            if not null_empty(manifest, 'version') and seclog_status != Execution.FAIL:
+            if will_update(manifest, 'version') and seclog_status != Execution.FAIL:
                 result=update_ssm_parameter('/org/member/SLZVersion', manifest['version'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
-            if not null_empty(ssm_actions, 'cloudtrail-groupname') and seclog_status != Execution.FAIL:
+            if will_update(ssm_actions, 'cloudtrail-groupname') and seclog_status != Execution.FAIL:
                 result=update_ssm_parameter('/org/member/SecLog_cloudtrail-groupname', ssm_actions['cloudtrail-groupname'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
-            if not null_empty(ssm_actions, 'insight-groupname') and seclog_status != Execution.FAIL:
+            if  will_update(ssm_actions, 'insight-groupname') and seclog_status != Execution.FAIL:
                 result=update_ssm_parameter('/org/member/SecLog_insight-groupname', ssm_actions['insight-groupname'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
-            if not null_empty(ssm_actions, 'guardduty-groupname') and seclog_status != Execution.FAIL:
+            if  will_update(ssm_actions, 'guardduty-groupname') and seclog_status != Execution.FAIL:
                 result=update_ssm_parameter('/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
-            if not null_empty(ssm_actions, 'securityhub-groupname') and seclog_status != Execution.FAIL:
+            if  will_update(ssm_actions, 'securityhub-groupname') and seclog_status != Execution.FAIL:
                 result=update_ssm_parameter('/org/member/SecLog_securityhub-groupname', ssm_actions['securityhub-groupname'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
-            if not null_empty(ssm_actions, 'config-groupname') and seclog_status != Execution.FAIL:
+            if  will_update(ssm_actions, 'config-groupname') and seclog_status != Execution.FAIL:
                 result=update_ssm_parameter('/org/member/SecLog_config-groupname', ssm_actions['config-groupname'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result
@@ -186,7 +186,7 @@ def main(argv):
         
 
         #KMS template
-        if seclog_status != Execution.FAIL and 'SECLZ-Cloudtrail-KMS' in stack_actions and stack_actions['SECLZ-Cloudtrail-KMS']['update'] == True:            
+        if will_update(stack_actions, 'SECLZ-Cloudtrail-KMS') and seclog_status != Execution.FAIL:            
             result = update_stack(cfn, 'SECLZ-Cloudtrail-KMS', stacks)
             if result != Execution.NO_ACTION:
                 seclog_status = result
@@ -196,13 +196,13 @@ def main(argv):
                 print(" [{}]".format(Status.OK.value))
 
         #logshipper lambdas S3 bucket
-        if seclog_status != Execution.FAIL and 'SECLZ-LogShipper-Lambdas-Bucket' in stack_actions and stack_actions['SECLZ-LogShipper-Lambdas-Bucket']['update'] == True:
+        if will_update(stack_actions, 'SECLZ-LogShipper-Lambdas-Bucket') and seclog_status != Execution.FAIL:
             result = update_stack(cfn, 'SECLZ-LogShipper-Lambdas-Bucket', stacks)
             if result != Execution.NO_ACTION:
                 seclog_status = result
         
         #logshipper lambdas
-        if seclog_status != Execution.FAIL and 'SECLZ-LogShipper-Lambdas' in stack_actions and stack_actions['SECLZ-LogShipper-Lambdas']['update'] == True:
+        if will_update(stack_actions, 'SECLZ-LogShipper-Lambdas') and seclog_status != Execution.FAIL:
             
             #packaging lambdas
             now = datetime.now().strftime('%d%m%Y')
@@ -268,43 +268,43 @@ def main(argv):
                     os.remove(f'EC-lz-logshipper-lambdas-{now}.packaged.yml')
 
         #central buckets
-        if seclog_status != Execution.FAIL and 'SECLZ-Central-Buckets' in stack_actions and stack_actions['SECLZ-Central-Buckets']['update'] == True:
+        if will_update(stack_actions, 'SECLZ-Central-Buckets') and seclog_status != Execution.FAIL:
             result = update_stack(cfn, 'SECLZ-Central-Buckets', stacks)
             if result != Execution.NO_ACTION:
                 seclog_status = result
         
         #password policy
-        if seclog_status != Execution.FAIL and 'SECLZ-Iam-Password-Policy' in stack_actions and stack_actions['SECLZ-Iam-Password-Policy']['update'] == True:
+        if will_update(stack_actions, 'SECLZ-Iam-Password-Policy') and seclog_status != Execution.FAIL:
             result = update_stack(cfn, 'SECLZ-Iam-Password-Policy', stacks)
             if result != Execution.NO_ACTION:
                 seclog_status = result
 
         #cloudtrail SNS
-        if seclog_status != Execution.FAIL and 'SECLZ-config-cloudtrail-SNS' in stack_actions and stack_actions['SECLZ-config-cloudtrail-SNS']['update'] == True:
+        if will_update(stack_actions, 'SECLZ-config-cloudtrail-SNS') and seclog_status != Execution.FAIL:
             result = update_stack(cfn, 'SECLZ-config-cloudtrail-SNS', stacks)
             if result != Execution.NO_ACTION:
                 seclog_status = result
         
         #guardduty detector
-        if seclog_status != Execution.FAIL and 'SECLZ-Guardduty-detector' in stack_actions and stack_actions['SECLZ-Guardduty-detector']['update'] == True:
+        if will_update(stack_actions, 'SECLZ-Guardduty-detector') and seclog_status != Execution.FAIL:
             result = update_stack(cfn, 'SECLZ-Guardduty-detector', stacks)
             if result != Execution.NO_ACTION:
                 seclog_status = result
         
         #securityhub
-        if seclog_status != Execution.FAIL and 'SECLZ-SecurityHub' in stack_actions and stack_actions['SECLZ-SecurityHub']['update'] == True:
+        if will_update(stack_actions, 'SECLZ-SecurityHub') and seclog_status != Execution.FAIL:
             result = update_stack(cfn, 'SECLZ-SecurityHub', stacks)
             if result != Execution.NO_ACTION:
                 seclog_status = result
         
         #cloudtrail notifications
-        if seclog_status != Execution.FAIL and 'SECLZ-Notifications-Cloudtrail' in stack_actions and stack_actions['SECLZ-Notifications-Cloudtrail']['update'] == True:
+        if will_update(stack_actions, 'SECLZ-Notifications-Cloudtrail') and seclog_status != Execution.FAIL:
             result = update_stack(cfn, 'SECLZ-Notifications-Cloudtrail', stacks)
             if result != Execution.NO_ACTION:
                 seclog_status = result
         
         #cloudwatch logs
-        if seclog_status != Execution.FAIL and 'SECLZ-CloudwatchLogs-SecurityHub' in stack_actions and stack_actions['SECLZ-CloudwatchLogs-SecurityHub']['update'] == True:
+        if will_update(stack_actions, 'SECLZ-CloudwatchLogs-SecurityHub') and seclog_status != Execution.FAIL:
             result = update_stack(cfn, 'SECLZ-CloudwatchLogs-SecurityHub', stacks)
             if result != Execution.NO_ACTION:
                 seclog_status = result
@@ -348,67 +348,67 @@ def main(argv):
                     #update SSM parameters
                     if account_id:
                         result=update_ssm_parameter('/org/member/SecLogMasterAccountId', account_id)
-                    if result != Execution.NO_ACTION:
-                        linked_status = result  
-                    if not null_empty(ssm_actions, 'seclog-ou') and linked_status != Execution.FAIL:
+                        if result != Execution.NO_ACTION:
+                            linked_status = result  
+                    if will_update(ssm_actions, 'seclog-ou') and linked_status != Execution.FAIL:
                         result=update_ssm_parameter('/org/member/SecLogOU', ssm_actions['seclog-ou'])
                         if result != Execution.NO_ACTION:
                             linked_status = result     
-                    if not null_empty(ssm_actions, 'notification-mail') and linked_status != Execution.FAIL:
+                    if will_update(ssm_actions, 'notification-mail') and linked_status != Execution.FAIL:
                         result=update_ssm_parameter('/org/member/SecLog_notification-mail', ssm_actions['notification-mail'])
                         if result != Execution.NO_ACTION:
                             linked_status = result     
-                    if not null_empty(manifest, 'version') and linked_status != Execution.FAIL:
+                    if will_update(manifest, 'version') and linked_status != Execution.FAIL:
                         result=update_ssm_parameter('/org/member/SLZVersion', manifest['version'])
                         if result != Execution.NO_ACTION:
                             linked_status = result  
-                    if not null_empty(ssm_actions, 'cloudtrail-groupname') and linked_status != Execution.FAIL:
+                    if will_update(ssm_actions, 'cloudtrail-groupname') and linked_status != Execution.FAIL:
                         result=update_ssm_parameter('/org/member/SecLog_cloudtrail-groupname', ssm_actions['cloudtrail-groupname'])
                         if result != Execution.NO_ACTION:
                             linked_status = result  
-                    if not null_empty(ssm_actions, 'insight-groupname') and linked_status != Execution.FAIL:
+                    if  will_update(ssm_actions, 'insight-groupname') and linked_status != Execution.FAIL:
                         result=update_ssm_parameter('/org/member/SecLog_insight-groupname', ssm_actions['insight-groupname'])
                         if result != Execution.NO_ACTION:
                             linked_status = result  
-                    if not null_empty(ssm_actions, 'guardduty-groupname') and linked_status != Execution.FAIL:
+                    if  will_update(ssm_actions, 'guardduty-groupname') and linked_status != Execution.FAIL:
                         result=update_ssm_parameter('/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname'])
                         if result != Execution.NO_ACTION:
                             linked_status = result  
-                    if not null_empty(ssm_actions, 'securityhub-groupname') and linked_status != Execution.FAIL:
+                    if  will_update(ssm_actions, 'securityhub-groupname') and linked_status != Execution.FAIL:
                         result=update_ssm_parameter('/org/member/SecLog_securityhub-groupname', ssm_actions['securityhub-groupname'])
                         if result != Execution.NO_ACTION:
                             linked_status = result  
-                    if not null_empty(ssm_actions, 'config-groupname') and linked_status != Execution.FAIL:
+                    if  will_update(ssm_actions, 'config-groupname') and linked_status != Execution.FAIL:
                         result=update_ssm_parameter('/org/member/SecLog_config-groupname', ssm_actions['config-groupname'])
                         if result != Execution.NO_ACTION:
-                            linked_status = result
+                            seclog_status = result
 
                 #password policy
-                if linked_status != Execution.FAIL and 'SECLZ-Iam-Password-Policy' in stack_actions and stack_actions['SECLZ-Iam-Password-Policy']['update'] == True:
+                if will_update(stack_actions, 'SECLZ-Iam-Password-Policy') and linked_status != Execution.FAIL:
                     result = update_stack(cfn, 'SECLZ-Iam-Password-Policy', stacks)
                     if result != Execution.NO_ACTION:
                         linked_status = result
                         
                 #cloudtrail SNS
-                if linked_status != Execution.FAIL and 'SECLZ-config-cloudtrail-SNS' in stack_actions and stack_actions['SECLZ-config-cloudtrail-SNS']['update'] == True:
+                if will_update(stack_actions, 'SECLZ-config-cloudtrail-SNS') and linked_status != Execution.FAIL:
                     result = update_stack(cfn, 'SECLZ-config-cloudtrail-SNS', stacks)
                     if result != Execution.NO_ACTION:
                         linked_status = result
                         
                 #securityhub
-                if linked_status != Execution.FAIL and 'SECLZ-SecurityHub' in stack_actions and stack_actions['SECLZ-SecurityHub']['update'] == True:
+                if will_update(stack_actions, 'SECLZ-SecurityHub') and linked_status != Execution.FAIL:
                     result = update_stack(cfn, 'SECLZ-SecurityHub', stacks)
                     if result != Execution.NO_ACTION:
                         linked_status = result
                         
                 #cloudtrail notification
-                if linked_status != Execution.FAIL and 'SECLZ-Notifications-Cloudtrail' in stack_actions and stack_actions['SECLZ-Notifications-Cloudtrail']['update'] == True:
+                if will_update(stack_actions, 'SECLZ-Notifications-Cloudtrail') and linked_status != Execution.FAIL:
                     result = update_stack(cfn, 'SECLZ-Notifications-Cloudtrail', stacks)
                     if result != Execution.NO_ACTION:
                         linked_status = result
                     
                 #local SNS topic
-                if linked_status != Execution.FAIL and 'SECLZ-local-SNS-topic' in stack_actions and stack_actions['SECLZ-local-SNS-topic']['update'] == True:
+                if will_update(stack_actions, 'SECLZ-local-SNS-topic') and linked_status != Execution.FAIL:
                     result = update_stack(cfn, 'SECLZ-local-SNS-topic', stacks)
                     if result != Execution.NO_ACTION:
                         linked_status = result
@@ -502,9 +502,20 @@ def null_empty(dict, key):
     Function that checks if the a key exists in the dict and the value is not empty
         :return: true or false
     """
-    if key in dict and dict[key]:
-        return False
-    else: return True
+    try:
+        if key in dict and dict[key]:
+            return False
+    finally:
+        return True
+
+def will_update(dict, key):
+    """
+    Function that checks if the a key exists in the dict and the value is not empty
+        :return: true or false
+    """
+    if not null_empty(dict, key) and update in dict[key] and dict[key]['update'] == True:
+        return True
+    else: return False
 
 def update_ssm_parameter(parameter, value):
     """

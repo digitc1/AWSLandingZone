@@ -1,12 +1,33 @@
 {   "version" : "1.5.0",
     "ssm" : {
-        "seclog-ou" : "",
-        "notification-mail" : "",
-        "cloudtrail-groupname" : "",
-        "insight-groupname" : "",
-        "guardduty-groupname" : "",
-        "securityhub-groupname" : "",
-        "config-groupname" : ""
+        "seclog-ou" : {
+            "value" : "",
+            "update" : false
+        },
+        "notification-mail" : {
+            "value" : "",
+            "update" : false
+        },
+        "cloudtrail-groupname" : {
+            "value" : "",
+            "update" : true
+        },
+        "insight-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "guardduty-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "securityhub-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "config-groupname" : {
+            "value" : "",
+            "update" : false
+        }
     },
     "stacks" : {
         "SECLZ-Cloudtrail-KMS" : {
