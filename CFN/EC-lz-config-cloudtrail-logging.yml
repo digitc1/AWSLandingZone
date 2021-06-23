@@ -135,7 +135,7 @@ Parameters:
     Description: AWS config CloudWatch LogGroup name
   CloudwatchAlarmsLogGroupName:
     Type: String
-    Default: '/aws/events/cloudwatch-alarms'
+    Default: '/org/member/SecLog_alarms-groupname'
     Description: AWS CloudWatch Alarms LogGroup name
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain CloudTrail log events in the CloudWatch Logs.'

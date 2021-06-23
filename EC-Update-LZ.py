@@ -181,6 +181,10 @@ def main(argv):
                 result=update_ssm_parameter('/org/member/SecLog_config-groupname', ssm_actions['config-groupname']['value'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result
+            if  will_update(ssm_actions, 'alarms-groupname') and seclog_status != Execution.FAIL:
+                result=update_ssm_parameter('/org/member/SecLog_alarms-groupname', ssm_actions['alarms-groupname']['value'])
+                if result != Execution.NO_ACTION:
+                    seclog_status = result
 
         cfn = boto3.client('cloudformation')
         

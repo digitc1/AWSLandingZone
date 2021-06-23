@@ -27,6 +27,10 @@
         "config-groupname" : {
             "value" : "",
             "update" : false
+        },
+        "alarms-groupname" : {
+            "value" : "/aws/events/cloudwatch-alarms",
+            "update" : true
         }
     },
     "stacks" : {
