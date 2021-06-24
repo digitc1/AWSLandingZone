@@ -373,17 +373,17 @@ Resources:
           Endpoint: !Ref NotifyEmail
         - Protocol: email
           Endpoint: !Ref DigitFMB
-      Tags:
-      - Key: Owner
-        Value: !Ref Owner
-      - Key: Environment
-        Value: !Ref Environment
-      - Key: Criticity
-        Value: !Ref Criticity
-      - Key: Project
-        Value: !Ref Project
-      - Key: DataClassification
-        Value: !Ref DataClassification
+      # Tags:
+      # - Key: Owner
+      #   Value: !Ref Owner
+      # - Key: Environment
+      #   Value: !Ref Environment
+      # - Key: Criticity
+      #   Value: !Ref Criticity
+      # - Key: Project
+      #   Value: !Ref Project
+      # - Key: DataClassification
+      #   Value: !Ref DataClassification
   
   SNSNotificationPolicy:
     Type: 'AWS::SNS::TopicPolicy'
@@ -441,17 +441,17 @@ Resources:
       Description: Contains the SNS Topic Arn for Landing Zone
       Type: String
       Value: !Ref SNSNotificationTopic
-      Tags:
-      - Key: Owner
-        Value: !Ref Owner
-      - Key: Environment
-        Value: !Ref Environment
-      - Key: Criticity
-        Value: !Ref Criticity
-      - Key: Project
-        Value: !Ref Project
-      - Key: DataClassification
-        Value: !Ref DataClassification
+      # Tags:
+      # - Key: Owner
+      #   Value: !Ref Owner
+      # - Key: Environment
+      #   Value: !Ref Environment
+      # - Key: Criticity
+      #   Value: !Ref Criticity
+      # - Key: Project
+      #   Value: !Ref Project
+      # - Key: DataClassification
+      #   Value: !Ref DataClassification
 
   ECLandingZoneLocalSecLogSNSTopicParameter:
     DependsOn:
@@ -463,17 +463,17 @@ Resources:
       Description: Contains the SNS Topic Arn for Landing Zone
       Type: String
       Value: 0
-      Tags:
-      - Key: Owner
-        Value: !Ref Owner
-      - Key: Environment
-        Value: !Ref Environment
-      - Key: Criticity
-        Value: !Ref Criticity
-      - Key: Project
-        Value: !Ref Project
-      - Key: DataClassification
-        Value: !Ref DataClassification
+      # Tags:
+      #   - Key: Owner
+      #     Value: !Ref Owner
+      #   - Key: Environment
+      #     Value: !Ref Environment
+      #   - Key: Criticity
+      #     Value: !Ref Criticity
+      #   - Key: Project
+      #     Value: !Ref Project
+      #   - Key: DataClassification
+      #     Value: !Ref DataClassification
 
   ECLandingZoneTargetSNSTopicParameter:
     Type: AWS::SSM::Parameter
@@ -483,17 +483,17 @@ Resources:
       Description: Contains the SNS Topic Arn for Landing Zone
       Type: String
       Value: !Sub "arn:aws:sns:${AWS::Region}:${SecLogMasterAccountId}:EC-Landing-Zone-Security-Notification"
-      Tags:
-      - Key: Owner
-        Value: !Ref Owner
-      - Key: Environment
-        Value: !Ref Environment
-      - Key: Criticity
-        Value: !Ref Criticity
-      - Key: Project
-        Value: !Ref Project
-      - Key: DataClassification
-        Value: !Ref DataClassification
+      # Tags:
+      # - Key: Owner
+      #   Value: !Ref Owner
+      # - Key: Environment
+      #   Value: !Ref Environment
+      # - Key: Criticity
+      #   Value: !Ref Criticity
+      # - Key: Project
+      #   Value: !Ref Project
+      # - Key: DataClassification
+      #   Value: !Ref DataClassification
   
 
   # Enable notifications for AWS Config Rule compliance changes
