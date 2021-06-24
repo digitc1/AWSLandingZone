@@ -14,7 +14,7 @@ Resources:
     Type: "AWS::SecurityHub::Hub"
     Properties:
       Tags:
-        "Project" : "secLZ"
+        "Name" : "SECLZ-SecurityHub"
 
 Outputs:
   HubArn:
