@@ -24,14 +24,14 @@ from botocore.exceptions import BotoCoreError, ClientError, ProfileNotFound
 
 account_id = ''
 
-stacks = { 'SECLZ-Cloudtrail-KMS' : { 'Template' : 'CFN/EC-lz-Cloudtrail-kms-key.yml' , "Params" : 'CFN/EC-lz-TAGS-params.json' } ,
-     'SECLZ-LogShipper-Lambdas-Bucket' : { 'Template' : 'CFN/EC-lz-s3-bucket-lambda-code.yml' , "Params" : 'CFN/EC-lz-TAGS-params.json' } ,
-     'SECLZ-LogShipper-Lambdas' : { 'Template' : 'CFN/EC-lz-logshipper-lambdas.yml' , "Params" : 'CFN/EC-lz-TAGS-params.json' } ,
-     'SECLZ-Central-Buckets' : { 'Template' : 'CFN/EC-lz-s3-buckets.yml' , "Params" : 'CFN/EC-lz-TAGS-params.json'} ,
-     'SECLZ-Iam-Password-Policy' : { 'Template' : 'CFN/EC-lz-iam-setting_password_policy.yml' , "Params" : 'CFN/EC-lz-TAGS-params.json', 'Linked':True } ,
+stacks = { 'SECLZ-Cloudtrail-KMS' : { 'Template' : 'CFN/EC-lz-Cloudtrail-kms-key.yml' } ,
+     'SECLZ-LogShipper-Lambdas-Bucket' : { 'Template' : 'CFN/EC-lz-s3-bucket-lambda-code.yml' } ,
+     'SECLZ-LogShipper-Lambdas' : { 'Template' : 'CFN/EC-lz-logshipper-lambdas.yml' } ,
+     'SECLZ-Central-Buckets' : { 'Template' : 'CFN/EC-lz-s3-buckets.yml'} ,
+     'SECLZ-Iam-Password-Policy' : { 'Template' : 'CFN/EC-lz-iam-setting_password_policy.yml', 'Linked':True } ,
      'SECLZ-config-cloudtrail-SNS' : { 'Template' : 'CFN/EC-lz-config-cloudtrail-logging.yml', 'Linked':True } ,
      'SECLZ-Guardduty-detector' : { 'Template' : 'CFN/EC-lz-guardDuty-detector.yml', 'Linked':True } ,
-     'SECLZ-SecurityHub' : { 'Template' : 'CFN/EC-lz-securityHub.yml', "Params" : 'CFN/EC-lz-TAGS-params.json', 'Linked':True } ,
+     'SECLZ-SecurityHub' : { 'Template' : 'CFN/EC-lz-securityHub.yml', 'Linked':True } ,
      'SECLZ-Notifications-Cloudtrail' : { 'Template' : 'CFN/EC-lz-notifications.yml', 'Linked':True } ,
      'SECLZ-CloudwatchLogs-SecurityHub' : { 'Template' : 'CFN/EC-lz-config-securityhub-logging.yml' } ,
      'SECLZ-local-SNS-topic' : { 'Template' : 'CFN/EC-lz-local-config-SNS.yml', 'Linked':True} }
@@ -40,6 +40,7 @@ stacks = { 'SECLZ-Cloudtrail-KMS' : { 'Template' : 'CFN/EC-lz-Cloudtrail-kms-key
 stacksets = { 'SECLZ-Enable-Config-SecurityHub-Globally' :  { 'Template' : 'CFN/EC-lz-Config-SecurityHub-all-regions.yml' } ,
      'SECLZ-Enable-Guardduty-Globally' :  { 'Template' : 'CFN/EC-lz-Config-Guardduty-all-regions.yml' } }
 
+tags = []
 
 def main(argv):
     
@@ -101,6 +102,22 @@ def main(argv):
         elif opt in ("-v", "--verbose"):
             verbosity = logging.DEBUG
     
+
+    try:
+        with open('CFN/EC-lz-TAGS.json') as f:
+            tags = json.load(f)
+    except FileNotFoundError as err:
+                    print("Tag file not found : {} [{}]".format(err.strerror,Status.FAIL.value))
+                    print("Exiting...")
+                    sys.exit(1)
+    except AttributeError:
+                    print("Manifest file {} is not a valid json [{}]".format(arg,Status.FAIL.value))
+                    print("Exiting...")
+                    sys.exit(1)
+
+    if 'tags' in manifest:
+        tags = {**tags, **manifest['tags']}
+
     logging.basicConfig(level=verbosity)
     p = 0
     loop = True
@@ -625,9 +642,10 @@ def update_stack(client, stack, templates, params=[]):
         :params:        parameters to be passed to the stack
         :return:        True or False
     """
+    global tags
     template = templates[stack]['Template']
     capabilities=[]
-
+    
     print("Stack {} update ".format(stack), end="")
 
     try:
@@ -662,8 +680,11 @@ def update_stack(client, stack, templates, params=[]):
     
     if not null_empty(response['Stacks'][0], 'Capabilities'):
         capabilities = response['Stacks'][0]['Capabilities']
-    
 
+    
+    if not null_empty(response['Stacks'][0], 'Tags'):
+        tags = {**response['Stacks'][0]['Tags'], **tags } 
+   
 
     if response['Stacks'][0]['StackStatus'] not in ('CREATE_COMPLETE', 'UPDATE_COMPLETE','UPDATE_ROLLBACK_COMPLETE'):
         print("Cannot update stack {}. Current status is : {} [{}]".format(stack,response['Stacks'][0]['StackStatus'],Status.FAIL.value ))
@@ -672,10 +693,10 @@ def update_stack(client, stack, templates, params=[]):
     print("in progress ".format(stack), end="")
     with Spinner():
         try:
-            client.update_stack(StackName=stack, TemplateBody=template_body, Parameters=params, Capabilities=capabilities)
+            client.update_stack(StackName=stack, TemplateBody=template_body, Parameters=params, Capabilities=capabilities, Tags=tags)
             updated=False
         
-            while updated == False:
+            while updated == False: 
                 response = client.describe_stacks(StackName=stack)
                 if 'COMPLETE' in response['Stacks'][0]['StackStatus'] :
                     print("\033[2K\033[1GStack {} update [{}]".format(stack,Status.OK.value))
@@ -706,6 +727,7 @@ def update_stackset(client, stackset, templates, params=[]):
         :params:        parameters to be passed to the stackset
         :return:        True or False
     """
+    global tags
     template = templates[stackset]['Template']
     capabilities=[]
 
@@ -744,6 +766,8 @@ def update_stackset(client, stackset, templates, params=[]):
     if not null_empty(response['StackSet'], 'Capabilities'):
         capabilities = response['StackSet']['Capabilities']
     
+    if not null_empty(response['Stacks'][0], 'Tags'):
+        tags = { **response['Stacks'][0]['Tags'], **tags} 
 
 
     if response['StackSet']['Status'] not in ('ACTIVE'):
@@ -763,7 +787,8 @@ def update_stackset(client, stackset, templates, params=[]):
                 TemplateBody=template_body, 
                 Parameters=params, 
                 Capabilities=capabilities,
-                OperationPreferences=operationPreferences
+                OperationPreferences=operationPreferences,
+                Tags=tags
                 )
            
             updated=False
