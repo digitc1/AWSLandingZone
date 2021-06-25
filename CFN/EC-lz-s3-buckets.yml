@@ -23,39 +23,9 @@ Metadata:
         Label:
           default: "Tags"
         Parameters:
-          - Owner
-          - Project
-          - Environment
-          - Criticity
-          - DataClassification
           - lambdaStack
 
-Parameters:
-  Owner:
-      Description: "Tag: owner. Creator or responsible for the project"
-      Type: String
-      Default: ''
-
-  Environment:
-      Description: "Tag: environment. Environnement of the resource (Dev, test, prod etc.)"
-      Type: String
-      Default: ''
-
-  Criticity:
-      Description: "Tag: criticity. Criticity of the application"
-      Type: String
-      Default: ''
-
-  Project:
-      Description: "Tag: project. Name of the application or project"
-      Type: String
-      Default: 'secLZ'
-
-  DataClassification:
-      Description: "Tag: data-classification. Level of criticality of the stored data"
-      Type: String
-      Default: ''
-  
+Parameters:  
   lambdaStack:
       Description: "Stack that deploys the lambdas for log shipping"
       Type: String
@@ -121,17 +91,6 @@ Resources:
               DestinationBucketName: !Ref AccessLogsBucket
           VersioningConfiguration:
               Status: Enabled
-          Tags:
-          - Key: Owner
-            Value: !Ref Owner
-          - Key: Environment
-            Value: !Ref Environment
-          - Key: Criticity
-            Value: !Ref Criticity
-          - Key: Project
-            Value: !Ref Project
-          - Key: DataClassification
-            Value: !Ref DataClassification
 
   CloudTrailBucketPolicy:
       Type: AWS::S3::BucketPolicy
@@ -236,17 +195,6 @@ Resources:
             BlockPublicPolicy: true
             IgnorePublicAcls: true
             RestrictPublicBuckets: true
-          Tags:
-          - Key: Owner
-            Value: !Ref Owner
-          - Key: Environment
-            Value: !Ref Environment
-          - Key: Criticity
-            Value: !Ref Criticity
-          - Key: Project
-            Value: !Ref Project
-          - Key: DataClassification
-            Value: !Ref DataClassification
 
   ConfigBucketPolicy:
       Type: AWS::S3::BucketPolicy
@@ -316,17 +264,6 @@ Resources:
             - Ref: AWS::AccountId
             - "-do-not-delete"
         AccessControl: LogDeliveryWrite
-        Tags:
-        - Key: Owner
-          Value: !Ref Owner
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Criticity
-          Value: !Ref Criticity
-        - Key: Project
-          Value: !Ref Project
-        - Key: DataClassification
-          Value: !Ref DataClassification
         PublicAccessBlockConfiguration:
           BlockPublicAcls: true
           BlockPublicPolicy: true

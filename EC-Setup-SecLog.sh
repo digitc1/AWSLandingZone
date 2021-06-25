@@ -78,6 +78,7 @@ CFN_SECURITYHUB_TEMPLATE='CFN/EC-lz-securityHub.yml'
 CFN_NOTIFICATIONS_CT_TEMPLATE='CFN/EC-lz-notifications.yml'
 CFN_IAM_PWD_POLICY='CFN/EC-lz-iam-setting_password_policy.yml'
 CFN_TAGS_PARAMS_FILE='CFN/EC-lz-TAGS-params.json'
+CFN_TAGS_FILE='CFN/EC-lz-TAGS.json'
 CFN_CLOUDTRAIL_KMS='CFN/EC-lz-Cloudtrail-kms-key.yml'
 CFN_STACKSET_ADMIN_ROLE='CFN/AWSCloudFormationStackSetAdministrationRole.yml'
 CFN_STACKSET_EXEC_ROLE='CFN/AWSCloudFormationStackSetExecutionRole.yml'
@@ -278,6 +279,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name SECLZ-StackSetAdministrationRole \
     --template-body file://$CFN_STACKSET_ADMIN_ROLE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -286,6 +288,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name SECLZ-StackSetExecutionRole \
     --template-body file://$CFN_STACKSET_EXEC_ROLE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -302,7 +305,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Cloudtrail-KMS' \
     --template-body file://$CFN_CLOUDTRAIL_KMS \
-    --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -336,7 +339,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-LogShipper-Lambdas-Bucket' \
     --template-body file://$CFN_LAMBDAS_BUCKET_TEMPLATE \
-    --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --tags file://$CFN_TAGS_FILE \
     --capabilities CAPABILITY_NAMED_IAM \
     --enable-termination-protection \
     --profile $seclogprofile
@@ -392,7 +395,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Central-Buckets' \
     --template-body file://$CFN_BUCKETS_TEMPLATE \
-    --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -416,7 +419,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Iam-Password-Policy' \
     --template-body file://$CFN_IAM_PWD_POLICY \
-    --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --tags file://$CFN_TAGS_FILE \
     --capabilities CAPABILITY_IAM \
     --enable-termination-protection \
     --profile $seclogprofile
@@ -469,6 +472,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-config-cloudtrail-SNS' \
     --template-body file://$CFN_LOG_TEMPLATE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile \
@@ -511,6 +515,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Guardduty-detector' \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile \
@@ -526,7 +531,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-SecurityHub' \
     --template-body file://$CFN_SECURITYHUB_TEMPLATE \
-    --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --profile $seclogprofile
 
@@ -545,6 +550,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Notifications-Cloudtrail' \
     --template-body file://$CFN_NOTIFICATIONS_CT_TEMPLATE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --profile $seclogprofile
 
@@ -569,6 +575,7 @@ configure_seclog() {
         aws cloudformation create-stack \
         --stack-name 'SECLZ-CloudwatchLogs-SecurityHub' \
         --template-body file://$CFN_SECURITYHUB_LOG_TEMPLATE \
+        --tags file://$CFN_TAGS_FILE \
         --enable-termination-protection \
         --capabilities CAPABILITY_IAM \
         --profile $seclogprofile \

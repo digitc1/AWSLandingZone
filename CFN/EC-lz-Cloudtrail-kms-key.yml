@@ -9,19 +9,6 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: >-
   v1.0. Creates KMS key for cloudTrail and a parameter in the parameterstore for the key arn
 
-Metadata:
-  AWS::CloudFormation::Interface:
-    ParameterGroups:
-      -
-        Label:
-          default: "Tags"
-        Parameters:
-          - Owner
-          - Project
-          - Environment
-          - Criticity
-          - DataClassification
-
 Parameters:
   KeyDescription:
       Description: 'A brief descrition of why this key is required'
@@ -32,31 +19,6 @@ Parameters:
       Description: 'A short friendly name for the key'
       Type: String
       Default: 'SECLZ-Cloudtrail-encryption-key'
-
-  Owner:
-      Description: "Tag: owner. Creator or responsible for the project"
-      Type: String
-      Default: ''
-
-  Environment:
-      Description: "Tag: environment. Environnement of the resource (Dev, test, prod etc.)"
-      Type: String
-      Default: ''
-
-  Criticity:
-      Description: "Tag: criticity. Criticity of the application"
-      Type: String
-      Default: ''
-
-  Project:
-      Description: "Tag: project. Name of the application or project"
-      Type: String
-      Default: 'secLZ'
-
-  DataClassification:
-      Description: "Tag: data-classification. Level of criticality of the stored data"
-      Type: String
-      Default: ''
 
 Mappings: {}
 
@@ -205,19 +167,6 @@ Resources:
                   - - "arn:aws:cloudtrail:*:"
                     - Ref: AWS::AccountId
                     - ":trail/*"
-      Tags:
-      - Key: Name
-        Value: !Ref KeyAlias
-      - Key: Owner
-        Value: !Ref Owner
-      - Key: Environment
-        Value: !Ref Environment
-      - Key: Criticity
-        Value: !Ref Criticity
-      - Key: Project
-        Value: !Ref Project
-      - Key: DataClassification
-        Value: !Ref DataClassification
 
   myKeyAlias:
     Type: AWS::KMS::Alias

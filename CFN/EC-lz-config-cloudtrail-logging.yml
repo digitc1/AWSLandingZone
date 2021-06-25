@@ -39,42 +39,8 @@ Metadata:
         Parameters:
           - CloudTrailBucket
           - ConfigBucket
-      -
-        Label:
-          default: "Tags"
-        Parameters:
-          - Owner
-          - Project
-          - Environment
-          - Criticity
-          - DataClassification
 
 Parameters:
-  Owner:
-      Description: "Tag: owner. Creator or responsible for the project"
-      Type: String
-      Default: ''
-
-  Environment:
-      Description: "Tag: environment. Environnement of the resource (Dev, test, prod etc.)"
-      Type: String
-      Default: ''
-
-  Criticity:
-      Description: "Tag: criticity. Criticity of the application"
-      Type: String
-      Default: ''
-
-  Project:
-      Description: "Tag: project. Name of the application or project"
-      Type: String
-      Default: 'secLZ'
-
-  DataClassification:
-      Description: "Tag: data-classification. Level of criticality of the stored data"
-      Type: String
-      Default: ''
-
   SecLogMasterAccountId:
     Description: 'SecLogMaster account ID'
     Type: AWS::SSM::Parameter::Value<String>
@@ -408,17 +374,6 @@ Resources:
           Endpoint: !Ref NotifyEmail
         - Protocol: email
           Endpoint: !Ref DigitFMB
-      Tags:
-      - Key: Owner
-        Value: !Ref Owner
-      - Key: Environment
-        Value: !Ref Environment
-      - Key: Criticity
-        Value: !Ref Criticity
-      - Key: Project
-        Value: !Ref Project
-      - Key: DataClassification
-        Value: !Ref DataClassification
   
   SNSNotificationPolicy:
     Type: 'AWS::SNS::TopicPolicy'
@@ -476,17 +431,6 @@ Resources:
       Description: Contains the SNS Topic Arn for Landing Zone
       Type: String
       Value: !Ref SNSNotificationTopic
-      Tags:
-      - Key: Owner
-        Value: !Ref Owner
-      - Key: Environment
-        Value: !Ref Environment
-      - Key: Criticity
-        Value: !Ref Criticity
-      - Key: Project
-        Value: !Ref Project
-      - Key: DataClassification
-        Value: !Ref DataClassification
 
   ECLandingZoneLocalSecLogSNSTopicParameter:
     DependsOn:
@@ -498,17 +442,6 @@ Resources:
       Description: Contains the SNS Topic Arn for Landing Zone
       Type: String
       Value: 0
-      Tags:
-      - Key: Owner
-        Value: !Ref Owner
-      - Key: Environment
-        Value: !Ref Environment
-      - Key: Criticity
-        Value: !Ref Criticity
-      - Key: Project
-        Value: !Ref Project
-      - Key: DataClassification
-        Value: !Ref DataClassification
 
   ECLandingZoneTargetSNSTopicParameter:
     Type: AWS::SSM::Parameter
@@ -518,17 +451,6 @@ Resources:
       Description: Contains the SNS Topic Arn for Landing Zone
       Type: String
       Value: !Sub "arn:aws:sns:${AWS::Region}:${SecLogMasterAccountId}:EC-Landing-Zone-Security-Notification"
-      Tags:
-      - Key: Owner
-        Value: !Ref Owner
-      - Key: Environment
-        Value: !Ref Environment
-      - Key: Criticity
-        Value: !Ref Criticity
-      - Key: Project
-        Value: !Ref Project
-      - Key: DataClassification
-        Value: !Ref DataClassification
   
 
   # Enable notifications for AWS Config Rule compliance changes

@@ -9,45 +9,7 @@ AWSTemplateFormatVersion : "2010-09-09"
 Description: >-
   v1.0. Script to create local SNS-Topic in client accounts for security notifications. Will forward to central SNS-topics
 
-Metadata:
-  AWS::CloudFormation::Interface:
-    ParameterGroups:
-      -
-        Label:
-          default: "Tags"
-        Parameters:
-          - Owner
-          - Project
-          - Environment
-          - Criticity
-          - DataClassification
-
 Parameters:
-  Owner:
-      Description: "Tag: owner. Creator or responsible for the project"
-      Type: String
-      Default: ''
-
-  Environment:
-      Description: "Tag: environment. Environnement of the resource (Dev, test, prod etc.)"
-      Type: String
-      Default: ''
-
-  Criticity:
-      Description: "Tag: criticity. Criticity of the application"
-      Type: String
-      Default: ''
-
-  Project:
-      Description: "Tag: project. Name of the application or project"
-      Type: String
-      Default: 'secLZ'
-
-  DataClassification:
-      Description: "Tag: data-classification. Level of criticality of the stored data"
-      Type: String
-      Default: ''
-
   LocalNotifyDisplayName:
     Type: 'String'
     Default: EC-LZ-Local-Notify
@@ -72,17 +34,6 @@ Resources:
     Properties:
       DisplayName: !Ref LocalNotifyDisplayName
       TopicName: !Ref LocalNotificationTopicName
-      Tags:
-      - Key: Owner
-        Value: !Ref Owner
-      - Key: Environment
-        Value: !Ref Environment
-      - Key: Criticity
-        Value: !Ref Criticity
-      - Key: Project
-        Value: !Ref Project
-      - Key: DataClassification
-        Value: !Ref DataClassification
 
   LocalSNSNotificationPolicy:
     Type: 'AWS::SNS::TopicPolicy'
@@ -208,17 +159,6 @@ Resources:
                 - !Sub ${AWS::Region}
                 - !Select [4, !Split [":", !Ref SNSNotificationTopic]]
                 - !Select [5, !Split [":", !Ref SNSNotificationTopic]]
-      Tags:
-      - Key: Owner
-        Value: !Ref Owner
-      - Key: Environment
-        Value: !Ref Environment
-      - Key: Criticity
-        Value: !Ref Criticity
-      - Key: Project
-        Value: !Ref Project
-      - Key: DataClassification
-        Value: !Ref DataClassification
 
   ForwardSnsNotificationGroup:
     Type: 'AWS::Logs::LogGroup'
