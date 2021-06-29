@@ -35,42 +35,45 @@
     },
     "stacks" : {
         "SECLZ-Cloudtrail-KMS" : {
-            "update" : true
+            "update" : false
         },
         "SECLZ-LogShipper-Lambdas-Bucket" : {
-            "update" : true
+            "update" : false
         },
         "SECLZ-LogShipper-Lambdas" : {
-            "update" : true
+            "update" : false
         },
         "SECLZ-Central-Buckets" : {
-            "update" : true
+            "update" : false
         },
         "SECLZ-Iam-Password-Policy" : {
-            "update" : true
+            "update" : false
         },
         "SECLZ-config-cloudtrail-SNS" : {
-            "update" : true
+            "update" : false
         },
         "SECLZ-Guardduty-detector" : {
-            "update" : true
+            "update" : false
         },
         "SECLZ-SecurityHub" : {
-            "update" : true
+            "update" : false
          },
         "SECLZ-Notifications-Cloudtrail" : {
-            "update" : true
+            "update" : true,
+            "params" : [
+                {"ParameterKey": "LogGroupName", "ParameterValue": "/org/member/SecLog_cloudtrail-groupname"}
+            ]
         },
         "SECLZ-CloudwatchLogs-SecurityHub" : {
-            "update" : true
+            "update" : false
         } 
     },
     "stacksets" : {
         "SECLZ-Enable-Config-SecurityHub-Globally" : {
-            "update" : true
+            "update" : false
         },
         "SECLZ-Enable-Guardduty-Globally" : {
-            "update" : true
+            "update" : false
         }
     },
     "cis" :  { 
