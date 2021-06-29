@@ -12,16 +12,18 @@ import json
 import zipfile
 import threading
 import cursor
+import yaml
+from cfn_tools import load_yaml, dump_yaml
 
 from zipfile import ZipFile
 from datetime import datetime
 from enum import Enum
 from colorama import Fore, Back, Style
 from botocore.exceptions import BotoCoreError, ClientError, ProfileNotFound
+from botocore.config import Config
 
  
  
-
 account_id = ''
 
 stacks = { 'SECLZ-Cloudtrail-KMS' : { 'Template' : 'CFN/EC-lz-Cloudtrail-kms-key.yml' } ,
@@ -44,16 +46,23 @@ tags = []
 
 def main(argv):
     
+    global tags
     start_time = time.time()
     manifest = ''
     profile = ''
     org_account='246933597933'
     has_profile = False
     verbosity = logging.ERROR
-    linked_accounts_doctored = []
     ssm_actions = []
     stack_actions = []
     stacksets_actions = []
+    cis_actions = []
+    
+    boto3_config = Config(
+        retries = dict(
+            max_attempts = 10
+        )
+    )
 
     
     sys.stdout = Unbuffered(sys.stdout)
@@ -76,7 +85,7 @@ def main(argv):
             sys.exit()
         elif opt in ("-m", "--manifest"):
             if (arg == ''):
-                print("Manifest has not been provided. [{}]".format(Status.FAIL.value))
+                print(f"Manifest has not been provided. [{Status.FAIL.value}]")
                 print("Exiting...")
                 sys.exit(1)
             else:
@@ -84,21 +93,21 @@ def main(argv):
                     with open(arg) as f:
                         manifest = json.load(f)
                 except FileNotFoundError as err:
-                    print("Manifest file not found : {} [{}]".format(err.strerror,Status.FAIL.value))
+                    print(f"Manifest file not found : {err.strerror} [{Status.FAIL.value}]")
                     print("Exiting...")
                     sys.exit(1)
                 except AttributeError:
-                    print("Manifest file {} is not a valid json [{}]".format(arg,Status.FAIL.value))
+                    print("fManifest file {arg} is not a valid json [{Status.FAIL.value}]")
                     print("Exiting...")
                     sys.exit(1)
         elif opt in ("-o", "--org"):
-            print("Using Organization account : {}".format(arg))
+            print(f"Using Organization account : {arg}")
             org_account = arg
         elif opt in ("-s", "--seclog"):
             profiles = arg.split(',')
             has_profile = True
             if len(profiles) > 1:
-                print("Multiple AWS profiles delected  : {}".format(profiles))
+                print(f"Multiple AWS profiles delected  : {profiles}")
         elif opt in ("-v", "--verbose"):
             verbosity = logging.DEBUG
     
@@ -107,17 +116,17 @@ def main(argv):
         with open('CFN/EC-lz-TAGS.json') as f:
             tags = json.load(f)
     except FileNotFoundError as err:
-                    print("Tag file not found : {} [{}]".format(err.strerror,Status.FAIL.value))
+                    print(f"Tag file not found : {err.strerror} [{Status.FAIL.value}]")
                     print("Exiting...")
                     sys.exit(1)
     except AttributeError:
-                    print("Manifest file {} is not a valid json [{}]".format(arg,Status.FAIL.value))
+                    print(f"Manifest file {arg} is not a valid json [{Status.FAIL.value}]")
                     print("Exiting...")
                     sys.exit(1)
 
     if 'tags' in manifest:
-        tags = {**tags, **manifest['tags']}
-
+        tags = merge_tags(tags, manifest['tags'])
+    
     logging.basicConfig(level=verbosity)
     p = 0
     loop = True
@@ -127,11 +136,11 @@ def main(argv):
                 profile = profiles[p]
                 p=p+1
                 try:
-                    print("Using AWS profile : {}".format(profile))
+                    print(f"Using AWS profile : {profile}")
                     boto3.setup_default_session(profile_name=profile)
                     get_account_id(True)
                 except ProfileNotFound as err:
-                    print("{} [{}]".format(err,Status.FAIL.value))
+                    print(f"{err} [{Status.FAIL.value}]")
                     print("Exiting...")
                     sys.exit(1)
             else:
@@ -140,26 +149,31 @@ def main(argv):
             loop = False 
 
         if (is_seclog() == False):
-            print("Not a SECLOG account. [{}]".format(Status.FAIL.value))
+            print(f"Not a SECLOG account. [{Status.FAIL.value}]")
             print("Exiting...")
             sys.exit(1)
         
-        print("SECLOG account identified. [{}]".format(Status.OK.value))
+        print(f"SECLOG account identified. [{Status.OK.value}]")
         print("")
 
         linked_accounts = get_linked_accounts()
         
         #update seclog stacks
         
-        print("Updating SECLOG account {}".format(account_id))
+        print(f"Updating SECLOG account {account_id}")
         print("")
  
         if not null_empty(manifest, 'stacks'): 
             stack_actions = manifest['stacks']
+
         if not null_empty(manifest, 'stacksets'):
             stacksets_actions = manifest['stacksets']
-        if null_empty(manifest, 'ssm'):
+
+        if not null_empty(manifest, 'ssm'):
             ssm_actions = manifest['ssm']
+
+        if not null_empty(manifest, 'cis'):
+            cis_actions = manifest['cis']
 
         seclog_status = Execution.NO_ACTION
         
@@ -200,7 +214,7 @@ def main(argv):
                 result=update_ssm_parameter('/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname']['value'])
                 if result != Execution.OK:
                     will_update(stack_actions,'SECLZ-Guardduty-detector')
-                    #will_update(stacksets_actions,'SECLZ-Enable-Guardduty-Globally')
+                    will_update(stacksets_actions,'SECLZ-Enable-Guardduty-Globally')
                 if result != Execution.NO_ACTION:
                     seclog_status = result  
             if  do_update(ssm_actions, 'securityhub-groupname') and seclog_status != Execution.FAIL:
@@ -223,7 +237,7 @@ def main(argv):
                 if result != Execution.NO_ACTION:
                     seclog_status = result
 
-        cfn = boto3.client('cloudformation')
+        cfn = boto3.client('cloudformation',config=boto3_config)
         
 
         #KMS template
@@ -234,7 +248,7 @@ def main(argv):
             elif result == Execution.OK :
                 print("SSM parameter /org/member/KMSCloudtrailKey_arn update", end="")
                 response = update_ssm_parameter('/org/member/KMSCloudtrailKey_arn', response['Parameter']['Value'])
-                print(" [{}]".format(Status.OK.value))
+                print(f" [{Status.OK.value}]")
 
         #logshipper lambdas S3 bucket
         if do_update(stack_actions, 'SECLZ-LogShipper-Lambdas-Bucket') and seclog_status != Execution.FAIL:
@@ -273,9 +287,9 @@ def main(argv):
                         f.write(template_body)
                 
 
-                    print(" [{}]".format(Status.OK.value))
+                    print(f" [{Status.OK.value}]")
                 except FileNotFoundError as err:
-                    print(" [{}]".format(Status.FAIL.value))
+                    print(f" [{Status.FAIL.value}]")
                     seclog_status = Execution.FAIL
             
             #package stack
@@ -291,10 +305,10 @@ def main(argv):
                     output, errors = proc.communicate()
                 
                 if len(errors) > 0:
-                    print(" failed. Readon {} [{}]".format(errors, Status.FAIL.value))
+                    print(f" failed. Readon {errors} [{Status.FAIL.value}]")
                     seclog_status = Execution.FAIL
                 else:
-                    print(" [{}]".format(Status.OK.value))
+                    print(f" [{Status.OK.value}]")
 
                 os.remove(template)
                 os.remove(cloudtrail_lambda)
@@ -362,14 +376,19 @@ def main(argv):
             if result != Execution.NO_ACTION:
                 seclog_status = result
 
+        #cis controls
+        if not null_empty(manifest, 'cis') and seclog_status != Execution.FAIL:
+            seclog_status = update_cis_controls(cis_actions) 
+
+
         print("")
-        print("SECLOG account {} update ".format(account_id), end="")
+        print(f"SECLOG account {account_id} update ", end="")
         if seclog_status == Execution.FAIL:
-            print("[{}]".format(Status.FAIL.value))
+            print(f"[{Status.FAIL.value}]")
         elif seclog_status == Execution.OK:
-            print("[{}]".format(Status.OK.value))
+            print(f"[{Status.OK.value}]")
         else:
-            print("[{}]".format(Status.NO_ACTION.value))
+            print(f"[{Status.NO_ACTION.value}]")
 
         #update linked account stacks
         if seclog_status == Execution.FAIL and len(linked_accounts) > 0:
@@ -379,7 +398,7 @@ def main(argv):
                 
                 sts = boto3.client('sts')
                 assumedRole = sts.assume_role(
-                    RoleArn="arn:aws:iam::{}:role/AWSCloudFormationStackSetExecutionRole".format(linked),
+                    RoleArn=f"arn:aws:iam::{linked}:role/AWSCloudFormationStackSetExecutionRole",
                     RoleSessionName='CloudFormationSession'
                 )
                 credentials = assumedRole['Credentials']
@@ -393,7 +412,7 @@ def main(argv):
                     aws_session_token=sessionToken)
                 
                 print("")
-                print("Updating linked account {}".format(linked))
+                print(f"Updating linked account {linked}")
                 print("")
                 linked_status = Execution.NO_ACTION
 
@@ -485,23 +504,26 @@ def main(argv):
                     result = update_stack(cfn, 'SECLZ-local-SNS-topic', stacks)
                     if result != Execution.NO_ACTION:
                         linked_status = result
-                    
+
+                #cis controls
+                if not null_empty(manifest, 'cis') and linked_status != Execution.FAIL:
+                    linked_status = update_cis_controls(cis_actions) 
 
                 print("")
-                print("Linked account {} update ".format(linked), end="")
+                print(f"Linked account {linked} update ", end="")
                 if linked_status == Execution.FAIL:
-                    print("[{}]".format(Status.FAIL.value))
+                    print(f"[{Status.FAIL.value}]")
                 elif linked_status == Execution.OK:
-                    print("[{}]".format(Status.OK.value))
+                    print(f"[{Status.OK.value}]")
                 else:
-                    print("[{}]".format(Status.NO_ACTION.value))
+                    print(f"[{Status.NO_ACTION.value}]")
                 print("")
     
         
                 
 
     print("")
-    print("####### AWS Landing Zone update script finished. Executed in {} seconds".format(time.time() - start_time))
+    print(f"####### AWS Landing Zone update script finished. Executed in {time.time() - start_time} seconds")
     print("#######")
     print("")
 
@@ -534,7 +556,7 @@ def get_account_id(Force = False):
             account_id = response['Account']
         except ClientError as error:
             if error.response['Error']['Code'] == 'AccessDenied':
-                print("Access denied getting account id [{}]".format(Status.FAIL.value))
+                print(f"Access denied getting account id [{Status.FAIL.value}]")
                 print("Exiting...") 
                 sys.exit(1)
             else:
@@ -599,14 +621,31 @@ def will_update(dict, key):
     if not null_empty(dict, key) and 'update' in dict[key] and dict[key]['update'] == False:
         dict[key]['update'] = True
     
+def merge_tags(list1, list2):
+    """
+    Function to merge two list of tags
+    """
+    res = {}
+    output = []
 
+    for item in list1:
+        res[item['Key']] = item['Value']
+
+    for item in list2:
+        res[item['Key']] = item['Value']
+       
+    
+    for item in res:
+        output.append({"Key": item, "Value": res[item]})
+
+    return output
 
 def update_ssm_parameter(parameter, value):
     """
     Function used to update an SSM parameter if the value is different
         :paremter:      parameter name
-        :params:        the value to be updated
-        :return: true or false
+        :value:         the value to be updated
+        :return:        execution status
     """
     exists = True
     client = boto3.client('ssm')
@@ -614,7 +653,7 @@ def update_ssm_parameter(parameter, value):
     try:
         response = client.get_parameter(Name=parameter)
     except client.exceptions.ParameterNotFound as err:
-        print("\033[2K\033[1GSSM parameter {} does not exist. Creating...".format(parameter), end="")
+        print(f"\033[2K\033[1GSSM parameter {parameter} does not exist. Creating...", end="")
         exists=False
     try:
         if exists == False or ('Value' in response['Parameter'] and value != response['Parameter']['Value']):
@@ -624,16 +663,77 @@ def update_ssm_parameter(parameter, value):
                 Type='String',
                 Overwrite=True|False)
             if response['Version']:
-                print("\033[2K\033[1SSM parameter {parameter} update [{}]".format(parameter,Status.OK.value))
+                print(f"\033[2K\033[1SSM parameter {parameter} update [{Status.OK.value}]")
                 return Execution.OK
     
     except Exception as err:
-        print("\033[2K\033[1SSM parameter {parameter} update failed. Reason {} [{}]".format(parameter,err.response['Error']['Message'], Status.FAIL.value))
+        print(f"\033[2K\033[1SSM parameter {parameter} update failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
         return Execution.FAIL
     
-    print(" [{}]".format(Status.NO_ACTION.value))
+    print(f" [{Status.NO_ACTION.value}]")
     return Execution.NO_ACTION
 
+def get_controls(region, sub_arn, NextToken=None):
+    client = boto3.client('securityhub', region_name=region)
+    controls = client.describe_standards_controls(
+        NextToken=NextToken,
+        StandardsSubscriptionArn=sub_arn) if NextToken else client.describe_standards_controls(
+        StandardsSubscriptionArn=sub_arn)
+    if ('NextToken' in controls):
+        return controls['Controls'] + get_controls(sub_arn, NextToken=controls['NextToken'])
+    else:
+        return controls['Controls']
+
+def update_cis_controls(rules): 
+    print(f"CIS controls update ", end="")
+    
+    regions = ["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-1", "eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]
+    try:
+        with Spinner():
+            for region in regions:
+                client = boto3.client('securityhub', region_name=region)
+            
+                stds = client.get_enabled_standards()
+                for std in stds['StandardsSubscriptions']:
+                    enabledControls = []
+                    disabledControls = []
+                    controls = get_controls(region, std['StandardsSubscriptionArn'])
+        
+                    for key, value in rules.items():
+                        enabledControls = [d for d in controls if key in d['StandardsControlArn'] and value['active'] == True]
+                        disabledControls = [d for d in controls if key in d['StandardsControlArn'] and value['active'] == False]
+                    
+                    try:
+                        for control in enabledControls:
+                            time.sleep(1)
+                            client.update_standards_control(
+                                StandardsControlArn=control['StandardsControlArn'],
+                                ControlStatus='ENABLED',
+                            ) 
+                    
+                        for control in disabledControls:
+                            time.sleep(1)
+                            client.update_standards_control(
+                                StandardsControlArn=control['StandardsControlArn'],
+                                ControlStatus='DISABLED',
+                                DisabledReason='Managed by Cloud Broker Team',
+                            )
+                    except ClientError as err:
+                        if err.response['Error']['Code'] == 'ThrottlingException':
+                            continue
+        print(f" [{Status.OK.value}]")
+        return Execution.OK
+    except Exception as e:
+        print(f"failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
+        return Execution.FAIL
+
+
+def validate_params(params, template):
+
+    new_params = []
+    dict_template = load_yaml(template)
+    return [elem for elem in params if elem['ParameterKey'] in dict_template['Parameters']]
+   
 def update_stack(client, stack, templates, params=[]):
     """
     Function that updates a stack defined in the parameters
@@ -646,76 +746,90 @@ def update_stack(client, stack, templates, params=[]):
     template = templates[stack]['Template']
     capabilities=[]
     
-    print("Stack {} update ".format(stack), end="")
+    print(f"Stack {stack} update ", end="")
 
     try:
         with open(template, "r") as f:
             template_body=f.read()
         response = client.describe_stacks(StackName=stack)
     except FileNotFoundError as err:
-        print("\033[2K\033[Stack template file not found : {} [{}]".format(err.strerror,Status.FAIL.value))
+        print(f"\033[2K\033[Stack template file not found : {err.strerror} [{Status.FAIL.value}]")
         return Execution.FAIL
     except ClientError as err:
         if err.response['Error']['Code'] == 'AmazonCloudFormationException':
-            print("\033[2K\033[1GStack {} not found : {} [{}]".format(stack,err.response['Error']['Message'],Status.FAIL.value))
+            print(f"\033[2K\033[1GStack {stack} not found : {err.response['Error']['Message']} [{Status.FAIL.value}]")
         else:
-            print("\033[2K\033[1GStack {} update failed. Reason : {} [{}]".format(stack,err.response['Error']['Message'],Status.FAIL.value))
+            print(f"\033[2K\033[1GStack {stack} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
     
+    if 'Parameters:' in template_body:
+        if not params: 
+            if not null_empty(templates[stack], 'Params'):
+                try:
+                    with open(templates[stack]['Params']) as f:
+                        params = json.load(f)
+                except FileNotFoundError as err:
+                    print(f"\033[2K\033[1GParameter file not found : {err.strerror} [{Status.FAIL.value}]")
+                    Execution.FAIL
+                except json.decoder.JSONDecodeError as err:
+                    print(f"\033[2K\033[1GParameter file problem : {err.strerror} [{Status.FAIL.value}]")
+                    Execution.FAIL
+            else: 
+                if not null_empty(response['Stacks'][0], 'Parameters'):
+                    params = response['Stacks'][0]['Parameters']
+        
+        
 
-    if not params: 
-        if not null_empty(templates[stack], 'Params'):
-            try:
-                with open(templates[stack]['Params']) as f:
-                    params = json.load(f)
-            except FileNotFoundError as err:
-                print("\033[2K\033[1GParameter file not found : {} [{}]".format(err.strerror,Status.FAIL.value))
-                Execution.FAIL
-            except json.decoder.JSONDecodeError as err:
-                print("\033[2K\033[1GParameter file problem : {} [{}]".format(err.strerror,Status.FAIL.value))
-                Execution.FAIL
-        else: 
-            if not null_empty(response['Stacks'][0], 'Parameters'):
-                params = response['Stacks'][0]['Parameters']
-    
-    
     if not null_empty(response['Stacks'][0], 'Capabilities'):
         capabilities = response['Stacks'][0]['Capabilities']
 
-    
     if not null_empty(response['Stacks'][0], 'Tags'):
-        tags = {**response['Stacks'][0]['Tags'], **tags } 
-   
+        apply_tags =  merge_tags(response['Stacks'][0]['Tags'], tags)
 
+   
     if response['Stacks'][0]['StackStatus'] not in ('CREATE_COMPLETE', 'UPDATE_COMPLETE','UPDATE_ROLLBACK_COMPLETE'):
-        print("Cannot update stack {}. Current status is : {} [{}]".format(stack,response['Stacks'][0]['StackStatus'],Status.FAIL.value ))
+        print(f"Cannot update stack {stack}. Current status is : {response['Stacks'][0]['StackStatus']} [{Status.FAIL.value}]")
         return Execution.FAIL
         
-    print("in progress ".format(stack), end="")
+    print("in progress ", end="")
+
     with Spinner():
         try:
-            client.update_stack(StackName=stack, TemplateBody=template_body, Parameters=params, Capabilities=capabilities, Tags=tags)
+            
+            client.update_stack(
+                StackName=stack, 
+                TemplateBody=template_body, 
+                Parameters=validate_params(params, template_body), 
+                Capabilities=capabilities, 
+                Tags=apply_tags)
             updated=False
-        
             while updated == False: 
-                response = client.describe_stacks(StackName=stack)
-                if 'COMPLETE' in response['Stacks'][0]['StackStatus'] :
-                    print("\033[2K\033[1GStack {} update [{}]".format(stack,Status.OK.value))
-                    updated=True
-                    break
-                elif 'FAILED' in response['Stacks'][0]['StackStatus'] or 'ROLLBACK' in response['Stacks'][0]['StackStatus'] :
-                    print("\033[2K\033[1GStack {} update failed. Reason {} [{}]".format(stack, response['Stacks'][0]['StackStatusReason'],Status.FAIL.value))
-                    return Execution.FAIL
+                try:
+                    time.sleep(1)
+                    response = client.describe_stacks(StackName=stack)
+                    if 'COMPLETE' in response['Stacks'][0]['StackStatus'] :
+                        print(f"\033[2K\033[1GStack {stack} update [{Status.OK.value}]")
+                        updated=True
+                        break
+                    elif 'FAILED' in response['Stacks'][0]['StackStatus'] or 'ROLLBACK' in response['Stacks'][0]['StackStatus'] :
+                        print(f"\033[2K\033[1GStack {stack} update failed. Reason {response['Stacks'][0]['StackStatusReason']} [{Status.FAIL.value}]")
+                        return Execution.FAIL
+                except ClientError as err:
+                    if err.response['Error']['Code'] == 'ThrottlingException':
+                        continue
+                    else:
+                        raise err
+                
                
             return Execution.OK
         
         except ClientError as err:
             if err.response['Error']['Code'] == 'AmazonCloudFormationException':
-                print("\033[2K\033[1GStack {} not found : {} [{}]".format(stack,err.response['Error']['Message'],Status.FAIL.value))
+                print(f"\033[2K\033[1GStack {stack} not found : {err.response['Error']['Message']} [{Status.FAIL.value}]")
             elif err.response['Error']['Code'] == 'ValidationError' and err.response['Error']['Message'] == 'No updates are to be performed.':
-                print("\033[2K\033[1GStack {} update [{}]".format(stack,Status.NO_ACTION.value))
+                print(f"\033[2K\033[1GStack {stack} update [{Status.NO_ACTION.value}]")
                 return Execution.NO_ACTION
             else:
-                print("\033[2K\033[1GStack {} update failed. Reason : {} [{}]".format(stack,err.response['Error']['Message'],Status.FAIL.value))
+                print(f"\033[2K\033[1GStack {stack} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
         
         return Execution.FAIL
 
@@ -731,50 +845,52 @@ def update_stackset(client, stackset, templates, params=[]):
     template = templates[stackset]['Template']
     capabilities=[]
 
-    print("StackSet {} update ".format(stackset), end="")
+    print(f"StackSet {stackset} update ", end="")
 
     try:
         with open(template, "r") as f:
             template_body=f.read()
         response = client.describe_stack_set(StackSetName=stackset)
     except FileNotFoundError as err:
-        print("\033[2K\033[StackSet template file not found : {} [{}]".format(err.strerror,Status.FAIL.value))
+        print(f"\033[2K\033[StackSet template file not found : {err.strerror} [{Status.FAIL.value}]")
         return Execution.FAIL
     except ClientError as err:
         if err.response['Error']['Code'] == 'AmazonCloudFormationException':
-            print("\033[2K\033[1GStackSet {} not found : {} [{}]".format(stackset,err.response['Error']['Message'],Status.FAIL.value))
+            print(f"\033[2K\033[1GStackSet {stackset} not found : {err.response['Error']['Message']} [{Status.FAIL.value}]")
         else:
-            print("\033[2K\033[1GStackSet {} update failed. Reason : {} [{}]".format(stackset,err.response['Error']['Message'],Status.FAIL.value))
+            print(f"\033[2K\033[1GStackSet {stackset} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
     
+    if 'Parameters:' in template_body:
+        if not params: 
+            if not null_empty(templates[stackset], 'Params'):
+                try:
+                    with open(templates[stackset]['Params']) as f:
+                        params = json.load(f)
+                except FileNotFoundError as err:
+                    print(f"\033[2K\033[1GParameter file not found : {err.strerror} [{Status.FAIL.value}]")
+                    Execution.FAIL
+                except json.decoder.JSONDecodeError as err:
+                    print(f"\033[2K\033[1GParameter file problem : {err.strerror} [{Status.FAIL.value}]")
+                    Execution.FAIL
+            else: 
+                if not null_empty(response['StackSet'], 'Parameters'):
+                    params = response['StackSet']['Parameters']
+        
 
-    if not params: 
-        if not null_empty(templates[stackset], 'Params'):
-            try:
-                with open(templates[stackset]['Params']) as f:
-                    params = json.load(f)
-            except FileNotFoundError as err:
-                print("\033[2K\033[1GParameter file not found : {} [{}]".format(err.strerror,Status.FAIL.value))
-                Execution.FAIL
-            except json.decoder.JSONDecodeError as err:
-                print("\033[2K\033[1GParameter file problem : {} [{}]".format(err.strerror,Status.FAIL.value))
-                Execution.FAIL
-        else: 
-            if not null_empty(response['StackSet'], 'Parameters'):
-                params = response['StackSet']['Parameters']
-    
-    
+        
+
     if not null_empty(response['StackSet'], 'Capabilities'):
         capabilities = response['StackSet']['Capabilities']
     
-    if not null_empty(response['Stacks'][0], 'Tags'):
-        tags = { **response['Stacks'][0]['Tags'], **tags} 
+    if not null_empty(response['StackSet'], 'Tags'):
+        apply_tags =  merge_tags(response['StackSet']['Tags'], tags)
 
 
     if response['StackSet']['Status'] not in ('ACTIVE'):
-        print("Cannot update stackset {}. Current status is : {} [{}]".format(stackset,response['StackSet']['Status'],Status.FAIL.value ))
+        print(f"Cannot update stackset {stackset}. Current status is : {response['StackSet']['Status']} [{Status.FAIL.value}]")
         return Execution.FAIL
         
-    print("in progress ".format(stackset), end="")
+    print("in progress ", end="")
     with Spinner():
         try:
             operationPreferences={
@@ -785,31 +901,38 @@ def update_stackset(client, stackset, templates, params=[]):
             client.update_stack_set(
                 StackSetName=stackset, 
                 TemplateBody=template_body, 
-                Parameters=params, 
+                Parameters=validate_params(params, template_body), 
                 Capabilities=capabilities,
                 OperationPreferences=operationPreferences,
-                Tags=tags
+                Tags=apply_tags
                 )
-           
             updated=False
         
             while updated == False:
-                response = client.describe_stack_set(StackSetName=stackset)
-                if 'ACTIVE' in response['StackSet']['Status'] :
-                    print("\033[2K\033[1GStackSet {} update [{}]".format(stackset,Status.OK.value))
-                    updated=True
-                    break
+                try:
+                    time.sleep(1)
+                    response = client.describe_stack_set(StackSetName=stackset)
+                    if 'ACTIVE' in response['StackSet']['Status'] :
+                        print(f"\033[2K\033[1GStackSet {stackset} update [{Status.OK.value}]")
+                        updated=True
+                        break
+                except ClientError as err:
+                    if err.response['Error']['Code'] == 'ThrottlingException':
+                        continue
+                    else:
+                        raise err
+                
                 
             return Execution.OK
         
         except ClientError as err:
             if err.response['Error']['Code'] == 'AmazonCloudFormationException':
-                print("\033[2K\033[1GStackSet {} not found : {} [{}]".format(stackset,err.response['Error']['Message'],Status.FAIL.value))
+                print(f"\033[2K\033[1GStackSet {stackset} not found : {err.response['Error']['Message']} [{Status.FAIL.value}]")
             elif err.response['Error']['Code'] == 'ValidationError' and err.response['Error']['Message'] == 'No updates are to be performed.':
-                print("\033[2K\033[1GStackSet {} update [{}]".format(stackset,Status.NO_ACTION.value))
+                print(f"\033[2K\033[1GStackSet {stackset} update [{Status.NO_ACTION.value}]")
                 return Execution.NO_ACTION
             else:
-                print("\033[2K\033[1GStackSet {} update failed. Reason : {} [{}]".format(stackset,err.response['Error']['Message'],Status.FAIL.value))
+                print(f"\033[2K\033[1GStackSet {stackset} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
         
         return Execution.FAIL
     

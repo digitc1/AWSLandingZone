@@ -41,7 +41,7 @@
             "update" : true
         },
         "SECLZ-LogShipper-Lambdas" : {
-            "update" : false
+            "update" : true
         },
         "SECLZ-Central-Buckets" : {
             "update" : true
@@ -50,13 +50,13 @@
             "update" : true
         },
         "SECLZ-config-cloudtrail-SNS" : {
-            "update" : false
+            "update" : true
         },
         "SECLZ-Guardduty-detector" : {
             "update" : true
         },
         "SECLZ-SecurityHub" : {
-            "update" : false
+            "update" : true
          },
         "SECLZ-Notifications-Cloudtrail" : {
             "update" : true
@@ -72,6 +72,14 @@
         "SECLZ-Enable-Guardduty-Globally" : {
             "update" : true
         }
+    },
+    "cis" :  { 
+            "aws-foundational-security-best-practices/v/1.0.0/IAM.6": { 
+                "active" : false 
+            },
+            "cis-aws-foundations-benchmark/v/1.2.0/1.14":  { 
+                "active" : false 
+            }
     },
     "tags" : [
         { "Key": "Organization","Value": "EC" },

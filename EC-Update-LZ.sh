@@ -97,18 +97,25 @@ update() {
     
     
     
-    DEPENDENCIES=(boto3 botocore time json colorama zipfile shlex cursor)
+    DEPENDENCIES=(boto3 botocore time json colorama zipfile shlex cursor pyyaml cfn_flip)
     
     #installing python dependencies
     for dep in "${DEPENDENCIES[@]}" 
         do
-        if [[ "$(python3 -c 'import sys, pkgutil; print(True) if pkgutil.find_loader(sys.argv[1]) else print(False)' $dep)" == "True" ]] ; then
+        idep=$dep
+        if [[ $idep == "pyyaml" ]] ; then
+                idep='yaml'
+            fi
+        if [[ "$(python3 -c 'import sys, pkgutil; print(True) if pkgutil.find_loader(sys.argv[1]) else print(False)' $idep)" == "True" ]] ; then
             echo "$dep installed [${GREEN}OK${NC}]"
         else
             echo -ne "Installing $dep... \033[0K\r"
-           
+            
+            
+            
+
             pip3 install $dep &> /dev/null;
-            if [[ "$(python3 -c 'import sys, pkgutil; print(True) if pkgutil.find_loader(sys.argv[1]) else print(False)' $dep)" == "True" ]] ; then
+            if [[ "$(python3 -c 'import sys, pkgutil; print(True) if pkgutil.find_loader(sys.argv[1]) else print(False)' $idep)" == "True" ]] ; then
                 echo ${EL}"$dep installed [${GREEN}OK${NC}]"
             else
                 echo "${EL}$dep installed [${RED}FAIL${NC}]"
