@@ -296,6 +296,7 @@ def main(argv):
             print("Template SECLZ-LogShipper-Lambdas package ", end="")
             bucket=f'lambda-artefacts-{account_id}'
             if seclog_status != Execution.FAIL:
+                prf=''
                 if has_profile:
                     prf = f'--profile {profile}'
                 with Spinner():
