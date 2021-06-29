@@ -1,0 +1,97 @@
+{   "version" : "1.5.0",
+    "ssm" : {
+        "seclog-ou" : {
+            "value" : "",
+            "update" : false
+        },
+        "notification-mail" : {
+            "value" : "",
+            "update" : false
+        },
+        "cloudtrail-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "insight-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "guardduty-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "securityhub-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "config-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "alarms-groupname" : {
+            "value" : "/aws/events/cloudwatch-alarms",
+            "update" : true
+        }
+    },
+    "stacks" : {
+        "SECLZ-Cloudtrail-KMS" : {
+            "update" : false
+        },
+        "SECLZ-LogShipper-Lambdas-Bucket" : {
+            "update" : false
+        },
+        "SECLZ-LogShipper-Lambdas" : {
+            "update" : false
+        },
+        "SECLZ-Central-Buckets" : {
+            "update" : false
+        },
+        "SECLZ-Iam-Password-Policy" : {
+            "update" : false
+        },
+        "SECLZ-config-cloudtrail-SNS" : {
+            "update" : false
+        },
+        "SECLZ-Guardduty-detector" : {
+            "update" : false
+        },
+        "SECLZ-SecurityHub" : {
+            "update" : false
+         },
+        "SECLZ-Notifications-Cloudtrail" : {
+            "update" : true,
+            "params" : [
+                {"ParameterKey": "LogGroupName", "ParameterValue": "/org/member/SecLog_cloudtrail-groupname"}
+            ]
+        },
+        "SECLZ-CloudwatchLogs-SecurityHub" : {
+            "update" : false
+        } 
+    },
+    "stacksets" : {
+        "SECLZ-Enable-Config-SecurityHub-Globally" : {
+            "update" : false
+        },
+        "SECLZ-Enable-Guardduty-Globally" : {
+            "update" : false
+        }
+    },
+    "cis" :  { 
+            "aws-foundational-security-best-practices/v/1.0.0/IAM.6": { 
+                "active" : false 
+            },
+            "cis-aws-foundations-benchmark/v/1.2.0/1.14":  { 
+                "active" : false 
+            }
+    },
+    "tags" : [
+        { "Key": "Organization","Value": "EC" },
+        { "Key": "Owner","Value": "DIGIT.C.1" },
+        { "Key": "Environment","Value": "prod" },
+        { "Key": "Criticity","Value": "high" },
+        { "Key": "Project","Value": "secLZ" },
+        { "Key": "Confidentiality","Value": "confidential" },
+        { "Key": "ApplicationRole","Value": "security" }
+    ]
+    
+}
