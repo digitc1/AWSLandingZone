@@ -803,7 +803,7 @@ def update_stack(client, stack, templates, params=[]):
             print(f"\033[2K\033[1GStack {stack} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
     
     if 'Parameters:' in template_body:
-        print(params)
+        
         if not null_empty(templates[stack], 'Params'):
             try:
                 with open(templates[stack]['Params']) as f:
@@ -900,24 +900,21 @@ def update_stackset(client, stackset, templates, params=[]):
         else:
             print(f"\033[2K\033[1GStackSet {stackset} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
     
+    
     if 'Parameters:' in template_body:
-        if not params: 
-            if not null_empty(templates[stackset], 'Params'):
-                try:
-                    with open(templates[stackset]['Params']) as f:
-                        params = json.load(f)
-                except FileNotFoundError as err:
-                    print(f"\033[2K\033[1GParameter file not found : {err.strerror} [{Status.FAIL.value}]")
-                    Execution.FAIL
-                except json.decoder.JSONDecodeError as err:
-                    print(f"\033[2K\033[1GParameter file problem : {err.strerror} [{Status.FAIL.value}]")
-                    Execution.FAIL
-            else: 
-                if not null_empty(response['StackSet'], 'Parameters'):
-                    params = merge_params(response['StackSet']['Parameters'], params)
         
-
-        
+        if not null_empty(templates[stackset], 'Params'):
+            try:
+                with open(templates[stackset]['Params']) as f:
+                    params = json.load(f)
+            except FileNotFoundError as err:
+                print(f"\033[2K\033[1GParameter file not found : {err.strerror} [{Status.FAIL.value}]")
+                Execution.FAIL
+            except json.decoder.JSONDecodeError as err:
+                print(f"\033[2K\033[1GParameter file problem : {err.strerror} [{Status.FAIL.value}]")
+                Execution.FAIL
+        elif not null_empty(response['Stacks'][0], 'Parameters'):
+                params = merge_params(response['StackSet']['Parameters'], params)        
 
     if not null_empty(response['StackSet'], 'Capabilities'):
         capabilities = response['StackSet']['Capabilities']
