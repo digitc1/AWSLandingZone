@@ -416,7 +416,6 @@ Resources:
       Description: Contains the SNS Topic Arn for Landing Zone
       Type: String
       Value: !Sub "arn:aws:sns:${AWS::Region}:${SecLogMasterAccountId}:EC-Landing-Zone-Security-Notification"
-
   
 
   # Enable notifications for AWS Config Rule compliance changes

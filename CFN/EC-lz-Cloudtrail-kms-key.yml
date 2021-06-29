@@ -9,54 +9,16 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: >-
   v1.0. Creates KMS key for cloudTrail and a parameter in the parameterstore for the key arn
 
-Metadata:
-  AWS::CloudFormation::Interface:
-    ParameterGroups:
-      -
-        Label:
-          default: "General"
-        Parameters:
-          - KeyDescription
-          - KeyAlias
-      -
-        Label:
-          default: "Tags"
-        Parameters:
-          - DirectorateGeneral
-          - BusinessUnit
-          - OwnerId
-          - DataClassification
-
 Parameters:
+  KeyDescription:
+      Description: 'A brief descrition of why this key is required'
+      Type: String
+      Default: 'KMS key for cloudtrail'
 
-    KeyDescription:
-        Description: 'A brief descrition of why this key is required'
-        Type: String
-        Default: 'KMS key for cloudtrail'
-    KeyAlias:
-        Description: 'A short friendly name for the key'
-        Type: String
-        Default: 'SECLZ-Cloudtrail-encryption-key'
-
-    DirectorateGeneral:
-        Description: ''
-        Type: String
-        Default: 'n/a'
-
-    BusinessUnit:
-        Description: ''
-        Type: String
-        Default: 'n/a'
-
-    OwnerId:
-        Description: ''
-        Type: String
-        Default: 'n/a'
-
-    DataClassification:
-        Description: ''
-        Type: String
-        Default: 'n/a'
+  KeyAlias:
+      Description: 'A short friendly name for the key'
+      Type: String
+      Default: 'SECLZ-Cloudtrail-encryption-key'
 
 Mappings: {}
 
@@ -205,17 +167,6 @@ Resources:
                   - - "arn:aws:cloudtrail:*:"
                     - Ref: AWS::AccountId
                     - ":trail/*"
-      Tags:
-      - Key: Name
-        Value: !Ref KeyAlias
-      - Key: DirectorateGeneral
-        Value: !Ref DirectorateGeneral
-      - Key: BusinessUnit
-        Value: !Ref BusinessUnit
-      - Key: OwnerId
-        Value: !Ref OwnerId
-      - Key: DataClassification
-        Value: !Ref DataClassification
 
   myKeyAlias:
     Type: AWS::KMS::Alias
