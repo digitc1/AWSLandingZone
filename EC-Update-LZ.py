@@ -44,6 +44,8 @@ stacksets = { 'SECLZ-Enable-Config-SecurityHub-Globally' :  { 'Template' : 'CFN/
 
 tags = []
 
+all_regions = ["ap-northeast-1","ap-northeast-2","ap-northeast-3","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-1", "eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]
+
 def main(argv):
     
     global tags
@@ -57,6 +59,7 @@ def main(argv):
     stack_actions = []
     stacksets_actions = []
     cis_actions = []
+    
     
     boto3_config = Config(
         retries = dict(
@@ -173,7 +176,11 @@ def main(argv):
             ssm_actions = manifest['ssm']
 
         if not null_empty(manifest, 'cis'):
+            all_regions = manifest['regions']
             cis_actions = manifest['cis']
+        
+        if not null_empty(manifest, 'regions'):
+            all_regions = manifest['regions']
 
         seclog_status = Execution.NO_ACTION
         
@@ -722,49 +729,119 @@ def update_cis_controls(rules,
     accessKey=None,
     secretAccessKey=None, 
     sessionToken=None): 
-    print(f"CIS controls update ", end="")
     
-    regions = ["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-1", "eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]
+    global all_regions
+   
+    print(f"CIS controls update ", end="")
     try:
         with Spinner():
+            #enable all rules
+          
+            regions = [d for d in all_regions if d  != 'ap-northeast-3']
+            
             for region in regions:
                 client = boto3.client('securityhub',aws_access_key_id=accessKey,
+                    aws_secret_access_key=secretAccessKey, 
+                    aws_session_token=sessionToken,
+                    region_name=region
+                )
+
+                client.batch_enable_standards(
+                    StandardsSubscriptionRequests=[
+                        {
+                            'StandardsArn': "arn:aws:securityhub:::ruleset/cis-aws-foundations-benchmark/v/1.2.0",
+                            
+                        },
+                    ]
+                )
+
+                client.batch_enable_standards(
+                    StandardsSubscriptionRequests=[
+                        {
+                            'StandardsArn': f"arn:aws:securityhub:{region}::standards/aws-foundational-security-best-practices/v/1.0.0",
+                            
+                        },
+                    ]
+                )
+
+            enabled_rules = { key:value for (key,value) in rules.items() if value['disabled'] == False}
+            disabled_rules = { key:value for (key,value) in rules.items() if value['disabled'] == True}
+
+            #enabled rules
+            for rule,value in enabled_rules.items():
+                regions = value['regions'] if 'regions' in value and len(value['regions']) > 0  else all_regions
+                if 'exclusions' in value:
+                    regions = [d for d in regions if d not in value['exclusions']]
+               
+                for region in regions:
+                    client = boto3.client('securityhub',aws_access_key_id=accessKey,
                         aws_secret_access_key=secretAccessKey, 
                         aws_session_token=sessionToken,
                         region_name=region
-                )
-            
-                stds = client.get_enabled_standards()
-                for std in stds['StandardsSubscriptions']:
-                    enabledControls = []
-                    disabledControls = []
-                    controls = get_controls(client, region, std['StandardsSubscriptionArn'])
-        
-                    for key, value in rules.items():
-                        enabledControls = [d for d in controls if key in d['StandardsControlArn'] and value['active'] == True]
-                        disabledControls = [d for d in controls if key in d['StandardsControlArn'] and value['active'] == False]
+                    )
+                
+                    stds = client.get_enabled_standards()
                     
-                    try:
-                        for control in enabledControls:
-                            time.sleep(1)
-                            client.update_standards_control(
-                                StandardsControlArn=control['StandardsControlArn'],
-                                ControlStatus='ENABLED',
-                            ) 
+                    for std in stds['StandardsSubscriptions']:
+                        controls = []
+                        available_controls = get_controls(client, region, std['StandardsSubscriptionArn'])
+                        if 'checks' not in value:
+                            controls = [d for d in available_controls if rule in d['StandardsControlArn'] ]
+                        else:
+                            for check in value['checks']:
+                                controls.extend([d for d in available_controls if f"{rule}/{check}" in d['StandardsControlArn'] ])
+
+                        for control in controls:
+                            
+                            try:
+                                client.update_standards_control(
+                                        StandardsControlArn=control['StandardsControlArn'],
+                                        ControlStatus='DISABLED',
+                                        DisabledReason='Managed by Cloud Broker Team' if 'disabled-reason' not in rule else rule['disabled-reason'],
+                                    ) 
+                            except ClientError as err:
+                                if err.response['Error']['Code'] == 'ThrottlingException':
+                                    continue
+
+            #disabled rules
+            for rule,value in disabled_rules.items():
+                regions = value['regions'] if 'regions' in value and len(value['regions']) > 0  else all_regions
+                if 'exclusions' in value:
+                    regions = [d for d in regions if d not in value['exclusions']]
+               
+                for region in regions:
+                    client = boto3.client('securityhub',aws_access_key_id=accessKey,
+                        aws_secret_access_key=secretAccessKey, 
+                        aws_session_token=sessionToken,
+                        region_name=region
+                    )
+                
+                    stds = client.get_enabled_standards()
                     
-                        for control in disabledControls:
-                            time.sleep(1)
-                            client.update_standards_control(
-                                StandardsControlArn=control['StandardsControlArn'],
-                                ControlStatus='DISABLED',
-                                DisabledReason='Managed by Cloud Broker Team',
-                            )
-                    except ClientError as err:
-                        if err.response['Error']['Code'] == 'ThrottlingException':
-                            continue
+                    for std in stds['StandardsSubscriptions']:
+                        available_controls = get_controls(client, region, std['StandardsSubscriptionArn'])
+                        controls = []
+                        if 'checks' not in value:
+                            controls = [d for d in available_controls if rule in d['StandardsControlArn'] ]
+                        else:
+                            for check in value['checks']:
+                                controls.extend([d for d in available_controls if f"{rule}/{check}" in d['StandardsControlArn'] ])
+
+                        for control in controls:
+                            
+                            try:
+                                response=client.update_standards_control(
+                                        StandardsControlArn=control['StandardsControlArn'],
+                                        ControlStatus='DISABLED',
+                                        DisabledReason='Managed by Cloud Broker Team' if 'disabled-reason' not in value else value['disabled-reason'],
+                                    ) 
+                                
+                            except ClientError as err:
+                                if err.response['Error']['Code'] == 'ThrottlingException':
+                                    continue
         print(f" [{Status.OK.value}]")
         return Execution.OK
-    except Exception as e:
+    except Exception as err:
         print(f"failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
         return Execution.FAIL
 
