@@ -990,7 +990,7 @@ def update_stackset(client, stackset, templates, params=[]):
             except json.decoder.JSONDecodeError as err:
                 print(f"\033[2K\033[1GParameter file problem : {err.strerror} [{Status.FAIL.value}]")
                 Execution.FAIL
-        elif not null_empty(response['Stacks'][0], 'Parameters'):
+        elif not null_empty(response['StackSet'], 'Parameters'):
                 params = merge_params(response['StackSet']['Parameters'], params)        
 
     if not null_empty(response['StackSet'], 'Capabilities'):
