@@ -83,14 +83,14 @@
                 "disabled" : true,
                 "disabled-reason" : "Alarm action unmanaged by SNS but cloudwatch event",
                 "regions": [],
-                "exclusions" : []
+                "exclusions" : ["ap-northeast-3"]
             },
             "aws-foundational-security-best-practices/v/1.0.0": { 
                 "checks" : ["IAM.1", "IAM.2", "IAM.3", "IAM.4", "IAM.6", "IAM.7", "Config.1"],
                 "disabled" : true,
                 "disabled-reason" : "Disable recording of global resources in all but one Region",
                 "regions": [],
-                "exclusions" : ["eu-west-1"]
+                "exclusions" : ["eu-west-1", "ap-northeast-3"]
             },
             "cis-aws-foundations-benchmark/v/1.2.0/1.14":  { 
                 "disabled" : true,
