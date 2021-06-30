@@ -3,31 +3,31 @@
     "ssm" : {
         "seclog-ou" : {
             "value" : "",
-            "update" : true
+            "update" : false
         },
         "notification-mail" : {
             "value" : "",
-            "update" : true
+            "update" : false
         },
         "cloudtrail-groupname" : {
             "value" : "",
-            "update" : true
+            "update" : false
         },
         "insight-groupname" : {
             "value" : "",
-            "update" : true
+            "update" : false
         },
         "guardduty-groupname" : {
             "value" : "",
-            "update" : true
+            "update" : false
         },
         "securityhub-groupname" : {
             "value" : "",
-            "update" : true
+            "update" : false
         },
         "config-groupname" : {
             "value" : "",
-            "update" : true
+            "update" : false
         },
         "alarms-groupname" : {
             "value" : "/aws/events/cloudwatch-alarms",
