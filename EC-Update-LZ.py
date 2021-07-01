@@ -287,7 +287,7 @@ def main(argv):
                     with open(template, "r") as f:
                         template_body=f.read()
                 
-                    template_body.replace('##cloudtrailCodeURI##',cloudtrail_lambda).replace('##configCodeURI##',config_lambda)
+                    template_body = template_body.replace('##cloudtrailCodeURI##',cloudtrail_lambda).replace('##configCodeURI##',config_lambda)
 
                     template = f'EC-lz-logshipper-lambdas-{now}.yml'
                     with open(template, "w") as f:
