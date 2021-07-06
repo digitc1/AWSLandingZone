@@ -274,7 +274,7 @@ def main(argv):
 
             config_lambda=f'ConfigLogShipper-{now}.zip'
             with ZipFile(config_lambda,'w') as zip:
-                zip.write('LAMBDAS/ConfigLogShipper.py','CloudtrailLogShipper.py')
+                zip.write('LAMBDAS/ConfigLogShipper.py','ConfigLogShipper.py')
 
             #update CFT file
             if seclog_status != Execution.FAIL:
@@ -874,10 +874,8 @@ def update_stack(client, stack, templates, params=[]):
         print(f"\033[2K\033[Stack template file not found : {err.strerror} [{Status.FAIL.value}]")
         return Execution.FAIL
     except ClientError as err:
-        if err.response['Error']['Code'] == 'AmazonCloudFormationException':
-            print(f"\033[2K\033[1GStack {stack} not found : {err.response['Error']['Message']} [{Status.FAIL.value}]")
-        else:
-            print(f"\033[2K\033[1GStack {stack} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
+        print(f"\033[2K\033[1GStack {stack} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
+        return Execution.FAIL
     
     if 'Parameters:' in template_body:
         
@@ -892,7 +890,7 @@ def update_stack(client, stack, templates, params=[]):
                 print(f"\033[2K\033[1GParameter file problem : {err.strerror} [{Status.FAIL.value}]")
                 Execution.FAIL
         elif not null_empty(response['Stacks'][0], 'Parameters'):
-                params = merge_params(response['Stacks'][0]['Parameters'], params)
+            params = merge_params(response['Stacks'][0]['Parameters'], params)
         
         
 
@@ -973,10 +971,8 @@ def update_stackset(client, stackset, templates, params=[]):
         print(f"\033[2K\033[StackSet template file not found : {err.strerror} [{Status.FAIL.value}]")
         return Execution.FAIL
     except ClientError as err:
-        if err.response['Error']['Code'] == 'AmazonCloudFormationException':
-            print(f"\033[2K\033[1GStackSet {stackset} not found : {err.response['Error']['Message']} [{Status.FAIL.value}]")
-        else:
-            print(f"\033[2K\033[1GStackSet {stackset} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
+        print(f"\033[2K\033[1GStackSet {stackset} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
+        return Execution.FAIL
     
     
     if 'Parameters:' in template_body:
@@ -992,7 +988,7 @@ def update_stackset(client, stackset, templates, params=[]):
                 print(f"\033[2K\033[1GParameter file problem : {err.strerror} [{Status.FAIL.value}]")
                 Execution.FAIL
         elif not null_empty(response['StackSet'], 'Parameters'):
-                params = merge_params(response['StackSet']['Parameters'], params)        
+            params = merge_params(response['StackSet']['Parameters'], params)        
 
     if not null_empty(response['StackSet'], 'Capabilities'):
         capabilities = response['StackSet']['Capabilities']
