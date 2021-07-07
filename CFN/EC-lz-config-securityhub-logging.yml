@@ -31,10 +31,27 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /org/member/SecLogMasterAccountId
     Description: "Contains account id of SecLogMaster"
+  EnableSecLogForSecurityHubParam:
+    Type: String
+    Description: "Enable SecLog integration for Securityhub?"
+    Default: true
+    AllowedValues:
+    - true
+    - false
 Conditions:
   IsSecLogMasterAccount: !Equals
     - !Ref AWS::AccountId
     - !Ref SecLogMasterAccountId
+  EnableSecLogForSecurityHub: !Equals
+    - !Ref EnableSecLogForSecurityHubParam
+    - 'true'
+  IsSecLogMasterAccountWithSOCIntegration: !And
+    - !Equals
+      - !Ref AWS::AccountId
+      - !Ref SecLogMasterAccountId
+    - !Equals
+      - !Ref EnableSecLogForCloudSecurityHub
+      - 'true'
 
 Resources:
   SecurityHubLogGroup:
@@ -47,7 +64,7 @@ Resources:
 
   SecurityHubSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsSecLogMasterAccount
+    Condition: IsSecLogMasterAccountWithSOCIntegration
     Properties:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''

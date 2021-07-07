@@ -559,33 +559,40 @@ configure_seclog() {
     while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
-    if  [ "$securityhubintegration" == "true" ]; then
-        sleep 5
-        
-        #   ------------------------------------
-        #   Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub
-        #   ------------------------------------
+
+    sleep 5
+    
+    #   ------------------------------------
+    #   Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub
+    #   ------------------------------------
 
 
-        echo ""
-        echo "- Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub"
-        echo "---------------------------------------"
-        echo ""
+    echo ""
+    echo "- Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub"
+    echo "---------------------------------------"
+    echo ""
 
-        aws cloudformation create-stack \
-        --stack-name 'SECLZ-CloudwatchLogs-SecurityHub' \
-        --template-body file://$CFN_SECURITYHUB_LOG_TEMPLATE \
-        --tags file://$CFN_TAGS_FILE \
-        --enable-termination-protection \
-        --capabilities CAPABILITY_IAM \
-        --profile $seclogprofile \
-        --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN
-
-        StackName="SECLZ-CloudwatchLogs-SecurityHub"
-        aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-        while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` = "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
-	    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    securityhubparams="ParameterKey=EnableSecLogForSecurityHubParam,ParameterValue=$securityhubintegration"
+    if [ "$securityhubintegration" == "true" ]; then
+        securityhubparams="ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN"
     fi
+
+    
+
+    aws cloudformation create-stack \
+    --stack-name 'SECLZ-CloudwatchLogs-SecurityHub' \
+    --template-body file://$CFN_SECURITYHUB_LOG_TEMPLATE \
+    --tags file://$CFN_TAGS_FILE \
+    --enable-termination-protection \
+    --capabilities CAPABILITY_IAM \
+    --profile $seclogprofile \
+    --parameters $securityhubparams
+
+    StackName="SECLZ-CloudwatchLogs-SecurityHub"
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` = "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
 
     sleep 5
 

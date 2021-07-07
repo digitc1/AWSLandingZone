@@ -59,6 +59,8 @@ configure_client() {
     CFN_PROFILES_ROLES='./CFN/EC-lz-Profiles-Roles.yml'
     CFN_LOCAL_SNS_TEMPLATE='./CFN/EC-lz-local-config-SNS.yml'
 
+    CFN_TAGS_FILE='./CFN/EC-lz-TAGS.json'
+
     # Script Spinner waiting for cloudformation completion
     export i=1
     export sp="/-\|"

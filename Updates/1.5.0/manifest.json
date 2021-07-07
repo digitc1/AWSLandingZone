@@ -26,7 +26,7 @@
             "update" : false
         },
         "config-groupname" : {
-            "value" : "",
+            "value" : "/aws/events/config",
             "update" : false
         },
         "alarms-groupname" : {
@@ -113,6 +113,10 @@
         { "Key": "Project","Value": "secLZ" },
         { "Key": "Confidentiality","Value": "confidential" },
         { "Key": "ApplicationRole","Value": "security" }
-    ]
+    ],
+    "accounts" : {
+        "exclude" : ["332055774146"],
+        "include" : ["566914725721"]
+    }
     
 }
