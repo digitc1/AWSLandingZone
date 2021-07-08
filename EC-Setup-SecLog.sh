@@ -43,6 +43,7 @@ insightgroupname=${insightgroupname:-}
 guarddutygroupname=${guarddutygroupname:-}
 securityhubgroupname=${securityhubgroupname:-}
 configgroupname=${configgroupname:-}
+alarmsgroupname=${alarmsgroupname:-}
 
 while [ $# -gt 0 ]; do
 
@@ -111,6 +112,7 @@ display_help() {
     echo "   --guarddutygroupname           : The custom name for GuardDuty Cloudwatch loggroup name (optional)"
     echo "   --securityhubgroupname         : The custom name for SecurityHub Cloudwatch loggroup name (optional)"
     echo "   --configgroupname              : The custom name for AWSConfig Cloudwatch loggroup name (optional)"
+    echo "   --alarmsgroupname              : The custom name for Cloudwatch Alarms loggroup name (optional)"
     echo "   --batch                        : Flag to enable or disable batch execution mode. Default: false (optional)"
     echo ""
     exit 1
@@ -180,6 +182,10 @@ configure_seclog() {
     
     if  [ ! -z "$configgroupname" ] ; then
         echo "     AWSConfig loggroup name:           $configgroupname"
+    fi
+
+    if  [ ! -z "$alarmsgroupname" ] ; then
+        echo "     Alarms loggroup name:           $alarmsgroupname"
     fi
     
     if [[ ("$cloudtrailintegration" == "true" || "$guarddutyintegration" == "true" || "$securityhubintegration" == "true" ) ]]; then
@@ -259,6 +265,15 @@ configure_seclog() {
         prevconfiggroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_config-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
         if  [ -z "$prevconfiggroupname" ] ; then
             aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value "/aws/events/config" --overwrite
+        fi
+    fi
+
+    if  [ ! -z "$alarmsgroupname" ] ; then
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value $alarmsgroupname --overwrite
+    else
+        prevalarmsgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_alarms-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
+        if  [ -z "$prevalarmsgroupname" ] ; then
+            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value "/aws/events/cloudwatch-alarms" --overwrite
         fi
     fi
     

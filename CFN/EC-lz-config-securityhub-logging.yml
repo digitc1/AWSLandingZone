@@ -38,6 +38,7 @@ Parameters:
     AllowedValues:
     - true
     - false
+    
 Conditions:
   IsSecLogMasterAccount: !Equals
     - !Ref AWS::AccountId
@@ -50,7 +51,7 @@ Conditions:
       - !Ref AWS::AccountId
       - !Ref SecLogMasterAccountId
     - !Equals
-      - !Ref EnableSecLogForCloudSecurityHub
+      - !Ref EnableSecLogForSecurityHubParam
       - 'true'
 
 Resources:
@@ -72,6 +73,7 @@ Resources:
 
   CloudWatchEventsLogGroupRole:
     Type: AWS::IAM::Role
+    Condition: IsSecLogMasterAccount
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'

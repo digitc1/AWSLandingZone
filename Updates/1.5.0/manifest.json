@@ -115,8 +115,8 @@
         { "Key": "ApplicationRole","Value": "security" }
     ],
     "accounts" : {
-        "exclude" : ["332055774146"],
-        "include" : ["566914725721"]
+        "exclude" : [],
+        "include" : []
     }
     
 }
