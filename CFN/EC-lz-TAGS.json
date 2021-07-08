@@ -1,0 +1,9 @@
+[
+    { "Key": "Organization","Value": "EC" },
+    { "Key": "Owner","Value": "DIGIT.C.1" },
+    { "Key": "Environment","Value": "prod" },
+    { "Key": "Criticity","Value": "high" },
+    { "Key": "Project","Value": "secLZ" },
+    { "Key": "Confidentiality","Value": "confidential" },
+    { "Key": "ApplicationRole","Value": "security" }
+]

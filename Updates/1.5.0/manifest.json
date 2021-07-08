@@ -1,0 +1,122 @@
+{   "version" : "1.5.0",
+    "regions" : ["ap-northeast-1","ap-northeast-2","ap-northeast-3","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-1", "eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"],
+    "ssm" : {
+        "seclog-ou" : {
+            "value" : "",
+            "update" : false
+        },
+        "notification-mail" : {
+            "value" : "",
+            "update" : false
+        },
+        "cloudtrail-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "insight-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "guardduty-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "securityhub-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "config-groupname" : {
+            "value" : "/aws/events/config",
+            "update" : false
+        },
+        "alarms-groupname" : {
+            "value" : "/aws/events/cloudwatch-alarms",
+            "update" : true
+        }
+    },
+    "stacks" : {
+        "SECLZ-Cloudtrail-KMS" : {
+            "update" : true
+        },
+        "SECLZ-LogShipper-Lambdas-Bucket" : {
+            "update" : true
+        },
+        "SECLZ-LogShipper-Lambdas" : {
+            "update" : true
+        },
+        "SECLZ-Central-Buckets" : {
+            "update" : true
+        },
+        "SECLZ-Iam-Password-Policy" : {
+            "update" : true
+        },
+        "SECLZ-config-cloudtrail-SNS" : {
+            "update" : true
+        },
+        "SECLZ-Guardduty-detector" : {
+            "update" : true
+        },
+        "SECLZ-SecurityHub" : {
+            "update" : true
+         },
+        "SECLZ-Notifications-Cloudtrail" : {
+            "update" : true,
+            "params" : [
+                {"ParameterKey": "LogGroupName", "ParameterValue": "/org/member/SecLog_cloudtrail-groupname"}
+            ]
+        },
+        "SECLZ-CloudwatchLogs-SecurityHub" : {
+            "update" : true
+        } 
+    },
+    "stacksets" : {
+        "SECLZ-Enable-Config-SecurityHub-Globally" : {
+            "update" : true
+        },
+        "SECLZ-Enable-Guardduty-Globally" : {
+            "update" : true
+        }
+    },
+    "cis" :  { 
+            "cis-aws-foundations-benchmark/v/1.2.0":  {
+                "checks" : ["3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"],
+                "disabled" : true,
+                "disabled-reason" : "Alarm action unmanaged by SNS but cloudwatch event",
+                "regions": [],
+                "exclusions" : ["ap-northeast-3"]
+            },
+            "aws-foundational-security-best-practices/v/1.0.0": { 
+                "checks" : ["IAM.1", "IAM.2", "IAM.3", "IAM.4", "IAM.6", "IAM.7", "Config.1"],
+                "disabled" : true,
+                "disabled-reason" : "Disable recording of global resources in all but one Region",
+                "regions": [],
+                "exclusions" : ["eu-west-1", "ap-northeast-3"]
+            },
+            "cis-aws-foundations-benchmark/v/1.2.0/1.14":  { 
+                "disabled" : true,
+                "disabled-reason" : "Managed by Cloud Broker Team",
+                "regions": ["eu-west-1"],
+                "exclusions" : []
+            },
+            "aws-foundational-security-best-practices/v/1.0.0/IAM.6":  { 
+                "disabled" : true,
+                "disabled-reason" : "Managed by Cloud Broker Team",
+                "regions": ["eu-west-1"],
+                "exclusions" : []
+            }
+    },
+    "tags" : [
+        { "Key": "Organization","Value": "EC" },
+        { "Key": "Owner","Value": "DIGIT.C.1" },
+        { "Key": "Environment","Value": "prod" },
+        { "Key": "Criticity","Value": "high" },
+        { "Key": "Project","Value": "secLZ" },
+        { "Key": "Confidentiality","Value": "confidential" },
+        { "Key": "ApplicationRole","Value": "security" }
+    ],
+    "accounts" : {
+        "exclude" : [],
+        "include" : []
+    }
+    
+}

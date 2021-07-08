@@ -16,44 +16,7 @@ Description: >-
     Script to be run in the SecLog-Master account
     StackName should contain EC-Customer
 
-Metadata:
-  AWS::CloudFormation::Interface:
-    ParameterGroups:
-      -
-        Label:
-          default: "Tags"
-        Parameters:
-          - owner
-          - project
-          - environment
-          - criticity
-          - dataClassification
-
 Parameters:
-    owner:
-        Description: "Tag: owner. Creator or responsible for the project"
-        Type: String
-        Default: ''
-
-    environment:
-        Description: "Tag: environment. Environnement of the resource (Dev, test, prod etc.)"
-        Type: String
-        Default: ''
-
-    criticity:
-        Description: "Tag: criticity. Criticity of the application"
-        Type: String
-        Default: ''
-
-    project:
-        Description: "Tag: project. Name of the application or project"
-        Type: String
-        Default: 'Landing Zone'
-
-    dataClassification:
-        Description: "Tag: data-classification. Level of criticality of the stored data"
-        Type: String
-        Default: ''
 
 Mappings: {}
 
@@ -103,17 +66,6 @@ Resources:
                 DestinationBucketName: !Ref AccessLogsBucket
             VersioningConfiguration:
                 Status: Enabled
-            Tags:
-            - Key: owner
-              Value: !Ref owner
-            - Key: environment
-              Value: !Ref environment
-            - Key: criticity
-              Value: !Ref criticity
-            - Key: project
-              Value: !Ref project
-            - Key: data-classification
-              Value: !Ref dataClassification
 
     CloudTrailBucketPolicy:
         Type: AWS::S3::BucketPolicy
@@ -212,17 +164,6 @@ Resources:
               BlockPublicPolicy: true
               IgnorePublicAcls: true
               RestrictPublicBuckets: true
-            Tags:
-            - Key: owner
-              Value: !Ref owner
-            - Key: environment
-              Value: !Ref environment
-            - Key: criticity
-              Value: !Ref criticity
-            - Key: project
-              Value: !Ref project
-            - Key: data-classification
-              Value: !Ref dataClassification
 
     ConfigBucketPolicy:
         Type: AWS::S3::BucketPolicy
@@ -292,17 +233,6 @@ Resources:
               - Ref: AWS::AccountId
               - "-do-not-delete"
           AccessControl: LogDeliveryWrite
-          Tags:
-          - Key: owner
-            Value: !Ref owner
-          - Key: environment
-            Value: !Ref environment
-          - Key: criticity
-            Value: !Ref criticity
-          - Key: project
-            Value: !Ref project
-          - Key: data-classification
-            Value: !Ref dataClassification
           PublicAccessBlockConfiguration:
             BlockPublicAcls: true
             BlockPublicPolicy: true

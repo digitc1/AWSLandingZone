@@ -99,6 +99,10 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: '/org/member/SecLog_config-groupname'
     Description: AWS config CloudWatch LogGroup name
+  CloudwatchAlarmsLogGroupName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: '/org/member/SecLog_alarms-groupname'
+    Description: AWS CloudWatch Alarms LogGroup name
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain CloudTrail log events in the CloudWatch Logs.'
     Type: Number
@@ -211,9 +215,40 @@ Resources:
 
 
   #   -------------------
+  #   Cloudwatch Alarms
+  #   -------------------
+  CloudwatchAlarmsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsSecLogMasterAccount
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: !Ref CloudwatchAlarmsLogGroupName
+      RetentionInDays: !Ref LogsRetentionInDays
+
+  # Enable cloudwatch Alarms events to be sent to the corresponding loggroup
+  CloudwatchAlarmsEventSecLog:
+    Type: AWS::Events::Rule
+    Condition: IsSecLogMasterAccount
+    Properties:
+      Name: SECLZ-CloudwatchAlarms-Events
+      Description: 'Rule to send Cloudwatch Alarms events to loggroup'
+      EventPattern:
+        {
+          "source": [
+            "aws.cloudwatch"
+          ],
+          "detail-type": [
+            "CloudWatch Alarm State Change"
+          ]
+        }
+      State: ENABLED
+      Targets:
+      - Id: "AwsCloudwatchAlarms-Seclog"
+        Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${CloudwatchAlarmsLogGroup}"
+
+  #   -------------------
   #   Trail Insights
   #   -------------------
-  
   TrailInsightsLogGroup:
     Type: AWS::Logs::LogGroup
     UpdateReplacePolicy: Retain
@@ -416,7 +451,6 @@ Resources:
       Description: Contains the SNS Topic Arn for Landing Zone
       Type: String
       Value: !Sub "arn:aws:sns:${AWS::Region}:${SecLogMasterAccountId}:EC-Landing-Zone-Security-Notification"
-
   
 
   # Enable notifications for AWS Config Rule compliance changes
@@ -437,8 +471,6 @@ Resources:
         }
       State: ENABLED
       Targets:
-      - Id: "AWS-Landing-Zone-Compliance-Change-Topic"
-        Arn: !Ref SNSNotificationTopic
       - Id: "AwsConfigCloudWatch-Seclog"
         Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${AwsConfigLogGroup}"
          
