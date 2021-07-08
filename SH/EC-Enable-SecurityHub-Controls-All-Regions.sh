@@ -2,7 +2,7 @@
 
 #   --------------------------------------------------------
 #
-#		Enables securityhub controls for all regions:
+#               Enables securityhub controls for all regions:
 #
 #
 #       Usage
@@ -14,8 +14,8 @@
 #   --------------------------------------------------------
 
 #   --------------------
-#	Parameters
-#	--------------------
+#       Parameters
+#       --------------------
 PROFILE=$1
 
 #   ---------------------
@@ -34,7 +34,7 @@ display_help() {
 #   ----------------------------
 configure() {
 
-   
+
     accountid=`aws --profile $PROFILE sts get-caller-identity --query 'Account' --output text`
 
     echo ""
@@ -44,22 +44,50 @@ configure() {
 
     accountid=`aws --profile $PROFILE sts get-caller-identity --query 'Account' --output text`
 
-
-    for region in $(aws --profile $PROFILE ec2 describe-regions --output text --query "Regions[?RegionName!='ap-northeast-3'].[RegionName]"); do
+    # Disable CIS controls only in eu-west-1
+    # ------------------
+    for region in $(aws ec2 describe-regions --output text --query "Regions[?(RegionName=='eu-west-1')].[RegionName]"); do
         echo "auto-enable-controls for securityhub for region $region ..."
         aws --profile $PROFILE --region $region securityhub batch-enable-standards --standards-subscription-requests StandardsArn="arn:aws:securityhub:::ruleset/cis-aws-foundations-benchmark/v/1.2.0"
         aws --profile $PROFILE --region $region securityhub batch-enable-standards --standards-subscription-requests StandardsArn="arn:aws:securityhub:$region::standards/aws-foundational-security-best-practices/v/1.0.0"
         aws --profile $PROFILE --region $region securityhub update-security-hub-configuration --auto-enable-controls
 
-        sleep 2
-
+        # Fix for https://github.com/digitc1/AWSLandingZone/issues/136
+        for cischeck in 3.1 3.2 3.3 3.4 3.5 3.6 3.7 3.8 3.9 3.10 3.11 3.12 3.13 3.14
+        do
+            aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/cis-aws-foundations-benchmark/v/1.2.0/$cischeck" --control-status "DISABLED" --disabled-reason "Alarm action unmanaged by SNS but cloudwatch event"
+            echo "CIS Check $cischeck update for cis-aws-foundations-benchmark in region $region: exit code $?"
+        done
         # Disable "ControlId": "IAM.6", "Title": "Hardware MFA should be enabled for the root user"
         aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/aws-foundational-security-best-practices/v/1.0.0/IAM.6" --control-status "DISABLED" --disabled-reason "Managed by Cloud Broker Team"
-        
-        sleep 2
-         # Disable "ControlId": "CIS1.14", "1.14 Ensure hardware MFA is enabled for the \"root\" account"
-        aws securityhub --profile $PROFILE --region $region update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/cis-aws-foundations-benchmark/v/1.2.0/1.14" --control-status "DISABLED" --disabled-reason "Managed by Cloud Broker Team"
+        echo "CIS Check $cischeck update for aws-foundational-security-best-practices in region $region: exit code $?"
+        # Disable "ControlId": "CIS1.14", "1.14 Ensure hardware MFA is enabled for the \"root\" account"
+        aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/cis-aws-foundations-benchmark/v/1.2.0/1.14" --control-status "DISABLED" --disabled-reason "Managed by Cloud Broker Team"
+        echo "CIS Check $cischeck update for cis-aws-foundations-benchmark in region $region: exit code $?"
+    done
 
+    # ------------------
+    # https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-standards-fsbp-to-disable.html
+    # Disable some CIS controls in all regions except eu-west-1 and ap-northeast-3
+    # ------------------
+    for region in $(aws ec2 describe-regions --output text --query "Regions[?(RegionName!='ap-northeast-3' && RegionName!='eu-west-1')].[RegionName]"); do
+        echo "auto-enable-controls for securityhub for region $region ..."
+        aws --profile $PROFILE --region $region securityhub batch-enable-standards --standards-subscription-requests StandardsArn="arn:aws:securityhub:::ruleset/cis-aws-foundations-benchmark/v/1.2.0"
+        aws --profile $PROFILE --region $region securityhub batch-enable-standards --standards-subscription-requests StandardsArn="arn:aws:securityhub:$region::standards/aws-foundational-security-best-practices/v/1.0.0"
+        aws --profile $PROFILE --region $region securityhub update-security-hub-configuration --auto-enable-controls
+
+        # Fix for https://github.com/digitc1/AWSLandingZone/issues/136
+        for cischeck in 3.1 3.2 3.3 3.4 3.5 3.6 3.7 3.8 3.9 3.10 3.11 3.12 3.13 3.14
+        do
+            aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/cis-aws-foundations-benchmark/v/1.2.0/$cischeck" --control-status "DISABLED" --disabled-reason "alarm action unmanaged by SNS but cloudwatch event"
+            echo "CIS Check $cischeck update for cis-aws-foundations-benchmark in region $region: exit code $?"
+        done
+        # Fix for https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-standards-fsbp-to-disable.html
+        for cischeck in IAM.1 IAM.2 IAM.3 IAM.4 IAM.6 IAM.7 Config.1
+        do
+            aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/aws-foundational-security-best-practices/v/1.0.0/$cischeck" --control-status "DISABLED" --disabled-reason "Disable recording of global resources in all but one Region"
+            echo "CIS Check $cischeck update for aws-foundational-security-best-practices in region $region: exit code $?"
+        done
     done
 }
 

@@ -55,6 +55,7 @@ AWS_REGION='eu-west-1'
 
 CFN_BUCKETS_TEMPLATE='CFN/EC-lz-s3-buckets.yml'
 CFN_TAGS_PARAMS_FILE='CFN/EC-lz-TAGS-params.json'
+CFN_TAGS_FILE='CFN/EC-lz-TAGS.json'
 CFN_LOG_TEMPLATE='CFN/EC-lz-config-cloudtrail-logging.yml'
 CFN_GUARDDUTY_DETECTOR_TEMPLATE='CFN/EC-lz-guardDuty-detector.yml'
 CFN_SECURITYHUB_LOG_TEMPLATE='CFN/EC-lz-config-securityhub-logging.yml'

@@ -43,6 +43,7 @@ insightgroupname=${insightgroupname:-}
 guarddutygroupname=${guarddutygroupname:-}
 securityhubgroupname=${securityhubgroupname:-}
 configgroupname=${configgroupname:-}
+alarmsgroupname=${alarmsgroupname:-}
 
 while [ $# -gt 0 ]; do
 
@@ -78,6 +79,7 @@ CFN_SECURITYHUB_TEMPLATE='CFN/EC-lz-securityHub.yml'
 CFN_NOTIFICATIONS_CT_TEMPLATE='CFN/EC-lz-notifications.yml'
 CFN_IAM_PWD_POLICY='CFN/EC-lz-iam-setting_password_policy.yml'
 CFN_TAGS_PARAMS_FILE='CFN/EC-lz-TAGS-params.json'
+CFN_TAGS_FILE='CFN/EC-lz-TAGS.json'
 CFN_CLOUDTRAIL_KMS='CFN/EC-lz-Cloudtrail-kms-key.yml'
 CFN_STACKSET_ADMIN_ROLE='CFN/AWSCloudFormationStackSetAdministrationRole.yml'
 CFN_STACKSET_EXEC_ROLE='CFN/AWSCloudFormationStackSetExecutionRole.yml'
@@ -110,6 +112,7 @@ display_help() {
     echo "   --guarddutygroupname           : The custom name for GuardDuty Cloudwatch loggroup name (optional)"
     echo "   --securityhubgroupname         : The custom name for SecurityHub Cloudwatch loggroup name (optional)"
     echo "   --configgroupname              : The custom name for AWSConfig Cloudwatch loggroup name (optional)"
+    echo "   --alarmsgroupname              : The custom name for Cloudwatch Alarms loggroup name (optional)"
     echo "   --batch                        : Flag to enable or disable batch execution mode. Default: false (optional)"
     echo ""
     exit 1
@@ -179,6 +182,10 @@ configure_seclog() {
     
     if  [ ! -z "$configgroupname" ] ; then
         echo "     AWSConfig loggroup name:           $configgroupname"
+    fi
+
+    if  [ ! -z "$alarmsgroupname" ] ; then
+        echo "     Alarms loggroup name:           $alarmsgroupname"
     fi
     
     if [[ ("$cloudtrailintegration" == "true" || "$guarddutyintegration" == "true" || "$securityhubintegration" == "true" ) ]]; then
@@ -260,6 +267,15 @@ configure_seclog() {
             aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value "/aws/events/config" --overwrite
         fi
     fi
+
+    if  [ ! -z "$alarmsgroupname" ] ; then
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value $alarmsgroupname --overwrite
+    else
+        prevalarmsgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_alarms-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
+        if  [ -z "$prevalarmsgroupname" ] ; then
+            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value "/aws/events/cloudwatch-alarms" --overwrite
+        fi
+    fi
     
     aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value $notificationemail --overwrite
     aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $SECLOG_ACCOUNT_ID --overwrite
@@ -278,6 +294,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name SECLZ-StackSetAdministrationRole \
     --template-body file://$CFN_STACKSET_ADMIN_ROLE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -286,6 +303,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name SECLZ-StackSetExecutionRole \
     --template-body file://$CFN_STACKSET_EXEC_ROLE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -302,6 +320,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Cloudtrail-KMS' \
     --template-body file://$CFN_CLOUDTRAIL_KMS \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -335,6 +354,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-LogShipper-Lambdas-Bucket' \
     --template-body file://$CFN_LAMBDAS_BUCKET_TEMPLATE \
+    --tags file://$CFN_TAGS_FILE \
     --capabilities CAPABILITY_NAMED_IAM \
     --enable-termination-protection \
     --profile $seclogprofile
@@ -390,7 +410,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Central-Buckets' \
     --template-body file://$CFN_BUCKETS_TEMPLATE \
-    --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -414,6 +434,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Iam-Password-Policy' \
     --template-body file://$CFN_IAM_PWD_POLICY \
+    --tags file://$CFN_TAGS_FILE \
     --capabilities CAPABILITY_IAM \
     --enable-termination-protection \
     --profile $seclogprofile
@@ -466,6 +487,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-config-cloudtrail-SNS' \
     --template-body file://$CFN_LOG_TEMPLATE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile \
@@ -508,6 +530,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Guardduty-detector' \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile \
@@ -523,7 +546,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-SecurityHub' \
     --template-body file://$CFN_SECURITYHUB_TEMPLATE \
-    --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --profile $seclogprofile
 
@@ -542,6 +565,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Notifications-Cloudtrail' \
     --template-body file://$CFN_NOTIFICATIONS_CT_TEMPLATE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --profile $seclogprofile
 
@@ -550,32 +574,40 @@ configure_seclog() {
     while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
-    if  [ "$securityhubintegration" == "true" ]; then
-        sleep 5
-        
-        #   ------------------------------------
-        #   Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub
-        #   ------------------------------------
+
+    sleep 5
+    
+    #   ------------------------------------
+    #   Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub
+    #   ------------------------------------
 
 
-        echo ""
-        echo "- Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub"
-        echo "---------------------------------------"
-        echo ""
+    echo ""
+    echo "- Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub"
+    echo "---------------------------------------"
+    echo ""
 
-        aws cloudformation create-stack \
-        --stack-name 'SECLZ-CloudwatchLogs-SecurityHub' \
-        --template-body file://$CFN_SECURITYHUB_LOG_TEMPLATE \
-        --enable-termination-protection \
-        --capabilities CAPABILITY_IAM \
-        --profile $seclogprofile \
-        --parameters ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN
-
-        StackName="SECLZ-CloudwatchLogs-SecurityHub"
-        aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-        while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` = "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
-	    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    securityhubparams="ParameterKey=EnableSecLogForSecurityHubParam,ParameterValue=$securityhubintegration"
+    if [ "$securityhubintegration" == "true" ]; then
+        securityhubparams="ParameterKey=FirehoseDestinationArn,ParameterValue=$FIREHOSE_ARN"
     fi
+
+    
+
+    aws cloudformation create-stack \
+    --stack-name 'SECLZ-CloudwatchLogs-SecurityHub' \
+    --template-body file://$CFN_SECURITYHUB_LOG_TEMPLATE \
+    --tags file://$CFN_TAGS_FILE \
+    --enable-termination-protection \
+    --capabilities CAPABILITY_IAM \
+    --profile $seclogprofile \
+    --parameters $securityhubparams
+
+    StackName="SECLZ-CloudwatchLogs-SecurityHub"
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` = "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
 
     sleep 5
 

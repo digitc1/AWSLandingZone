@@ -9,15 +9,28 @@ AWSTemplateFormatVersion: '2010-09-09'
 
 Description: >-
     v1.2  J. Silva          Updated LogGroupName to be compliant with naming convention
-    v1.1. AWS CloudTrail API Activity Alarm Template for CloudWatch Logs
+    v1.1                    AWS CloudTrail API Activity Alarm Template for CloudWatch Logs
 
 
 Parameters:
   LogGroupName:
+    Description: 'Cloudtrail CloudWatch LogGroup name'
     Type: AWS::SSM::Parameter::Value<String>
     Default: '/org/member/SecLog_cloudtrail-groupname'
-    Description: Cloudtrail CloudWatch LogGroup name
-    
+  SecLogMasterAccountId:
+    Description: 'SecLogMaster account ID'
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: '/org/member/SecLogMasterAccountId'
+  SNSNotificationTopic:
+    Description: 'Local Admin SNS Topic for Landing Zone'
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: '/org/member/SecLog_sns_arn'
+  LocalSNSNotificationTopic:
+    Description: 'Local Admin SNS Topic for Landing Zone'
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: '/org/member/Local_SecLog_sns_arn'
+
+
   EnableSecurityGroupChangeAlarm:
     Type: String
     Description: "Enable alarm for security group changes?"
@@ -130,18 +143,6 @@ Parameters:
     AllowedValues:
     - true
     - false
-  SecLogMasterAccountId:
-    Description: 'SecLogMaster account ID'
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: "/org/member/SecLogMasterAccountId"
-  SNSNotificationTopic:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /org/member/SecLog_sns_arn
-    Description: "Local Admin SNS Topic for Landing Zone"
-  LocalSNSNotificationTopic:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /org/member/Local_SecLog_sns_arn
-    Description: "Local Admin SNS Topic for Landing Zone"
 
 Conditions:
   EnableSecurityGroupChange: !Equals
@@ -204,8 +205,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableSecurityGroupChange
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: "{ ($.eventName = AuthorizeSecurityGroupIngress) || ($.eventName
         = AuthorizeSecurityGroupEgress) || ($.eventName = RevokeSecurityGroupIngress)
         || ($.eventName = RevokeSecurityGroupEgress) || ($.eventName = CreateSecurityGroup)
@@ -221,8 +221,6 @@ Resources:
       AlarmName: VPCSecurityGroupChanges
       AlarmDescription: Alarms when an API call is made to create, update or delete
         a Security Group.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: SecurityGroupEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -235,8 +233,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableNetworkAclChange
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: "{ ($.eventName = CreateNetworkAcl) || ($.eventName = CreateNetworkAclEntry)
         || ($.eventName = DeleteNetworkAcl) || ($.eventName = DeleteNetworkAclEntry)
         || ($.eventName = ReplaceNetworkAclEntry) || ($.eventName = ReplaceNetworkAclAssociation)
@@ -253,8 +250,6 @@ Resources:
       AlarmName: CloudTrailNetworkAclChanges
       AlarmDescription: Alarms when an API call is made to create, update or delete
         a Network ACL.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: NetworkAclEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -267,8 +262,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableGatewayChange
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: "{ ($.eventName = CreateCustomerGateway) || ($.eventName = DeleteCustomerGateway)
         || ($.eventName = AttachInternetGateway) || ($.eventName = CreateInternetGateway)
         || ($.eventName = DeleteInternetGateway) || ($.eventName = DetachInternetGateway)
@@ -285,8 +279,6 @@ Resources:
       AlarmName: CloudTrailGatewayChanges
       AlarmDescription: Alarms when an API call is made to create, update or delete
         a Customer or Internet Gateway.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: GatewayEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -299,8 +291,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableVpcChange
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: "{ ($.eventName = CreateVpc) || ($.eventName = DeleteVpc) ||
         ($.eventName = ModifyVpcAttribute) || ($.eventName = AcceptVpcPeeringConnection)
         || ($.eventName = CreateVpcPeeringConnection) || ($.eventName = DeleteVpcPeeringConnection)
@@ -319,8 +310,6 @@ Resources:
       AlarmName: CloudTrailVpcChanges
       AlarmDescription: Alarms when an API call is made to create, update or delete
         a VPC, VPC peering connection or VPC connection to classic.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: VpcEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -333,8 +322,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableEc2InstanceChange
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: "{ ($.eventName = RunInstances) || ($.eventName = RebootInstances)
         || ($.eventName = StartInstances) || ($.eventName = StopInstances) || ($.eventName
         = TerminateInstances) }"
@@ -350,8 +338,6 @@ Resources:
       AlarmName: CloudTrailEC2InstanceChanges
       AlarmDescription: Alarms when an API call is made to create, terminate, start,
         stop or reboot an EC2 instance.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: EC2InstanceEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -364,8 +350,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: S3BucketPolicyChange
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: "{ ($.eventSource = s3.amazonaws.com) && (($.eventName = PutBucketAcl)
       || ($.eventName = PutBucketPolicy) || ($.eventName = PutBucketCors)
       || ($.eventName = PutBucketLifecycle) || ($.eventName = PutBucketReplication)
@@ -382,8 +367,6 @@ Resources:
       AlarmName: CloudTrailS3BucketPolicyChanges
       AlarmDescription: Alarms when an API call is made to PUT or DELETE bucket policy,
           bucket lifecycle, bucket replication, or to PUT a bucket ACL
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: S3BucketPolicyEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -396,8 +379,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableEc2LargeInstanceChange
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: "{ (($.eventName = RunInstances) || ($.eventName = RebootInstances)
         || ($.eventName = StartInstances) || ($.eventName = StopInstances) || ($.eventName
         = TerminateInstances)) && (($.requestParameters.instanceType
@@ -421,8 +403,6 @@ Resources:
       AlarmName: CloudTrailEC2LargeInstanceChanges
       AlarmDescription: Alarms when an API call is made to create, terminate, start,
         stop or reboot a 4x, 8x, 9x, 10x, 12x, 16x, 18x, 24x, 32x-large EC2 instance.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: EC2LargeInstanceEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -435,8 +415,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableConfigChange
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: "{($.eventSource=config.amazonaws.com) && (($.eventName=StopConfigurationRecorder)
         || ($.eventName=DeleteDeliveryChannel) || ($.eventName=PutDeliveryChannel)
         || ($.eventName=PutConfigurationRecorder))}"
@@ -451,8 +430,6 @@ Resources:
       AlarmName: ConfigChanges
       AlarmDescription: Alarms when an API call is made to create, update or delete
         a config rule change.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: ConfigChangeEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -465,8 +442,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableCloudTrailChange
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: "{ ($.eventName = CreateTrail) || ($.eventName = UpdateTrail)
         || ($.eventName = DeleteTrail) || ($.eventName = StartLogging) || ($.eventName
         = StopLogging) }"
@@ -481,8 +457,6 @@ Resources:
       AlarmName: CloudTrailChanges
       AlarmDescription: Alarms when an API call is made to create, update or delete
         a CloudTrail trail, or to start or stop logging to a trail.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: CloudTrailEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -495,8 +469,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableConsoleSignInFailure
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: '{ ($.eventName = ConsoleLogin) && ($.errorMessage = "Failed
         authentication") }'
       MetricTransformations:
@@ -511,8 +484,6 @@ Resources:
       AlarmName: CloudTrailConsoleSignInFailures
       AlarmDescription: Alarms when an unauthenticated API call is made to sign into
         the console.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: ConsoleSignInFailureCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -525,8 +496,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableAuthorizationFailure
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: '{ ($.errorCode = "*UnauthorizedOperation") || ($.errorCode =
         "AccessDenied*") }'
       MetricTransformations:
@@ -540,8 +510,6 @@ Resources:
     Properties:
       AlarmName: CloudTrailAuthorizationFailures
       AlarmDescription: Alarms when an unauthorized API call is made.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: AuthorizationFailureCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -554,8 +522,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableIamPolicyChanges
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: "{($.eventName=DeleteGroupPolicy)||($.eventName=DeleteRolePolicy)||($.eventName=DeleteUserPolicy)||($.eventName=PutGroupPolicy)||($.eventName=PutRolePolicy)||($.eventName=PutUserPolicy)||($.eventName=CreatePolicy)||($.eventName=DeletePolicy)||($.eventName=CreatePolicyVersion)||($.eventName=DeletePolicyVersion)||($.eventName=AttachRolePolicy)||($.eventName=DetachRolePolicy)||($.eventName=AttachUserPolicy)||($.eventName=DetachUserPolicy)||($.eventName=AttachGroupPolicy)||($.eventName=DetachGroupPolicy)}"
       MetricTransformations:
       - MetricNamespace: LogMetrics
@@ -568,8 +535,6 @@ Resources:
     Properties:
       AlarmName: IAMPolicyChanges
       AlarmDescription: Alarms when IAM policy changes are made.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: IAMPolicyEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -582,8 +547,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableRootLogin
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: '{ $.userIdentity.type = "Root" && $.userIdentity.invokedBy NOT EXISTS && $.eventType != "AwsServiceEvent" }'
       MetricTransformations:
       - MetricNamespace: LogMetrics
@@ -596,8 +560,6 @@ Resources:
     Properties:
       AlarmName: RootLogin
       AlarmDescription: Alarms when the root user logs in.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: RootLoginEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -610,8 +572,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableMFALogin
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: '{($.eventName="ConsoleLogin") && ($.additionalEventData.MFAUsed !="Yes")}'
       MetricTransformations:
       - MetricNamespace: LogMetrics
@@ -624,8 +585,6 @@ Resources:
     Properties:
       AlarmName: ConsoleMFALogin
       AlarmDescription: Alarms when user login to the console without MFA.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: ConsoleMFALoginEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -638,8 +597,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableRouteTableChange
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: '{($.eventName=CreateRoute) || ($.eventName=CreateRouteTable) ||
         ($.eventName=ReplaceRoute) || ($.eventName=ReplaceRouteTableAssociation) ||
         ($.eventName=DeleteRouteTable) || ($.eventName=DeleteRoute) ||
@@ -654,8 +612,6 @@ Resources:
     Properties:
       AlarmName: RouteTableChange
       AlarmDescription: Alarms when changes are made to routing tables.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: RouteTableChangeEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -668,8 +624,7 @@ Resources:
     Type: AWS::Logs::MetricFilter
     Condition: EnableCMKdeletion
     Properties:
-      LogGroupName: 
-        Ref: LogGroupName
+      LogGroupName: !Ref LogGroupName
       FilterPattern: '{ ($.eventSource = kms.amazonaws.com) &&  (($.eventName=DisableKey) ||
         ($.eventName=ScheduleKeyDeletion)) }'
       MetricTransformations:
@@ -682,8 +637,6 @@ Resources:
     Properties:
       AlarmName: CMKdeletion
       AlarmDescription: Alarms when CMK is deleted.
-      AlarmActions:
-      - Fn::If: [IsNotSecLogMasterAccount, !Ref LocalSNSNotificationTopic , !Ref SNSNotificationTopic]
       MetricName: CMKdeletionEventCount
       Namespace: LogMetrics
       ComparisonOperator: GreaterThanOrEqualToThreshold
