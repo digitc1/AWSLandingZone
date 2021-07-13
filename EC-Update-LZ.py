@@ -740,7 +740,7 @@ def get_controls(client, region, sub_arn, NextToken=None):
         StandardsSubscriptionArn=sub_arn) if NextToken else client.describe_standards_controls(
         StandardsSubscriptionArn=sub_arn)
     if ('NextToken' in controls):
-        return controls['Controls'] + get_controls(sub_arn, NextToken=controls['NextToken'])
+        return controls['Controls'] + get_controls(client, region, sub_arn, NextToken=controls['NextToken'])
     else:
         return controls['Controls']
 
@@ -827,8 +827,7 @@ def update_cis_controls(rules,
                             try:
                                 client.update_standards_control(
                                         StandardsControlArn=control['StandardsControlArn'],
-                                        ControlStatus='DISABLED',
-                                        DisabledReason='Managed by Cloud Broker Team' if 'disabled-reason' not in rule else rule['disabled-reason'],
+                                        ControlStatus='ENABLED'
                                     ) 
                             except ClientError as err:
                                 if err.response['Error']['Code'] == 'ThrottlingException':
