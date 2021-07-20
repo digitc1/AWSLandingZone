@@ -1,12 +1,12 @@
-# Welcome to the CDK TypeScript project for the AWS Landing Zone!
+# Welcome to the CDK TypeScript project for the AWS Landing Zone
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
 This CDK project deploys in the SECLOG account:
 
-* A lambda function configured to DISABLE/ENABLE one single CIS control
-* A stepfunctions workflow configured to update multiple CIS controls in multiple AWS regions of one single AWS account
-* A cloudformation stackset on the seclog account to deploy the IAM role SECLZ-SeclogRole in all accounts (seclog+linked). This role will allow the lambda function called by the stepfunction to enable or disable a CIS control in the SECLOG and its linkeds accounts
+* One lambda function named `SECLZ-CisControlUpdateLambda` configured to DISABLE/ENABLE one single CIS control
+* One stepfunctions named `SECLZ-CISControlsUpdate workflow` configured to update multiple CIS controls in multiple AWS regions of one single AWS account
+* A cloudformation stackset deployed in the seclog account to deploy the IAM role `SECLZ-SeclogRole` in all accounts (seclog+linked). This role allows the lambda function called by the stepfunction to enable or disable a CIS control in the SECLOG and its linkeds accounts
 
 ## Useful CDK commands
 
@@ -22,7 +22,7 @@ This CDK project deploys in the SECLOG account:
 * `sh bin/cdk-deploy --seclog_accountid <123456789012> --linked_accountids 12345678902,123456789012,....`
 * `sh bin/cdk-destroy --seclog_accountid <123456789012> --linked_accountids 12345678902,123456789012,....`
 
-## execution of the workflow defined in AWSstepfunctions
+## execution of the workflow defined in AWS stepfunctions
 
 To reproduce the CIS updates implemented in the release 1.5.0
 
