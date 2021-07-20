@@ -4,8 +4,8 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
 This CDK project deploys in the SECLOG account:
 
-* One lambda function named `SECLZ-CisControlUpdateLambda` configured to DISABLE/ENABLE one single CIS control
-* One stepfunctions named `SECLZ-CISControlsUpdate workflow` configured to update multiple CIS controls in multiple AWS regions of one single AWS account
+* One lambda function `SECLZ-CisControlUpdateLambda` configured to DISABLE/ENABLE one single CIS control
+* One stepfunctions `SECLZ-CISControlsUpdate workflow` configured to update multiple CIS controls in multiple AWS regions of one single AWS account
 * A cloudformation stackset deployed in the seclog account to deploy the IAM role `SECLZ-SeclogRole` in all accounts (seclog+linked). This role allows the lambda function called by the stepfunction to enable or disable a CIS control in the SECLOG and its linkeds accounts
 
 ## Useful CDK commands
