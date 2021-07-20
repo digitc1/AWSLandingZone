@@ -19,8 +19,8 @@ This CDK project deploys in the SECLOG account:
 
 ## Shell wrappers to deploy or undeploy the CDK stacks
 
-* `sh bin/cdk-deploy --seclog_accountid <123456789012> --linked_accountids 12345678902,123456789012,....`
-* `sh bin/cdk-destroy --seclog_accountid <123456789012> --linked_accountids 12345678902,123456789012,....`
+* `sh bin/cdk-deploy.sh --seclog_accountid <123456789012> --linked_accountids 12345678902,123456789012,....`
+* `sh bin/cdk-destroy.sh --seclog_accountid <123456789012> --linked_accountids 12345678902,123456789012,....`
 
 ## execution of the workflow defined in AWS stepfunctions
 
