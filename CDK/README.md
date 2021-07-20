@@ -33,45 +33,56 @@ To reproduce the CIS updates implemented in the release 1.5.0
 
 ### run1.json
 
-> {
-> "accountid" : 12345678902,
-> "regions" : ["ap-northeast-1","ap-northeast-2","ap-northeast-3","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1",> "eu-central-1","eu-north-1","eu-west-1", "eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"],
-> "rule": "cis-aws-foundations-benchmark/v/1.2.0",
-> "checks" : ["3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"],
-> "disabled" : true,
-> "reason" : "Alarm action unmanaged by SNS but cloudwatch event",
-> "exclusions" : ["ap-northeast-3"]
-> }
+```json
+{
+  "accountid" : 12345678902,
+  "regions" : ["ap-northeast-1","ap-northeast-2","ap-northeast-3","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-1", "eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"],
+  "rule": "cis-aws-foundations-benchmark/v/1.2.0",
+  "checks" : ["3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"],
+  "disabled" : true,
+  "reason" : "Alarm action unmanaged by SNS but cloudwatch event",
+  "exclusions" : ["ap-northeast-3"]
+}
+```
+
 ### run2.json
 
-> {
-> "accountid" : 12345678902,
-> "regions" : ["ap-northeast-1","ap-northeast-2","ap-northeast-3","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-1", "eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"],
-> "rule": "aws-foundational-security-best-practices/v/1.0.0",
-> "checks" : ["IAM.1", "IAM.2", "IAM.3", "IAM.4", "IAM.6", "IAM.7", "Config.1"],
-> "disabled" : true,
-> "reason" : "Disable recording of global resources in all but one Region",
-> "exclusions" : ["eu-west-1", "ap-northeast-3"]
-> }
+```json
+{
+  "accountid" : 12345678902,
+  "regions" : ["ap-northeast-1","ap-northeast-2","ap-northeast-3","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-1", "eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"],
+  "rule": "aws-foundational-security-best-practices/v/1.0.0",
+  "checks" : ["IAM.1", "IAM.2", "IAM.3", "IAM.4", "IAM.6", "IAM.7", "Config.1"],
+  "disabled" : true,
+  "reason" : "Disable recording of global resources in all but one Region",
+  "exclusions" : ["eu-west-1", "ap-northeast-3"]
+}
+```
+
 ### run3.json
 
-> {
-> "accountid" : 12345678902,
-> "regions" : ["eu-west-1"],
-> "rule": "cis-aws-foundations-benchmark/v/1.2.0",
-> "checks" : ["1.14"],
-> "disabled" : true,
-> "reason" : "Managed by Cloud Broker Team",
-> "exclusions" : []
-> }
+```json
+{
+  "accountid" : 12345678902,
+  "regions" : ["eu-west-1"],
+  "rule": "cis-aws-foundations-benchmark/v/1.2.0",
+  "checks" : ["1.14"],
+  "disabled" : true,
+  "reason" : "Managed by Cloud Broker Team",
+  "exclusions" : []
+}
+```
+
 ### run4.json
 
-> {
-> "accountid" : 12345678902,
-> "regions" : ["eu-west-1"],
-> "rule": "aws-foundational-security-best-practices/v/1.0.0",
-> "checks" : ["IAM.6"],
-> "disabled" : true,
-> "reason" : "Managed by Cloud Broker Team",
-> "exclusions" : []
-> }
+```json
+{
+  "accountid" : 12345678902,
+  "regions" : ["eu-west-1"],
+  "rule": "aws-foundational-security-best-practices/v/1.0.0",
+  "checks" : ["IAM.6"],
+  "disabled" : true,
+  "reason" : "Managed by Cloud Broker Team",
+  "exclusions" : []
+}
+```
