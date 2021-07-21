@@ -797,34 +797,33 @@ def update_cis_controls(cis_actions,
    
     print(f"CIS controls update ", end="")
 
-    with Spinner():
-        #foreach rule, enable/disable the controls passed in checks
-        # rules = { key:value for (key,value) in rules.items()}
-        client = boto3.client('stepfunctions', region_name="eu-west-1")
-        print(f"CIS updates async execution:")
-        for cis_action in cis_actions:
-            regions = cis_action['regions'] if 'regions' in cis_action and len(cis_action['regions']) > 0  else all_regions
+    #foreach rule, enable/disable the controls passed in checks
+    # rules = { key:value for (key,value) in rules.items()}
+    client = boto3.client('stepfunctions', region_name="eu-west-1")
+    print(f"CIS updates async execution:")
+    for cis_action in cis_actions:
+        regions = cis_action['regions'] if 'regions' in cis_action and len(cis_action['regions']) > 0  else all_regions
 
-            sfn_input={
-                "accountid": accountid,
-                "regions": regions,
-                "rule": cis_action["rule"],
-                "checks":  cis_action["checks"],
-                "disabled": cis_action["disabled"],
-                "reason": cis_action['disabled-reason'],
-                "exclusions": cis_action["exclusions"]
-            }
-            sfn_input = str(sfn_input).replace('\'','"')
-            
-            try:
-                response = client.start_execution(
-                    stateMachineArn=sfn_arn,
-                    input=str(sfn_input)
-                )
-                print(f"    aws --profile {profile} stepfunctions describe-execution --execution-arn {response['executionArn']}")
-            except Exception as err:
-                print(f"stateMachineArn excution failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
-                return Execution.FAIL
+        sfn_input={
+            "accountid": accountid,
+            "regions": regions,
+            "rule": cis_action["rule"],
+            "checks":  cis_action["checks"],
+            "disabled": cis_action["disabled"],
+            "reason": cis_action['disabled-reason'],
+            "exclusions": cis_action["exclusions"]
+        }
+        sfn_input = str(sfn_input).replace('\'','"')
+        
+        try:
+            response = client.start_execution(
+                stateMachineArn=sfn_arn,
+                input=str(sfn_input)
+            )
+            print(f"    aws --profile {profile} stepfunctions describe-execution --execution-arn {response['executionArn']}")
+        except Exception as err:
+            print(f"stateMachineArn excution failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
+            return Execution.FAIL
             
     return Execution.OK
 
