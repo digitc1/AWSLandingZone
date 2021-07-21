@@ -820,7 +820,12 @@ def update_cis_controls(cis_actions,
                 stateMachineArn=sfn_arn,
                 input=str(sfn_input)
             )
-            print(f"    aws --profile {profile} stepfunctions describe-execution --execution-arn {response['executionArn']}")
+
+            if len(profile) != 0:
+                print(f"    aws --profile {profile} stepfunctions describe-execution --execution-arn {response['executionArn']}")
+            else:
+                print(f"    aws stepfunctions describe-execution --execution-arn {response['executionArn']}")
+
         except Exception as err:
             print(f"stateMachineArn excution failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
             return Execution.FAIL
