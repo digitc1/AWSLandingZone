@@ -34,7 +34,7 @@ Resources:
     Properties:
       DisplayName: !Ref LocalNotifyDisplayName
       TopicName: !Ref LocalNotificationTopicName
-  
+
   LocalSNSNotificationPolicy:
     Type: 'AWS::SNS::TopicPolicy'
     Properties:
@@ -159,6 +159,7 @@ Resources:
                 - !Sub ${AWS::Region}
                 - !Select [4, !Split [":", !Ref SNSNotificationTopic]]
                 - !Select [5, !Split [":", !Ref SNSNotificationTopic]]
+
   ForwardSnsNotificationGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:

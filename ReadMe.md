@@ -46,6 +46,7 @@ To configure the SecLog account that you just created, we'll need to run the *EC
 * --guarddutygroupname           : The custom name for GuardDuty Cloudwatch loggroup name (optional)
 * --securityhubgroupname         : The custom name for SecurityHub Cloudwatch loggroup name (optional)
 * --configgroupname              : The custom name for AWSConfig Cloudwatch loggroup name (optional)
+* --alarmsgroupname              : The custom name for Cloudwatch alarms loggroup name (optional)
 * --batch                  : Flag to enable or disable batch execution mode. Default: false (optional)
 
 Run the script
@@ -89,37 +90,6 @@ $ ./EC-Setup-SecLog.sh  --organisation DIGIT_ORG_ACC --seclogprofile D3_seclog -
 $ ./EC-Setup-SecLog.sh--seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLUNK --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest --batch true
 ```
 
-### Update SECLOG account 
-
-Updates are now based on the version of the landing zone to be upgraded. Depending on the version, different parameters may be required so the best approach is to execute the script without any parameter and check for the instructions provided by the script. For instance, if we are upgrating to version 1.3.3, run the following commands:
-
-```
-$ cd ./Updates/1.3.3
-$ sh ./EC-Update-SecLog.sh  
-```
-The script will output the following help message:
-
-```
-Usage: ./EC-Update-SecLog.sh --seclogprofile <SecLog Profile>
-   Provide 
-   --seclogprofile: The profile of the seclog account as configured in your AWS profile"
-   ...
-```
-
-So in this case, to execute the update script, run the following:
-
-```
-$ sh ./EC-Update-SecLog.sh  --seclogprofile D3_SECLOG 
-```
-
-It's important to note that the LZ versions should only be updated in sequence, meaning if upgrading from 1.3.0 to 1.3.3, the operation must execute all the update scripts (i.e. 1.3.1 and 1.3.2) before upgrading to the latest version.
-
-
-**Run script in batch mode - no confirmation asked from user**
-
-```
-$ ./EC-Update-SecLog.sh --seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2  --notificationemail D3-SecNotif@ec.europa.eu --logdestination dgtest --batch true
-```
 
 ### Create a client account (only for new account)
 
@@ -227,36 +197,248 @@ The second stage is to deploy the stackset instances on all regions for all acco
 
 For the 3rd stage, first check in the SECLOG account if all stackset instances have been deployed. When it's all is done, execute the last command from the message above for "all" client accounts..
 
-### Update client account  
+### Update Landing Zone  
 
-Updates are now based on the version of the landing zone to be upgraded. Depending on the version, different parameters may be required so the best approach is to execute the script without any parameter and check for the instructions provided by the script. For instance, if we are upgrating to version 1.3.3, run the following commands:
-```
-$ cd ./Updates/1.3.3
-$ sh ./EC-Update-Client.sh  
-```
-The script will output the following help message:
+Updates are now based a new approach that combines all steps in a single stage for the SECLOG account as well all the linked associated accounts. This script can be run as usual on the DEVOPS management account, or if required can also be executed directly on the SECLOG account via AWS CloudShell.
 
-```
-Usage: $0 --seclogprofile <Client Acc Profile>
-   Provide 
-   --clientaccprofile        : The profile of the client account as configured in your AWS profile"
-```
-So in this case, to execute the update script, run the following:
-
-```
-$ sh ./EC-Update-Client.sh --clientaccprofile D3_Acc1 
-```
-It's important to note that the LZ versions should only be updated in sequence, meaning if upgrading from 1.3.0 to 1.3.3, the operation must execute all the update scripts (i.e. 1.3.1 and 1.3.2) before upgrading to the latest version.
-
-### Downgrade Secure Landing zone - disable SECLOG to SOC integration
-
-This script will disable the existing SOC integration on an upgraded secure landing zone environment. 
-Only run this script if the current SECLOG account has been installed/upgraded with the LZ 1.1.x
+*Note: This options gives the ability to the customer to update the Secure Landing Zone themselves if required.*
 
 This script will:
-- Update log groups to push to remove link to a log destination for Cloudtrail, cloudwatch and config logs
+- Update the SECLOG landing zone including SSM parameters, Stacks, StackSets and CIS controls
+- Update linked accounts associated with the SECLOG account including SSM parameters, Stacks and CIS controls
 
-Run the script
+The SLZ is highly configurable and it is based on a manifest file (json format) that is provided as a default template for each release. Users are welcomed to review the manifest and update it as per own needs.
+
+To execute the update script execute the following command (location of the manifest and seclog profile are given as an example; please adapt accordingly):
+
 ```
-$ ./EC-Disable-SecLog-Splunk.sh --seclogprofile D3_seclog --notificationemail D3-SecNotif@ec.europa.eu
+$ sh ./EC-Update-LZ.sh --manifest ./Update/1.5.0/manifest.json  --seclog EC_DIGIT_C1-LZ-SECLOG
 ```
+
+In the case the script is to be executed on the SECLOG account directly using AWS Cloudshell, run the following command (no --seclog parameter is required):
+
+```
+$ sh ./EC-Update-LZ.sh --manifest ./Update/1.5.0/manifest.json 
+```
+
+The script runs unattended and does not require intervention by the user (perhaps only exception would be entering the MFA token if required by the profile). 
+
+The shell script will perform a number of actions to prepare the execution environment for the SLZ update script. After that, the update script will perform a number of validations and begin the process of updating the SECLOG account, acording to the pre-defined settings from the manifest file. When done, the script cycles through all the linked accounts associated with the SECLOG and will perform the required updates as mentioned previously.
+
+#### Manifest
+
+The manifest file is bound to each release and defines what actions are to be performed by the SLZ update script. A sample can be seen below:
+
+```
+{   "version" : "1.5.0",
+    "regions" : ["ap-northeast-1","ap-northeast-2","ap-northeast-3","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-1", "eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"],
+    "ssm" : {
+        "seclog-ou" : {
+            "value" : "",
+            "update" : false
+        },
+        "notification-mail" : {
+            "value" : "",
+            "update" : false
+        },
+        "cloudtrail-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "insight-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "guardduty-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "securityhub-groupname" : {
+            "value" : "",
+            "update" : false
+        },
+        "config-groupname" : {
+            "value" : "/aws/events/config",
+            "update" : false
+        },
+        "alarms-groupname" : {
+            "value" : "/aws/events/cloudwatch-alarms",
+            "update" : true
+        }
+    },
+    "stacks" : {
+        "SECLZ-Cloudtrail-KMS" : {
+            "update" : true
+        },
+        "SECLZ-LogShipper-Lambdas-Bucket" : {
+            "update" : true
+        },
+        "SECLZ-LogShipper-Lambdas" : {
+            "update" : true
+        },
+        "SECLZ-Central-Buckets" : {
+            "update" : true
+        },
+        "SECLZ-Iam-Password-Policy" : {
+            "update" : true
+        },
+        "SECLZ-config-cloudtrail-SNS" : {
+            "update" : true
+        },
+        "SECLZ-Guardduty-detector" : {
+            "update" : true
+        },
+        "SECLZ-SecurityHub" : {
+            "update" : true
+         },
+        "SECLZ-Notifications-Cloudtrail" : {
+            "update" : true,
+            "params" : [
+                {"ParameterKey": "LogGroupName", "ParameterValue": "/org/member/SecLog_cloudtrail-groupname"}
+            ]
+        },
+        "SECLZ-CloudwatchLogs-SecurityHub" : {
+            "update" : true
+        } 
+    },
+    "stacksets" : {
+        "SECLZ-Enable-Config-SecurityHub-Globally" : {
+            "update" : true
+        },
+        "SECLZ-Enable-Guardduty-Globally" : {
+            "update" : true
+        }
+    },
+    "cis" :  { 
+            "cis-aws-foundations-benchmark/v/1.2.0":  {
+                "checks" : ["3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"],
+                "disabled" : true,
+                "disabled-reason" : "Alarm action unmanaged by SNS but cloudwatch event",
+                "regions": [],
+                "exclusions" : ["ap-northeast-3"]
+            },
+            "aws-foundational-security-best-practices/v/1.0.0": { 
+                "checks" : ["IAM.1", "IAM.2", "IAM.3", "IAM.4", "IAM.6", "IAM.7", "Config.1"],
+                "disabled" : true,
+                "disabled-reason" : "Disable recording of global resources in all but one Region",
+                "regions": [],
+                "exclusions" : ["eu-west-1", "ap-northeast-3"]
+            },
+            "cis-aws-foundations-benchmark/v/1.2.0/1.14":  { 
+                "disabled" : true,
+                "disabled-reason" : "Managed by Cloud Broker Team",
+                "regions": ["eu-west-1"],
+                "exclusions" : []
+            },
+            "aws-foundational-security-best-practices/v/1.0.0/IAM.6":  { 
+                "disabled" : true,
+                "disabled-reason" : "Managed by Cloud Broker Team",
+                "regions": ["eu-west-1"],
+                "exclusions" : []
+            }
+    },
+    "tags" : [
+        { "Key": "Organization","Value": "EC" },
+        { "Key": "Owner","Value": "DIGIT.C.1" },
+        { "Key": "Environment","Value": "prod" },
+        { "Key": "Criticity","Value": "high" },
+        { "Key": "Project","Value": "secLZ" },
+        { "Key": "Confidentiality","Value": "confidential" },
+        { "Key": "ApplicationRole","Value": "security" }
+    ],
+    "accounts" : {
+        "exclude" : [],
+        "include" : []
+    }
+    
+}
+
+```
+
+Attributes are as follows:
+
+* version (mandatory) - it defines the version of the SLZ
+* regions (mandatory) - default set of regions where the LZ is installed
+* ssm (optional) - list of SSM parameters for update
+   * seclog-ou (optional) - sets the seclog-ou
+      * value (mandatory) - the value to be stored
+      * update (mandatory) - enable or disable the update
+   * notification-mail (optional) - sets the seclog-ou
+      * value (mandatory) - the value to be stored
+      * update (mandatory) - enable or disable the update
+   * cloudtrail-groupname (optional) - cloudtrail log group name to be used
+      * value (mandatory) - the value to be stored
+      * update (mandatory) - enable or disable the update
+   * insight-groupname (optional) -  cloudtrail insight log group name to be used
+      * value (mandatory) - the value to be stored
+      * update (mandatory) - enable or disable the update
+   * guardduty-groupname (optional) - guardduty log group name to be used
+      * value (mandatory) - the value to be stored
+      * update (mandatory) - enable or disable the update
+   * securityhub-groupname (optional) - securityhub log group name to be used
+      * value (mandatory) - the value to be stored
+      * update (mandatory) - enable or disable the update
+   * config-groupname (optional) - config log group name to be used
+      * value (mandatory) - the value to be stored
+      * update (mandatory) - enable or disable the update
+   * alatms-groupname (optional) - cloudwatch alarms log group name to be used
+      * value (mandatory) - the value to be stored
+      * update (mandatory) - enable or disable the update
+* stacks (optional) - stacks for update
+   * SECLZ-Cloudtrail-KMS (optional) - KMS key stack
+      * params (optional) - parameters to be passed to the stack
+      * update (mandatory) - enable or disable the update
+   * SECLZ-LogShipper-Lambdas-Bucket (optional) - S3 bucket for logshipper lambdas stack
+      * params (optional) - parameters to be passed to the stack
+      * update (mandatory) - enable or disable the update
+   * SECLZ-Central-Buckets (optional) - Central S3 buckets stack
+      * params (optional) - parameters to be passed to the stack
+      * update (mandatory) - enable or disable the update
+   * SECLZ-LogShipper-Lambdas (optional) - Logshipper lambdas stack
+      * params (optional) - parameters to be passed to the stack
+      * update (mandatory) - enable or disable the update
+   * SECLZ-Iam-Password-Policy (optional) - Password policy stack
+      * params (optional) - parameters to be passed to the stack
+      * update (mandatory) - enable or disable the update
+   * SECLZ-config-cloudtrail-SNS (optional) - Config SNS and cloudtrail stack
+      * params (optional) - parameters to be passed to the stack
+      * update (mandatory) - enable or disable the update
+   * SECLZ-Guardduty-detector (optional) - Guardduty detector stack
+      * params (optional) - parameters to be passed to the stack
+      * update (mandatory) - enable or disable the update
+   * SECLZ-SecurityHub (optional) - Securityhub stack
+      * params (optional) - parameters to be passed to the stack
+      * update (mandatory) - enable or disable the update
+   * SECLZ-Notifications-Cloudtrail (optional) - Securityhub cloudtrail notifications stack
+      * params (optional) - parameters to be passed to the stack
+      * update (mandatory) - enable or disable the update
+   * SECLZ-CloudwatchLogs-SecurityHub (optional) - Cloudwatch logs stack
+      * params (optional) - parameters to be passed to the stack
+      * update (mandatory) - enable or disable the update
+* stacks (optional) - stacksets for update
+   * SECLZ-Enable-Config-SecurityHub-Globally (optional) - Global securityhub stackset
+      * params (optional) - parameters to be passed to the stack
+      * update (mandatory) - enable or disable the update
+   * SECLZ-Enable-Guardduty-Globally (optional) - Global guardduy stackset
+      * params (optional) - parameters to be passed to the stack
+      * update (mandatory) - enable or disable the update
+* cis (optional) - cis controls to be updated. the configuration object is variable (currently two controls are used *cis-aws-foundations-benchmark/v/1.2.0* and *aws-foundational-security-best-practices/v/1.0.0*) and their configuration can be done in two ways:
+   * adding the check on the control (like *cis-aws-foundations-benchmark/v/1.2.0**/1.14***)
+      * disabled (mandatory) - true or false depending on the need for disabling or enabling the check
+      * disabled-reason (optional) - when set *disabled* attribute to true, to set the reason
+      * regions (optional) - region where to apply the check change. If none is included, all regions defined in the regions section will be used
+      * exclusions (optional) - region to exclude the check change update.
+   * not adding the check on the control (like *cis-aws-foundations-benchmark/v/1.2.0*)
+      * checks (mandatory) - an array of checks to be updated on this control
+      * disabled (mandatory) - true or false depending on the need for disabling or enabling the check
+      * disabled-reason (optional) - when set *disabled* attribute to true, to set the reason
+      * regions (optional) - region where to apply the check change. If none is included, all regions defined in the regions section will be used
+      * exclusions (optional) - region to exclude the check change update.
+* tags (mandatory) - an array of tags to be applied to every resource updated by the script. Each object inside the array must contain:
+   * Key (mandatory) - the name of the tag
+   * Value (mandatory) - the value for the tag
+* accounts (optional) - list of account ids for the script orchestration
+   * include (optional) - accounts to be updated (will replace the list of accounts bound to the seclog. Useful to just update a limited set of linked accounts)
+   * excloude (optionsl) - accounts to be excluded from the update (can include the seclog account id).
+
+

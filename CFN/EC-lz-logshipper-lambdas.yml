@@ -20,7 +20,6 @@ Metadata:
       - configLambdaCodeURI
 
 Parameters:
- 
   lambdaLogLevel:
     Description: 'Lambda logging level'
     Type: String
@@ -49,200 +48,200 @@ Parameters:
 
 Resources:
 
-    #   -------------------
-    #   Global Lambda Execution role
-    #   -------------------
+  #   -------------------
+  #   Global Lambda Execution role
+  #   -------------------
 
-    LogShipperLambdaExecutionRole:
-      Type: 'AWS::IAM::Role'
-      Properties:
-        AssumeRolePolicyDocument:
-          Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Principal:
-                Service:
-                  - lambda.amazonaws.com
-              Action:
-                - 'sts:AssumeRole'
-        Path: /
-        Policies:
-          - PolicyName: root
-            PolicyDocument:
-              Version: 2012-10-17
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - dynamodb:GetItem
-                    - dynamodb:PutItem
-                    - dynamodb:DeleteItem
-                    - dynamodb:DescribeTable
-                  Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/SECLZSyncLogs'
-                - Effect: Allow
-                  Action:
-                    - 'logs:CreateLogGroup'
-                    - 'logs:CreateLogStream'
-                    - 'logs:DescribeLogStreams'
-                  Resource:
-                    Fn::Join:
-                      - ""
-                      - - "arn:aws:logs:*:"
-                        - Ref: AWS::AccountId
-                        - ":log-group:*"
-                - Effect: Allow
-                  Action:
-                    - 'logs:PutLogEvents'
-                  Resource:
-                    Fn::Join:
-                      - ""
-                      - - "arn:aws:logs:*:"
-                        - Ref: AWS::AccountId
-                        - ":log-group:*:log-stream:*"
-                - Effect: Allow
-                  Action:
-                  - 's3:GetObject'
-                  Resource:
-                  - Fn::Join:
+  LogShipperLambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:DescribeTable
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/SECLZSyncLogs'
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:DescribeLogStreams'
+                Resource:
+                  Fn::Join:
                     - ""
-                    - - "arn:aws:s3:::cloudtrail-logs-"
+                    - - "arn:aws:logs:*:"
                       - Ref: AWS::AccountId
-                      - "-do-not-delete/*"
-                  - Fn::Join:
+                      - ":log-group:*"
+              - Effect: Allow
+                Action:
+                  - 'logs:PutLogEvents'
+                Resource:
+                  Fn::Join:
                     - ""
-                    - - "arn:aws:s3:::config-logs-"
+                    - - "arn:aws:logs:*:"
                       - Ref: AWS::AccountId
-                      - "-do-not-delete/*"
-                - Effect: Allow
-                  Action:
-                  - 'kms:Decrypt'
-                  Resource:
-                    Fn::Join:
-                      - ""
-                      - - "arn:aws:kms:*:"
-                        - Ref: AWS::AccountId
-                        - ":key/*"
+                      - ":log-group:*:log-stream:*"
+              - Effect: Allow
+                Action:
+                - 's3:GetObject'
+                Resource:
+                - Fn::Join:
+                  - ""
+                  - - "arn:aws:s3:::cloudtrail-logs-"
+                    - Ref: AWS::AccountId
+                    - "-do-not-delete/*"
+                - Fn::Join:
+                  - ""
+                  - - "arn:aws:s3:::config-logs-"
+                    - Ref: AWS::AccountId
+                    - "-do-not-delete/*"
+              - Effect: Allow
+                Action:
+                - 'kms:Decrypt'
+                Resource:
+                  Fn::Join:
+                    - ""
+                    - - "arn:aws:kms:*:"
+                      - Ref: AWS::AccountId
+                      - ":key/*"
 
-    #   -------------------
-    #   Cloudtrail
-    #   -------------------
+  #   -------------------
+  #   Cloudtrail
+  #   -------------------
 
-    CloudTraiLambdaPermission:
-      Type: AWS::Lambda::Permission
-      Properties:
-        Action: 'lambda:InvokeFunction'
-        FunctionName: !Ref CloudTrailLogShipperFunction
-        Principal: s3.amazonaws.com
-        SourceArn:
-          Fn::Join:
-            - ""
-            - - "arn:aws:s3:::cloudtrail-logs-"
-              - Ref: AWS::AccountId
-              - "-do-not-delete"
-        SourceAccount: !Ref AWS::AccountId
+  CloudTraiLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref CloudTrailLogShipperFunction
+      Principal: s3.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:aws:s3:::cloudtrail-logs-"
+            - Ref: AWS::AccountId
+            - "-do-not-delete"
+      SourceAccount: !Ref AWS::AccountId
 
-    CloudTrailLogShipperFunction:
-      Type: 'AWS::Lambda::Function'
+  CloudTrailLogShipperFunction:
+    Type: 'AWS::Lambda::Function'
+    DependsOn:
+      - DynamoDBTable
+      - LogShipperLambdaExecutionRole
+    Properties:
+      Code: ##cloudtrailCodeURI##
+      Handler: 'CloudtrailLogShipper.lambda_handler'
+      MemorySize: 128
+      Role: !GetAtt LogShipperLambdaExecutionRole.Arn
+      Runtime: python3.8
+      Timeout: 900
+      Environment:
+        Variables:
+          LOG_LEVEL: !Ref lambdaLogLevel
+          MAX_TRY: !Ref lambdaMaxRetry
+          CLOUDTRAIL_LOG_GROUP: !Ref lambdaCloudTrailLogGroup
+          INSIGHT_LOG_GROUP: !Ref lambdaInsightLogGroup
+
+  CloudTrailLogShipperLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn: CloudTrailLogShipperFunction
+    Properties:
+      LogGroupName:
+        Fn::Join:
+        - ''
+        - - "/aws/lambda/"
+          - Ref: CloudTrailLogShipperFunction
+      RetentionInDays: 14
+
+  #   -------------------
+  #   Config 
+  #   -------------------
+
+  ConfigLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref ConfigLogShipperFunction
+      Principal: s3.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:aws:s3:::config-logs-"
+            - Ref: AWS::AccountId
+            - "-do-not-delete"
+      SourceAccount: !Ref AWS::AccountId
+
+  ConfigLogShipperFunction:
+    Type: 'AWS::Lambda::Function'
+    DependsOn:
+      - DynamoDBTable
+      - LogShipperLambdaExecutionRole
+    Properties:
+      Code: ##configCodeURI##
+      Handler: 'ConfigLogShipper.lambda_handler'
+      Role: !GetAtt LogShipperLambdaExecutionRole.Arn
+      Runtime: python3.8
+      Timeout: 900
+      Environment:
+        Variables:
+          LOG_LEVEL: !Ref lambdaLogLevel
+          MAX_TRY: !Ref lambdaMaxRetry
+          CONFIG_LOG_GROUP: !Ref lambdaConfigLogGroup
+
+  ConfigLogShipperLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn: ConfigLogShipperFunction
+    Properties:
+      LogGroupName:
+        Fn::Join:
+        - ''
+        - - "/aws/lambda/"
+          - Ref: ConfigLogShipperFunction
+      RetentionInDays: 14
+
+  
+  #   -------------------
+  #   DynamoDB 
+  #   -------------------
+  DynamoDBTable:
+      Type: AWS::DynamoDB::Table
       DependsOn:
-        - DynamoDBTable
-        - LogShipperLambdaExecutionRole
+      - LogShipperLambdaExecutionRole
       Properties:
-        Code: ##cloudtrailCodeURI##
-        Handler: 'CloudtrailLogShipper.lambda_handler'
-        MemorySize: 128
-        Role: !GetAtt LogShipperLambdaExecutionRole.Arn
-        Runtime: python3.8
-        Timeout: 900
-        Environment:
-          Variables:
-            LOG_LEVEL: !Ref lambdaLogLevel
-            MAX_TRY: !Ref lambdaMaxRetry
-            CLOUDTRAIL_LOG_GROUP: !Ref lambdaCloudTrailLogGroup
-            INSIGHT_LOG_GROUP: !Ref lambdaInsightLogGroup
-
-    CloudTrailLogShipperLogGroup:
-      Type: AWS::Logs::LogGroup
-      DependsOn: CloudTrailLogShipperFunction
-      Properties:
-        LogGroupName:
-          Fn::Join:
-          - ''
-          - - "/aws/lambda/"
-            - Ref: CloudTrailLogShipperFunction
-        RetentionInDays: 14
-
-    #   -------------------
-    #   Config 
-    #   -------------------
-
-    ConfigLambdaPermission:
-      Type: AWS::Lambda::Permission
-      Properties:
-        Action: 'lambda:InvokeFunction'
-        FunctionName: !Ref ConfigLogShipperFunction
-        Principal: s3.amazonaws.com
-        SourceArn:
-          Fn::Join:
-            - ""
-            - - "arn:aws:s3:::config-logs-"
-              - Ref: AWS::AccountId
-              - "-do-not-delete"
-        SourceAccount: !Ref AWS::AccountId
-
-    ConfigLogShipperFunction:
-      Type: 'AWS::Lambda::Function'
-      DependsOn:
-        - DynamoDBTable
-        - LogShipperLambdaExecutionRole
-      Properties:
-        Code: ##configCodeURI##
-        Handler: 'ConfigLogShipper.lambda_handler'
-        Role: !GetAtt LogShipperLambdaExecutionRole.Arn
-        Runtime: python3.8
-        Timeout: 900
-        Environment:
-          Variables:
-            LOG_LEVEL: !Ref lambdaLogLevel
-            MAX_TRY: !Ref lambdaMaxRetry
-            CONFIG_LOG_GROUP: !Ref lambdaConfigLogGroup
-
-    ConfigLogShipperLogGroup:
-      Type: AWS::Logs::LogGroup
-      DependsOn: ConfigLogShipperFunction
-      Properties:
-        LogGroupName:
-          Fn::Join:
-          - ''
-          - - "/aws/lambda/"
-            - Ref: ConfigLogShipperFunction
-        RetentionInDays: 14
-
-    
-    #   -------------------
-    #   DynamoDB 
-    #   -------------------
-    DynamoDBTable:
-        Type: AWS::DynamoDB::Table
-        DependsOn:
-        - LogShipperLambdaExecutionRole
-        Properties:
-            BillingMode: PAY_PER_REQUEST
-            AttributeDefinitions:
-                - AttributeName: LogGroupName
-                  AttributeType: S
-                - AttributeName: LogStreamName
-                  AttributeType: S
-            KeySchema:
-                - AttributeName: LogGroupName
-                  KeyType: HASH
-                - AttributeName: LogStreamName
-                  KeyType: RANGE
-            TableName: SECLZSyncLogs
-            Tags:
-                - Key: Name
-                  Value: SECLZSynclogs
-            TimeToLiveSpecification:
-                AttributeName: TTL
-                Enabled: True
+          BillingMode: PAY_PER_REQUEST
+          AttributeDefinitions:
+              - AttributeName: LogGroupName
+                AttributeType: S
+              - AttributeName: LogStreamName
+                AttributeType: S
+          KeySchema:
+              - AttributeName: LogGroupName
+                KeyType: HASH
+              - AttributeName: LogStreamName
+                KeyType: RANGE
+          TableName: SECLZSyncLogs
+          Tags:
+          - Key: Name
+            Value: SECLZSynclogs
+          TimeToLiveSpecification:
+              AttributeName: TTL
+              Enabled: True
 
 
 Outputs:

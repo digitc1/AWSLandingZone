@@ -177,17 +177,48 @@ def create_log_stream(log_group_name, log_stream):
         :param log_group_name: The name of the log group with the correct pattern.
         :param log_stream: The name of the log stream that should be created.
     """
-    try:
-        client = boto3.client('logs')
-        client.create_log_stream(logStreamName=log_stream, logGroupName=log_group_name)
-        delete_sequence_token(log_stream=log_stream, log_group_name=log_group_name)
-        LOGGER.info("Log Stream created")
-    except ClientError as client_error:
-        if client_error.response['Error']['Code'] == 'ResourceAlreadyExistsException':
-            LOGGER.debug("Log Stream already exists")
-    except Exception:
-        LOGGER.exception("Unexpected error while creating the log stream.")
-        raise
+     # Create the logstream if needed
+    if ( logstream_exists(log_group_name,log_stream) is False):
+        try:
+            client = boto3.client('logs')
+            client.create_log_stream(logStreamName=log_stream, logGroupName=log_group_name)
+            delete_sequence_token(log_stream=log_stream, log_group_name=log_group_name)
+            LOGGER.info("Log Stream created")
+        except ClientError as client_error:
+            if client_error.response['Error']['Code'] == 'ResourceAlreadyExistsException':
+                LOGGER.debug("Log Stream already exists")
+        except Exception:
+            LOGGER.exception("Unexpected error while creating the log stream.")
+            raise
+
+def logstream_exists(log_group_name,log_stream):
+    """
+    This function check if the log stream already exists in the DynamoDB table
+
+        :param log_group_name: The name of the log group with the correct pattern.
+        :param log_stream: The name of the log stream.
+    """
+    client = boto3.client('dynamodb')
+    response = client.get_item(
+        TableName=DYNAMODB_TABLE_NAME,
+        Key={
+            'LogGroupName': {
+                'S': log_group_name
+            },
+            'LogStreamName': {
+                'S': log_stream
+            }
+        },
+        ConsistentRead=True
+    )
+    logstream_inDB = response.get('Item', {}).get('LogStreamName', {}).get('S', None)
+
+    # if logstream not in DynamoDB return False otherwise return True
+    if (logstream_inDB is None):
+        LOGGER.debug("Log Stream not found in DynamoDB for loggroup: "+log_group_name+" and stream: "+log_stream)
+        return False
+    else:
+        return True
 
 def save_next_sequence_token(log_group_name, log_stream, sequence_token):
     """

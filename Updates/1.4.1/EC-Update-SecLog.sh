@@ -75,6 +75,7 @@ update_seclog() {
     aws cloudformation update-stack \
     --stack-name 'SECLZ-LogShipper-Lambdas-Bucket' \
     --template-body file://$CFN_LAMBDAS_BUCKET_TEMPLATE \
+    --parameters file://$CFN_TAGS_PARAMS_FILE \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
     

@@ -59,6 +59,8 @@ configure_client() {
     CFN_PROFILES_ROLES='./CFN/EC-lz-Profiles-Roles.yml'
     CFN_LOCAL_SNS_TEMPLATE='./CFN/EC-lz-local-config-SNS.yml'
 
+    CFN_TAGS_FILE='./CFN/EC-lz-TAGS.json'
+
     # Script Spinner waiting for cloudformation completion
     export i=1
     export sp="/-\|"
@@ -81,6 +83,7 @@ configure_client() {
     guarddutygroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_guardduty-groupname" --output text --query 'Parameter.Value'`
     securityhubgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_securityhub-groupname" --output text --query 'Parameter.Value'`
     configgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_config-groupname" --output text --query 'Parameter.Value'`
+    alarmsgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_alarms-groupname" --output text --query 'Parameter.Value'`
     
 
     echo ""
@@ -130,28 +133,35 @@ configure_client() {
     if  [ ! -z "$insightgroupname" ] ; then
         aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite
     else
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail/insight" --overwrite
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value "/aws/cloudtrail/insight" --overwrite
     fi
     
     for region in $(aws --profile $CLIENT ec2 describe-regions --output text --query "Regions[?RegionName!='ap-northeast-3'].[RegionName]"); do
         if  [ ! -z "$guarddutygroupname" ] ; then
             aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
         else
-            aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/events/guardduty" --overwrite
+            aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value "/aws/events/guardduty" --overwrite
         fi
     done
     
     if  [ ! -z "$securityhubgroupname" ] ; then
         aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite
     else
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/events/securityhub" --overwrite
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value "/aws/events/securityhub" --overwrite
     fi
 
     if  [ ! -z "$configgroupname" ] ; then
         aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite
     else
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/events/config" --overwrite
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value "/aws/events/config" --overwrite
     fi
+
+    if  [ ! -z "$alarmsgroupname" ] ; then
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value $alarmsgroupname --overwrite
+    else
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value "/aws/events/cloudwatch-alarms" --overwrite
+    fi
+
 
     #   Create ExecRole
     #   -------------------
@@ -166,6 +176,7 @@ configure_client() {
     aws cloudformation create-stack \
     --stack-name $StackName \
     --template-body file://$CFN_STACKSET_EXEC_ROLE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $CLIENT
@@ -215,6 +226,7 @@ configure_client() {
     aws cloudformation create-stack \
     --stack-name $StackName \
     --template-body file://$CFN_LOG_TEMPLATE \
+    --tags file://$CFN_TAGS_FILE \
     --capabilities CAPABILITY_NAMED_IAM \
     --enable-termination-protection \
     --profile $CLIENT
@@ -249,6 +261,7 @@ configure_client() {
     aws cloudformation create-stack \
     --stack-name $StackName \
     --template-body file://$CFN_LOCAL_SNS_TEMPLATE \
+    --tags file://$CFN_TAGS_FILE \
     --capabilities CAPABILITY_NAMED_IAM \
     --enable-termination-protection \
     --profile $CLIENT
@@ -267,6 +280,7 @@ configure_client() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Guardduty-detector' \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
+    --tags file://$CFN_TAGS_FILE \
     --capabilities CAPABILITY_NAMED_IAM \
     --enable-termination-protection \
     --profile $CLIENT
@@ -281,7 +295,7 @@ configure_client() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-SecurityHub' \
     --template-body file://$CFN_SECURITYHUB_TEMPLATE \
-    --parameters file://$CFN_TAGS_PARAMS_FILE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --profile $CLIENT
 
@@ -295,6 +309,7 @@ configure_client() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Iam-Password-Policy' \
     --template-body  file://$CFN_IAM_PWD_POLICY \
+    --tags file://$CFN_TAGS_FILE \
     --capabilities CAPABILITY_IAM \
     --enable-termination-protection \
     --profile $CLIENT
@@ -310,6 +325,7 @@ configure_client() {
     aws cloudformation create-stack \
     --stack-name $StackName \
     --template-body file://$CFN_NOTIFICATIONS_CT_TEMPLATE \
+    --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --profile $CLIENT
 
