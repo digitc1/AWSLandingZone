@@ -400,8 +400,13 @@ def main(argv):
 
             #cis controls
             if not null_empty(manifest, 'cis') and seclog_status != Execution.FAIL:
-                seclog_status = update_cis_controls(rules=cis_actions) 
-
+                seclog_accountid = get_account_id()
+                sfn_cis_controls_arn = get_sfn_arn_by_name('SECLZ-CISControlsUpdate')
+                seclog_status = update_cis_controls(
+                    cis_actions=cis_actions,
+                    sfn_arn=sfn_cis_controls_arn,
+                    accountid=seclog_accountid
+                )
 
             print("")
             print(f"SECLOG account {account_id} update ", end="")
@@ -541,10 +546,9 @@ def main(argv):
                     #cis controls
                     if not null_empty(manifest, 'cis') and linked_status != Execution.FAIL:
                         linked_status = update_cis_controls(
-                            rules=cis_actions, 
-                            accessKey=accessKey,
-                            secretAccessKey=secretAccessKey, 
-                            sessionToken=sessionToken
+                            cis_actions=cis_actions, 
+                            sfn_arn = sfn_cis_controls_arn,
+                            accountid=linked
                         ) 
 
                     print("")
@@ -744,138 +748,81 @@ def get_controls(client, region, sub_arn, NextToken=None):
     else:
         return controls['Controls']
 
-def update_cis_controls(rules,
-    accessKey=None,
-    secretAccessKey=None, 
-    sessionToken=None): 
+
+def get_stepfunctions_arns_by_name(client, NextToken=None):
+    try:
+        if (NextToken == None):
+            response = client.list_state_machines()
+        else:
+            response = client.list_state_machines(NextToken=NextToken)   
+
+        if ('nextToken' in response):
+            nextToken = response['nextToken']
+            arns_by_name = {response['stateMachines']['name'] , response['stateMachines']['stateMachineArn']}
+            next_arns = get_stepfunctions_arns_by_name(client, NextToken=nextToken)
+            return {**arns_by_name , **next_arns}
+        else:
+            if ('stateMachines' in response):
+                stateMachines=response['stateMachines']
+                arns_by_name={}
+                for stateMachine in stateMachines:
+                    stateMachineArn = stateMachine['stateMachineArn']
+                    stateMachineName = stateMachine['name']
+                    arns_by_name[stateMachineName] = stateMachineArn
+                return arns_by_name
+            else:
+                return {}
+    except Exception as err:
+        print(f"get_stepfunctions_arn_by_name() failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
+        return {}
+
+def get_sfn_arn_by_name(sfnName):
+        try:
+            client = boto3.client('stepfunctions', region_name="eu-west-1")
+            stepfunctions_arn_by_name = get_stepfunctions_arns_by_name(client)
+            sfn_arn = stepfunctions_arn_by_name[sfnName]
+            return sfn_arn
+        except Exception as err:
+            print(f"failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
+            return None
+
+def update_cis_controls(cis_actions,
+    sfn_arn=None,
+    accountid=None): 
     
     global all_regions
    
     print(f"CIS controls update ", end="")
-    try:
-        with Spinner():
-            #enable all rules
-          
-            regions = [d for d in all_regions if d  != 'ap-northeast-3']
+
+    with Spinner():
+        #foreach rule, enable/disable the controls passed in checks
+        # rules = { key:value for (key,value) in rules.items()}
+        client = boto3.client('stepfunctions', region_name="eu-west-1")
+        for cis_action in cis_actions:
+            regions = cis_action['regions'] if 'regions' in cis_action and len(cis_action['regions']) > 0  else all_regions
+
+            sfn_input={
+                "accountid": accountid,
+                "regions": regions,
+                "rule": cis_action["rule"],
+                "checks":  cis_action["checks"],
+                "disabled": cis_action["disabled"],
+                "reason": cis_action['disabled-reason'],
+                "exclusions": cis_action["exclusions"]
+            }
+            sfn_input = str(sfn_input).replace('\'','"')
             
-            failed_regions = []
-            for region in regions:
-                try:
-                    client = boto3.client('securityhub',aws_access_key_id=accessKey,
-                        aws_secret_access_key=secretAccessKey, 
-                        aws_session_token=sessionToken,
-                        region_name=region
-                    )
-
-
-
-                    client.batch_enable_standards(
-                        StandardsSubscriptionRequests=[
-                            {
-                                'StandardsArn': "arn:aws:securityhub:::ruleset/cis-aws-foundations-benchmark/v/1.2.0",
-                                
-                            },
-                        ]
-                    )
-
-                    client.batch_enable_standards(
-                        StandardsSubscriptionRequests=[
-                            {
-                                'StandardsArn': f"arn:aws:securityhub:{region}::standards/aws-foundational-security-best-practices/v/1.0.0",
-                                
-                            },
-                        ]
-                    )
-                except Exception as err:
-                        
-                        failed_regions.append(region)
-
-            if len(failed_regions) > 0:
-                print(f"failed. Reason Account is not subscribed to AWS Security Hub on the following regions {failed_regions} [{Status.FAIL.value}]")
+            try:
+                response = client.start_execution(
+                    stateMachineArn=sfn_arn,
+                    input=str(sfn_input)
+                )
+                print(f"CIS updates in accountid {accountid} for rule {cis_action} execution ARN: {response['executionArn']}")
+            except Exception as err:
+                print(f"stateMachineArn excution failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
                 return Execution.FAIL
-
-            enabled_rules = { key:value for (key,value) in rules.items() if value['disabled'] == False}
-            disabled_rules = { key:value for (key,value) in rules.items() if value['disabled'] == True}
-
-            #enabled rules
-            for rule,value in enabled_rules.items():
-                regions = value['regions'] if 'regions' in value and len(value['regions']) > 0  else all_regions
-                if 'exclusions' in value:
-                    regions = [d for d in regions if d not in value['exclusions']]
-              
-                for region in regions:
-                
-                    client = boto3.client('securityhub',aws_access_key_id=accessKey,
-                        aws_secret_access_key=secretAccessKey, 
-                        aws_session_token=sessionToken,
-                        region_name=region
-                    )
-                
-                    stds = client.get_enabled_standards()
-                    
-                    for std in stds['StandardsSubscriptions']:
-                        controls = []
-                        available_controls = get_controls(client, region, std['StandardsSubscriptionArn'])
-                        if 'checks' not in value:
-                            controls = [d for d in available_controls if rule in d['StandardsControlArn'] ]
-                        else:
-                            for check in value['checks']:
-                                controls.extend([d for d in available_controls if f"{rule}/{check}" in d['StandardsControlArn'] ])
-
-                        for control in controls:
-                            
-                            try:
-                                client.update_standards_control(
-                                        StandardsControlArn=control['StandardsControlArn'],
-                                        ControlStatus='ENABLED'
-                                    ) 
-                            except ClientError as err:
-                                if err.response['Error']['Code'] == 'ThrottlingException':
-                                    continue
-                   
-            #disabled rules
-            for rule,value in disabled_rules.items():
-                regions = value['regions'] if 'regions' in value and len(value['regions']) > 0  else all_regions
-                if 'exclusions' in value:
-                    regions = [d for d in regions if d not in value['exclusions']]
-               
-                for region in regions:
-                
-                    client = boto3.client('securityhub',aws_access_key_id=accessKey,
-                        aws_secret_access_key=secretAccessKey, 
-                        aws_session_token=sessionToken,
-                        region_name=region
-                    )
-                
-                    stds = client.get_enabled_standards()
-                    
-                    for std in stds['StandardsSubscriptions']:
-                        available_controls = get_controls(client, region, std['StandardsSubscriptionArn'])
-                        controls = []
-                        if 'checks' not in value:
-                            controls = [d for d in available_controls if rule in d['StandardsControlArn'] ]
-                        else:
-                            for check in value['checks']:
-                                controls.extend([d for d in available_controls if f"{rule}/{check}" in d['StandardsControlArn'] ])
-
-                        for control in controls:
-                            
-                            try:
-                                response=client.update_standards_control(
-                                        StandardsControlArn=control['StandardsControlArn'],
-                                        ControlStatus='DISABLED',
-                                        DisabledReason='Managed by Cloud Broker Team' if 'disabled-reason' not in value else value['disabled-reason'],
-                                    ) 
-                                
-                            except ClientError as err:
-                                if err.response['Error']['Code'] == 'ThrottlingException':
-                                    continue
-                
-        print(f" [{Status.OK.value}]")
-        return Execution.OK
-    except Exception as err:
-        print(f"failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
-        return Execution.FAIL
+            
+    return Execution.OK
 
 
 def validate_params(params, template):
