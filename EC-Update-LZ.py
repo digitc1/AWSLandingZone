@@ -405,7 +405,8 @@ def main(argv):
                 seclog_status = update_cis_controls(
                     cis_actions=cis_actions,
                     sfn_arn=sfn_cis_controls_arn,
-                    accountid=seclog_accountid
+                    accountid=seclog_accountid,
+                    profile=profile
                 )
 
             print("")
@@ -548,7 +549,8 @@ def main(argv):
                         linked_status = update_cis_controls(
                             cis_actions=cis_actions, 
                             sfn_arn = sfn_cis_controls_arn,
-                            accountid=linked
+                            accountid=linked,
+                            profile=profile
                         ) 
 
                     print("")
@@ -788,7 +790,8 @@ def get_sfn_arn_by_name(sfnName):
 
 def update_cis_controls(cis_actions,
     sfn_arn=None,
-    accountid=None): 
+    accountid=None,
+    profile=None): 
     
     global all_regions
    
@@ -798,6 +801,7 @@ def update_cis_controls(cis_actions,
         #foreach rule, enable/disable the controls passed in checks
         # rules = { key:value for (key,value) in rules.items()}
         client = boto3.client('stepfunctions', region_name="eu-west-1")
+        print(f"CIS updates async execution:")
         for cis_action in cis_actions:
             regions = cis_action['regions'] if 'regions' in cis_action and len(cis_action['regions']) > 0  else all_regions
 
@@ -817,7 +821,7 @@ def update_cis_controls(cis_actions,
                     stateMachineArn=sfn_arn,
                     input=str(sfn_input)
                 )
-                print(f"CIS updates in accountid {accountid} for rule {cis_action} execution ARN: {response['executionArn']}")
+                print(f"    aws --profile {profile} stepfunctions describe-execution --execution-arn {response['executionArn']}")
             except Exception as err:
                 print(f"stateMachineArn excution failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
                 return Execution.FAIL
