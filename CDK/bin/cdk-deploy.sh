@@ -3,6 +3,8 @@
 #   --------------------
 #       Parameters
 #   --------------------
+cdk_release=1.114.0
+
 seclog_accountid=${seclog_accountid:-}
 linked_accountids=${linked_accountids:-}
 
@@ -36,6 +38,19 @@ if  [ -z "$seclog_accountid" ] ; then
     exit 0
 fi
 
+# Check for local CDK, if not present install local cdk
+if [ -d "./node_modules" ]; then
+    if [ ! -d "./node_modules/aws-cdk" ]; then
+        npm install aws-cdk@${cdk-release}
+        export PATH=./node_modules/aws-cdk/bin:$PATH
+    fi
+fi
+
+# Check for required CDK modules, if not present install them locally
+for module in core aws-iam aws-lambda aws-stepfunctions aws-stepfunctions-tasks
+do
+    npm install "@aws-cdk/${module}@${cdk_release}"
+done
 
 cdk deploy --all \
     --context seclog_accountid=$seclog_accountid \
