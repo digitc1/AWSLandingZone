@@ -3,6 +3,8 @@
 #   --------------------
 #       Parameters
 #   --------------------
+cdk_release=1.114.0
+
 seclog_accountid=${seclog_accountid:-}
 linked_accountids=${linked_accountids:-}
 
@@ -36,6 +38,13 @@ if  [ -z "$seclog_accountid" ] ; then
     exit 0
 fi
 
+# Check for local CDK, if not present install local cdk
+if [ -d "./node_modules" ]; then
+    if [ ! -d "./node_modules/aws-cdk" ]; then
+        npm install aws-cdk@1.114.0
+        export PATH=./node_modules/aws-cdk/bin:$PATH
+    fi
+fi
 
 cdk destroy \
     --context seclog_accountid=$seclog_accountid \
