@@ -24,19 +24,14 @@ display_help() {
     echo "Usage: $0 <params>"
     echo ""
     echo "   Provide "
-    echo "   --seclog_accountid     : the AWS account ID of the seclog account"
-    echo "   --linked_accountids    : a comma separated list of the AWS linked account IDs of the SECLOG account"
+    echo "   --seclog_accountid     : (mandatory) the AWS account ID of the seclog account"
+    echo "   [--linked_accountids]  : (optional) a comma separated list of the AWS linked account IDs of the SECLOG account"
     echo ""
     exit 1
 }
 
 # Check to validate number of parameters entered
 if  [ -z "$seclog_accountid" ] ; then
-    display_help
-    exit 0
-fi
-
-if  [ -z "$linked_accountids" ] ; then
     display_help
     exit 0
 fi

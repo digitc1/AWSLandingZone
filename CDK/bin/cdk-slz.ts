@@ -8,12 +8,14 @@ import { SeclogRoleStackSet } from '../lib/SeclogRoleStackSet';
 
 const app = new cdk.App();
 
+var all_accounts = [] as string[];
 const seclog_accountid = app.node.tryGetContext('seclog_accountid') as string;
-const linked_accountids = app.node.tryGetContext('linked_accountids').split(',') as string[];
 const seclog = { account: seclog_accountid, region: 'eu-west-1' };
-
-var all_accounts = linked_accountids;
-all_accounts.push(seclog['account']);
+const linked_accountids = app.node.tryGetContext('linked_accountids') as string;
+if (linked_accountids) {
+  all_accounts = linked_accountids.split(',');
+}
+all_accounts.push(seclog_accountid);
 
 cdk.Tags.of(app).add("Project", "secLZ");
 cdk.Tags.of(app).add("Owner", "DIGIT.C.1");
