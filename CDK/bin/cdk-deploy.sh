@@ -3,7 +3,7 @@
 #   --------------------
 #       Parameters
 #   --------------------
-cdk_release=1.114.0
+cdk_release=1.115.0
 
 seclog_accountid=${seclog_accountid:-}
 linked_accountids=${linked_accountids:-}
@@ -52,7 +52,7 @@ do
     npm install "@aws-cdk/${module}@${cdk_release}"
 done
 
-cdk deploy --all \
+./node_modules/aws-cdk/bin/cdk deploy --all \
     --context seclog_accountid=$seclog_accountid \
     --context linked_accountids=$linked_accountids
 
