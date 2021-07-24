@@ -5,14 +5,12 @@ import * as s3 from '@aws-cdk/aws-s3';
 import * as logs from '@aws-cdk/aws-logs';
 import * as s3n from '@aws-cdk/aws-s3-notifications';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
+import * as ssm from '@aws-cdk/aws-ssm';
 
 interface LambdaLogShipperProps extends cdk.StackProps {
   readonly env : cdk.Environment,
   readonly ConfigBucketName: string,
   readonly CloudtrailBucketName: string,
-  readonly CloudtrailLogGroup: string,
-  readonly CloudtrailInsightLogGroup: string,
-  readonly ConfigLogGroup: string,
 }
 
 export class LambdaLogShippersStack extends cdk.Stack {
@@ -20,6 +18,16 @@ export class LambdaLogShippersStack extends cdk.Stack {
 
   constructor(scope: cdk.Construct, id: string, props: LambdaLogShipperProps) {
     super(scope, id, props);
+
+
+    
+    // Get latest version or specified version of plain string attribute
+    const cloudtrailLogGroupName = ssm.StringParameter.valueForStringParameter(
+      this, '/org/member/SecLog_cloudtrail-groupname');      // latest version
+    const cloudtrailInsightLogGroupName = ssm.StringParameter.valueForStringParameter(
+      this, '/org/member/SecLog_insight-groupname');      // latest version
+    const configLogGroupName = ssm.StringParameter.valueForStringParameter(
+      this, '/org/member/SecLog_config-groupname');      // latest version
 
     const configBucket = s3.Bucket.fromBucketName(
       this,
@@ -59,9 +67,9 @@ export class LambdaLogShippersStack extends cdk.Stack {
       description: 'Execution role of the lambda called by the stepfunctions of the SECLZ',
     });
 
-    const cloudtrailLogGroup = logs.LogGroup.fromLogGroupName(this,'cloudtrailLogGroup',props.CloudtrailLogGroup);
-    const cloudtrailInsightLogGroup = logs.LogGroup.fromLogGroupName(this,'cloudtrailInsightLogGroup',props.CloudtrailInsightLogGroup);
-    const configLogGroup = logs.LogGroup.fromLogGroupName(this,'configLogGroup',props.ConfigLogGroup);
+    const cloudtrailLogGroup = logs.LogGroup.fromLogGroupName(this,'cloudtrailLogGroup',cloudtrailLogGroupName);
+    const cloudtrailInsightLogGroup = logs.LogGroup.fromLogGroupName(this,'cloudtrailInsightLogGroup',cloudtrailInsightLogGroupName);
+    const configLogGroup = logs.LogGroup.fromLogGroupName(this,'configLogGroup',configLogGroupName);
 
     // 👇 Set various inline policies in lambdaExecutionRole to allow the lambda to update
     // the DynamoDB table (rw)
@@ -115,8 +123,8 @@ export class LambdaLogShippersStack extends cdk.Stack {
       environment: {
           "LOG_LEVEL": "INFO",
           "MAX_TRY": "30",
-          "CLOUDTRAIL_LOG_GROUP": props.CloudtrailLogGroup,
-          "INSIGHT_LOG_GROUP": props.CloudtrailInsightLogGroup,
+          "CLOUDTRAIL_LOG_GROUP": cloudtrailLogGroupName,
+          "INSIGHT_LOG_GROUP": cloudtrailInsightLogGroupName,
       }
     });
 
@@ -137,7 +145,7 @@ export class LambdaLogShippersStack extends cdk.Stack {
       environment: {
           "LOG_LEVEL": "INFO",
           "MAX_TRY": "30",
-          "CONFIG_LOG_GROUP": props.ConfigLogGroup,
+          "CONFIG_LOG_GROUP": configLogGroupName,
       }
     });
 

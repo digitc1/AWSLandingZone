@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from '@aws-cdk/core';
-import * as ssm from '@aws-cdk/aws-ssm';
 
 import { LambdaLogShippersStack } from '../lib/LambdaLogShippersStack';
 
@@ -65,9 +64,12 @@ const cisControlsUpdateStack = new CisControlsUpdateStack(app, 'SECLZ-CisControl
 });
 
 
-const CloudtrailLogGroup = ssm.StringParameter.valueFromLookup(this, '/org/member/SecLog_cloudtrail-groupname');
-const CloudtrailInsightLogGroup = ssm.StringParameter.valueFromLookup(this, '/org/member/SecLog_insight-groupname');
-const ConfigLogGroup = ssm.StringParameter.valueFromLookup(this, '/org/member/SecLog_config-groupname');
+
+
+// Get latest version at synth time 
+// const CloudtrailLogGroup = ssm.StringParameter.valueFromLookup(this, '/org/member/SecLog_cloudtrail-groupname');
+// const CloudtrailInsightLogGroup = ssm.StringParameter.valueFromLookup(this, '/org/member/SecLog_insight-groupname');
+// const ConfigLogGroup = ssm.StringParameter.valueFromLookup(this, '/org/member/SecLog_config-groupname');
 
 const lambdaLogShippersStack = new LambdaLogShippersStack(app, 'SECLZ-LambdaLogShippersStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
@@ -83,9 +85,6 @@ const lambdaLogShippersStack = new LambdaLogShippersStack(app, 'SECLZ-LambdaLogS
   env: seclog,
   ConfigBucketName: "config-logs-${seclog_accountid}-do-not-delete",
   CloudtrailBucketName: "cloudtrail-logs-${seclog_accountid}-do-not-delete",
-  CloudtrailLogGroup: CloudtrailLogGroup,
-  CloudtrailInsightLogGroup: CloudtrailInsightLogGroup,
-  ConfigLogGroup: ConfigLogGroup,
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
   // tags : tags,
