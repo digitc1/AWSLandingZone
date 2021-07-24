@@ -47,7 +47,7 @@ if [ -d "./node_modules" ]; then
 fi
 
 # Check for required CDK modules, if not present install them locally
-for module in core aws-iam aws-lambda aws-stepfunctions aws-stepfunctions-tasks
+for module in core aws-iam aws-lambda aws-stepfunctions aws-stepfunctions-tasks aws-ssm aws-dynamodb
 do
     npm install "@aws-cdk/${module}@${cdk_release}"
 done
