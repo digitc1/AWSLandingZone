@@ -5,9 +5,8 @@ interface SeclogRoleProps extends cdk.StackProps {
 }
 
 export class SeclogRoleStackSet extends cdk.Stack {
-  
-    constructor(scope: cdk.Construct, id: string, props: SeclogRoleProps) {
-      super(scope, id, props);
+  constructor(scope: cdk.Construct, id: string, props: SeclogRoleProps) {
+    super(scope, id, props);
 
     new cdk.CfnStackSet(this, "SECLZSeclogRoleCreateStackSet", {
         description: "Deploy the IAM roles required by the SECLOG to manage linked accounts",
@@ -37,31 +36,29 @@ export class SeclogRoleStackSet extends cdk.Stack {
             Description: SecLog Account ID
         Resources:
           LambdasSeclogAssumeRole:
-              Type: AWS::IAM::Role
-              Properties:
-                  RoleName: "SECLZ-SeclogRole"
-                  Description: Allow lambdas in seclog to assume lambda execution role in this account
-                  ManagedPolicyArns:
-                    - arn:aws:iam::aws:policy/AWSSecurityHubFullAccess
-                    - arn:aws:iam::aws:policy/AmazonGuardDutyFullAccess
-                  AssumeRolePolicyDocument:
-                      Version: "2012-10-17"
-                      Statement:
-                          -
-                              Effect: "Allow"
-                              Principal:
-                                  AWS: 
-                                    Fn::Join:
-                                    - ""
-                                    - - "arn:aws:iam::"
-                                      - Ref: SeclogAccountId
-                                      - ":role/SECLZ-lambdasExecutionRole"
-                              Action:
-                                  - "sts:AssumeRole"
-                  Path: "/"
-
+            Type: AWS::IAM::Role
+            Properties:
+              RoleName: "SECLZ-SeclogRole"
+              Description: Allow lambdas in seclog to assume lambda execution role in this account
+              ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/AWSSecurityHubFullAccess
+                - arn:aws:iam::aws:policy/AmazonGuardDutyFullAccess
+              AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                  -
+                    Effect: "Allow"
+                    Principal:
+                      AWS: 
+                        Fn::Join:
+                        - ""
+                        - - "arn:aws:iam::"
+                          - Ref: SeclogAccountId
+                          - ":role/SECLZ-lambdasExecutionRole"
+                    Action:
+                      - "sts:AssumeRole"
+              Path: "/"
       `,
     });
-
-    }
+  }
 }
