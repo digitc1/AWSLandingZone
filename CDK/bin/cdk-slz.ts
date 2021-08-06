@@ -3,8 +3,6 @@ import 'source-map-support/register';
 import * as cdk from '@aws-cdk/core';
 
 import { LambdaLogShippersStack } from '../lib/LambdaLogShippersStack';
-
-// import { SlzSeclogRoles } from '../lib/SlzSeclogRoles';
 import { CisControlsUpdateStack } from '../lib/CisControlsUpdateStack';
 import { SeclogRoleStackSet } from '../lib/SeclogRoleStackSet';
 

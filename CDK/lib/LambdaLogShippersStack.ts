@@ -18,8 +18,6 @@ export class LambdaLogShippersStack extends cdk.Stack {
 
   constructor(scope: cdk.Construct, id: string, props: LambdaLogShipperProps) {
     super(scope, id, props);
-
-
     
     // Get latest version or specified version of plain string attribute
     const cloudtrailLogGroupName = ssm.StringParameter.valueForStringParameter(
@@ -37,6 +35,7 @@ export class LambdaLogShippersStack extends cdk.Stack {
 
     const seclzSyncLogs = new dynamodb.Table(this, 'SECLZSyncLogs', {
       tableName : 'SECLZSyncLogs',
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST, 
       partitionKey : {
         name : "LogGroupName",
@@ -123,6 +122,7 @@ export class LambdaLogShippersStack extends cdk.Stack {
       environment: {
           "LOG_LEVEL": "INFO",
           "MAX_TRY": "30",
+          "DYNAMODB_TABLE_NAME": "SECLZSyncLogs",
           "CLOUDTRAIL_LOG_GROUP": cloudtrailLogGroupName,
           "INSIGHT_LOG_GROUP": cloudtrailInsightLogGroupName,
       }
@@ -145,6 +145,7 @@ export class LambdaLogShippersStack extends cdk.Stack {
       environment: {
           "LOG_LEVEL": "INFO",
           "MAX_TRY": "30",
+          "DYNAMODB_TABLE_NAME": "SECLZSyncLogs",
           "CONFIG_LOG_GROUP": configLogGroupName,
       }
     });

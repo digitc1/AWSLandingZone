@@ -15,18 +15,22 @@ import sys
 
 # initialise logger
 LOGGER = logging.getLogger()
-DYNAMODB_TABLE_NAME = 'SECLZSyncLogs'
 SEVEN_DAYS_IN_SECONDS = 604800
 MAX_ITEMS_PER_BATCH = 10000
 ITEM_BYTES_OVERHEAD = 26
 MAX_BATCH_SISE = 1048576
 MAX_TRY = 30
+DYNAMODB_TABLE_NAME = 'SECLZSyncLogs'
 
 def lambda_handler(event, context):
-  cloudwatch = boto3.client('logs')
+  global DYNAMODB_TABLE_NAME
+  global MAX_TRY
+
   sts = boto3.client('sts')
   s3 = boto3.client('s3')
   MAX_TRY = get_max_try()
+  DYNAMODB_TABLE_NAME = get_dynamodb_table_name()
+
   LOGGER.setLevel(check_log_level())
   LOGGER.debug('Lambda invoked')
   LOGGER.debug('Event: %s', event)
@@ -36,7 +40,6 @@ def lambda_handler(event, context):
   LOGGER.debug("Mem. limits(MB): %s", context.memory_limit_in_mb)
   LOGGER.debug("Function name: %s", context.function_name)
   LOGGER.debug("Function version: %s", context.function_version)
-  region = os.environ['AWS_REGION']
   loggroup = get_cloudtrail_logggroup()
   account = sts.get_caller_identity()
   for record in event['Records']:
@@ -124,7 +127,7 @@ def delete_sequence_token(log_group_name, log_stream):
     """
     client = boto3.client('dynamodb')
     try:
-        response = client.delete_item(
+        client.delete_item(
             TableName=DYNAMODB_TABLE_NAME,
             Key={
                 'LogGroupName': {
@@ -342,7 +345,7 @@ def get_max_try():
     """
     This function gets the LogLevel from the environment variables table.
     """
-    return os.environ.get('MAX_TRY', 30)
+    return os.environ.get('MAX_TRY', MAX_TRY)
 
 def get_cloudtrail_logggroup():
     """
@@ -355,3 +358,10 @@ def get_insight_logggroup():
     This function gets the cloudtrail insight log group from the environment variables table.
     """
     return os.environ.get('INSIGHT_LOG_GROUP', '/aws/cloudtrail/insight')
+
+
+def get_dynamodb_table_name():
+    """
+    This function gets the name of the DynamoDBB table from the environment variables table.
+    """
+    return os.environ.get('DYNAMODB_TABLE_NAME', DYNAMODB_TABLE_NAME)
