@@ -5,6 +5,8 @@ import * as cdk from '@aws-cdk/core';
 import { LambdaLogShippersStack } from '../lib/LambdaLogShippersStack';
 import { CisControlsUpdateStack } from '../lib/CisControlsUpdateStack';
 import { SeclogRoleStackSet } from '../lib/SeclogRoleStackSet';
+import { SsmParametersStack } from '../lib/SsmParametersStack';
+
 
 const app = new cdk.App();
 
@@ -12,6 +14,8 @@ var all_accounts = [] as string[];
 const seclog_accountid = app.node.tryGetContext('seclog_accountid') as string;
 const seclog = { account: seclog_accountid, region: 'eu-west-1' };
 const linked_accountids = app.node.tryGetContext('linked_accountids') as string;
+const manifest = app.node.tryGetContext('manifest') as string;
+
 if (linked_accountids) {
   all_accounts = linked_accountids.split(',');
 }
@@ -24,6 +28,25 @@ cdk.Tags.of(app).add("Criticity", "high");
 cdk.Tags.of(app).add("Confidentiality", "confidential");
 cdk.Tags.of(app).add("Organization", "EC");
 cdk.Tags.of(app).add("ApplicationRole", "security");
+
+const ssmParametersStack = new SsmParametersStack(app, 'SECLZ-SsmParametersStack', {
+  /* If you don't specify 'env', this stack will be environment-agnostic.
+   * Account/Region-dependent features and context lookups will not work,
+   * but a single synthesized template can be deployed anywhere. */
+
+  /* Uncomment the next line to specialize this stack for the AWS Account
+   * and Region that are implied by the current CLI configuration. */
+  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+
+  /* Uncomment the next line if you know exactly what Account and Region you
+   * want to deploy the stack to. */
+  env: seclog,
+  accounts : all_accounts,
+  manifest: manifest,
+
+  /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+  // tags : tags,
+});
 
 const seclogRoleStackSet = new SeclogRoleStackSet(app, 'SECLZ-SeclogRoleStackSet', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
@@ -81,8 +104,11 @@ const lambdaLogShippersStack = new LambdaLogShippersStack(app, 'SECLZ-LambdaLogS
   /* Uncomment the next line if you know exactly what Account and Region you
    * want to deploy the stack to. */
   env: seclog,
-  ConfigBucketName: "config-logs-${seclog_accountid}-do-not-delete",
-  CloudtrailBucketName: "cloudtrail-logs-${seclog_accountid}-do-not-delete",
+  // ConfigBucketName: "config-logs-" + seclog_accountid + "-do-not-delete",
+  // CloudtrailBucketName: "cloudtrail-logs-" + seclog_accountid + "-do-not-delete",
+  ConfigBucketName: "config-bucket-" + seclog_accountid ,
+  CloudtrailBucketName: "cloudtrail-bucket-" + seclog_accountid,
+
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
   // tags : tags,

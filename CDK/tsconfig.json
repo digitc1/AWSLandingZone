@@ -5,6 +5,7 @@
     "lib": [
       "es2018"
     ],
+    "resolveJsonModule": true,
     "declaration": true,
     "strict": true,
     "noImplicitAny": true,

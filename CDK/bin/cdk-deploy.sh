@@ -27,6 +27,7 @@ display_help() {
     echo ""
     echo "   Provide "
     echo "   --seclog_accountid     : (mandatory) the AWS account ID of the seclog account"
+    echo "   [--manifest]  : (optional) the path to the manifest.json file. Default value is conf/manifest.json"
     echo "   [--linked_accountids]  : (optional) a comma separated list of the AWS linked account IDs of the SECLOG account"
     echo ""
     exit 1
@@ -54,5 +55,6 @@ done
 
 ./node_modules/aws-cdk/bin/cdk deploy --all \
     --context seclog_accountid=$seclog_accountid \
-    --context linked_accountids=$linked_accountids
+    --context linked_accountids=$linked_accountids \
+    --context manifest='conf/manifest.json'
 
