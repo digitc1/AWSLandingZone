@@ -13,7 +13,11 @@ import { SsmParametersStack } from '../lib/SsmParametersStack';
 const app = new cdk.App();
 
 var all_accounts = [] as string[];
-const seclog_accountid = app.node.tryGetContext('seclog_accountid') as string;
+let seclog_accountid = app.node.tryGetContext('seclog_accountid') as string;
+if ( ! seclog_accountid ) {
+  seclog_accountid = '123456789012';
+}
+
 const seclog = { account: seclog_accountid, region: 'eu-west-1' };
 const linked_accountids = app.node.tryGetContext('linked_accountids') as string;
 const manifest = app.node.tryGetContext('manifest') as string;

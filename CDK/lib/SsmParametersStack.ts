@@ -1,6 +1,7 @@
 import * as cdk from '@aws-cdk/core';
 import * as ssm from '@aws-cdk/aws-ssm';
-import { env } from 'process';
+// import { env } from 'process';
+
 interface manifestProps extends cdk.StackProps {
   readonly env : cdk.Environment,
   readonly seclog_cloudtrail_groupname: string,
@@ -72,8 +73,6 @@ export class SsmParametersStack extends cdk.Stack {
       description: 'The name of the cloudwatch loggroup for aws guardduty',
       stringValue: props.guardduty_groupname
     });
-
-
     
   }
 }

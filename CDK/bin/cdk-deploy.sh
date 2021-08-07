@@ -58,3 +58,7 @@ fi
     --context linked_accountids=$linked_accountids \
     --context manifest='conf/manifest.json'
 
+./node_modules/aws-cdk/bin/cdk deploy SECLZ-SeclogRoleStackSet \
+    --context seclog_accountid=$seclog_accountid \
+    --context linked_accountids=$linked_accountids \
+    --context manifest='conf/manifest.json'
