@@ -3,7 +3,7 @@
 #   --------------------
 #       Parameters
 #   --------------------
-cdk_release=1.115.0
+cdk_release=1.117.0
 
 seclog_accountid=${seclog_accountid:-}
 linked_accountids=${linked_accountids:-}
@@ -48,12 +48,12 @@ if [ -d "./node_modules" ]; then
 fi
 
 # Check for required CDK modules, if not present install them locally
-for module in core aws-iam aws-lambda aws-stepfunctions aws-stepfunctions-tasks aws-ssm aws-dynamodb
-do
-    npm install "@aws-cdk/${module}@${cdk_release}"
-done
+# for module in core aws-iam aws-lambda aws-stepfunctions aws-stepfunctions-tasks aws-ssm aws-dynamodb aws-ssm aws-s3 aws-s3-notifications
+# do
+#     npm install "@aws-cdk/${module}@${cdk_release}"
+# done
 
-./node_modules/aws-cdk/bin/cdk deploy --all \
+./node_modules/aws-cdk/bin/cdk deploy SECLZ-SsmParametersStack \
     --context seclog_accountid=$seclog_accountid \
     --context linked_accountids=$linked_accountids \
     --context manifest='conf/manifest.json'

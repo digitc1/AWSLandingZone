@@ -3,7 +3,7 @@
 #   --------------------
 #       Parameters
 #   --------------------
-cdk_release=1.115.0
+cdk_release=1.117.0
 
 seclog_accountid=${seclog_accountid:-}
 linked_accountids=${linked_accountids:-}

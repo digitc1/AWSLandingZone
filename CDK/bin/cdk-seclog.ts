@@ -2,6 +2,8 @@
 import 'source-map-support/register';
 import * as cdk from '@aws-cdk/core';
 
+import * as m from  '../conf/manifest.json';
+
 import { LambdaLogShippersStack } from '../lib/LambdaLogShippersStack';
 import { CisControlsUpdateStack } from '../lib/CisControlsUpdateStack';
 import { SeclogRoleStackSet } from '../lib/SeclogRoleStackSet';
@@ -41,8 +43,16 @@ const ssmParametersStack = new SsmParametersStack(app, 'SECLZ-SsmParametersStack
   /* Uncomment the next line if you know exactly what Account and Region you
    * want to deploy the stack to. */
   env: seclog,
-  accounts : all_accounts,
-  manifest: manifest,
+  seclog_cloudtrail_groupname: m.ssm.cloudtrail_groupname.value,
+  cloudtrail_insight_groupname: m.ssm.insight_groupname.value,
+  config_groupname: m.ssm.config_groupname.value,
+  notification_mail : m.ssm.notification_mail.value,
+  seclog_ou : m.ssm.seclog_ou.value,
+  guardduty_groupname : m.ssm.guardduty_groupname.value,
+  securityhub_groupname : m.ssm.securityhub_groupname.value,
+  alarms_groupname : m.ssm.alarms_groupname.value,
+  slz_version: m.version,
+  seclogid : seclog_accountid,
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
   // tags : tags,
@@ -107,8 +117,7 @@ const lambdaLogShippersStack = new LambdaLogShippersStack(app, 'SECLZ-LambdaLogS
   // ConfigBucketName: "config-logs-" + seclog_accountid + "-do-not-delete",
   // CloudtrailBucketName: "cloudtrail-logs-" + seclog_accountid + "-do-not-delete",
   ConfigBucketName: "config-bucket-" + seclog_accountid ,
-  CloudtrailBucketName: "cloudtrail-bucket-" + seclog_accountid,
-
+  CloudtrailBucketName: "cloudtrail-bucket-" + seclog_accountid
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
   // tags : tags,
