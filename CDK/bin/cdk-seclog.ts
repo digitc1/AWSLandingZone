@@ -8,7 +8,8 @@ import { LambdaLogShippersStack } from '../lib/LambdaLogShippersStack';
 import { CisControlsUpdateStack } from '../lib/CisControlsUpdateStack';
 import { SeclogRoleStackSet } from '../lib/SeclogRoleStackSet';
 import { SsmParametersStack } from '../lib/SsmParametersStack';
-
+import { KmsStack } from '../lib/KmsStack';
+KmsStack
 
 const app = new cdk.App();
 
@@ -34,6 +35,10 @@ cdk.Tags.of(app).add("Criticity", "high");
 cdk.Tags.of(app).add("Confidentiality", "confidential");
 cdk.Tags.of(app).add("Organization", "EC");
 cdk.Tags.of(app).add("ApplicationRole", "security");
+
+const kmsStack = new KmsStack(app, 'SECLZ-KmsStack', {
+  env: seclog,
+});
 
 const ssmParametersStack = new SsmParametersStack(app, 'SECLZ-SsmParametersStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.

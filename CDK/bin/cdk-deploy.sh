@@ -47,11 +47,12 @@ if [ -d "./node_modules" ]; then
     fi
 fi
 
+
 # Check for required CDK modules, if not present install them locally
-# for module in core aws-iam aws-lambda aws-stepfunctions aws-stepfunctions-tasks aws-ssm aws-dynamodb aws-ssm aws-s3 aws-s3-notifications
-# do
-#     npm install "@aws-cdk/${module}@${cdk_release}"
-# done
+for module in core aws-iam aws-lambda aws-stepfunctions aws-stepfunctions-tasks aws-ssm aws-dynamodb aws-ssm aws-s3 aws-s3-notifications aws-kms
+do
+    npm install "@aws-cdk/${module}@${cdk_release}"
+done
 
 ./node_modules/aws-cdk/bin/cdk deploy SECLZ-SsmParametersStack \
     --context seclog_accountid=$seclog_accountid \
