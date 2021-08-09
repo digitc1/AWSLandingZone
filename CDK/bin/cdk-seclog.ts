@@ -122,8 +122,8 @@ const lambdaLogShippersStack = new LambdaLogShippersStack(app, 'SECLZ-LambdaLogS
   env: seclog,
   // ConfigBucketName: "config-logs-" + seclog_accountid + "-do-not-delete",
   // CloudtrailBucketName: "cloudtrail-logs-" + seclog_accountid + "-do-not-delete",
-  ConfigBucketName: "config-bucket-" + seclog_accountid ,
-  CloudtrailBucketName: "cloudtrail-bucket-" + seclog_accountid
+  ConfigBucketName: "config-logs-" + seclog_accountid + "-do-not-delete",
+  CloudtrailBucketName: "cloudtrail-logs-" + seclog_accountid + "-do-not-delete"
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
   // tags : tags,
