@@ -28,13 +28,10 @@ if (linked_accountids) {
 }
 all_accounts.push(seclog_accountid);
 
-cdk.Tags.of(app).add("Project", "secLZ");
-cdk.Tags.of(app).add("Owner", "DIGIT.C.1");
-cdk.Tags.of(app).add("Environment", "prod");
-cdk.Tags.of(app).add("Criticity", "high");
-cdk.Tags.of(app).add("Confidentiality", "confidential");
-cdk.Tags.of(app).add("Organization", "EC");
-cdk.Tags.of(app).add("ApplicationRole", "security");
+// Set the tags defined by the manifest to the CDK app
+for (var tag of m.tags) {
+  cdk.Tags.of(app).add(tag.Key,tag.Value);
+}
 
 const kmsStack = new KmsStack(app, 'SECLZ-KmsStack', {
   env: seclog,
