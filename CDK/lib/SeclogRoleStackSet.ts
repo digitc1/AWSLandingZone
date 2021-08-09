@@ -35,45 +35,6 @@ export class SeclogRoleStackSet extends cdk.Stack {
             Default: '/org/member/SecLogMasterAccountId'
             Description: SecLog Account ID
         Resources:
-          ExecutionRole:
-            Type: AWS::IAM::Role
-            Properties:
-              RoleName: AWSCloudFormationStackSetExecutionRole
-              AssumeRolePolicyDocument:
-                Version: 2012-10-17
-                Statement:
-                  - Effect: Allow
-                    Principal:
-                      AWS:
-                        - !Ref SeclogAccountId
-                    Action:
-                      - sts:AssumeRole
-              Path: /
-              ManagedPolicyArns:
-                - arn:aws:iam::aws:policy/AdministratorAccess
-          AdministrationRole:
-            Type: AWS::IAM::Role
-            Properties:
-              RoleName: AWSCloudFormationStackSetAdministrationRole
-              AssumeRolePolicyDocument:
-                Version: 2012-10-17
-                Statement:
-                  - Effect: Allow
-                    Principal:
-                      Service: cloudformation.amazonaws.com
-                    Action:
-                      - sts:AssumeRole
-              Path: /
-              Policies:
-                - PolicyName: AssumeRole-AWSCloudFormationStackSetExecutionRole
-                  PolicyDocument:
-                    Version: 2012-10-17
-                    Statement:
-                      - Effect: Allow
-                        Action:
-                          - sts:AssumeRole
-                        Resource:
-                          - "arn:aws:iam::*:role/AWSCloudFormationStackSetExecutionRole"
           LambdasSeclogAssumeRole:
             Type: AWS::IAM::Role
             Properties:
