@@ -49,10 +49,10 @@ fi
 
 
 # Check for required CDK modules, if not present install them locally
-for module in core aws-iam aws-lambda aws-stepfunctions aws-stepfunctions-tasks aws-ssm aws-dynamodb aws-ssm aws-s3 aws-s3-notifications aws-kms
-do
-    npm install "@aws-cdk/${module}@${cdk_release}"
-done
+# for module in core aws-iam aws-lambda aws-stepfunctions aws-stepfunctions-tasks aws-ssm aws-dynamodb aws-ssm aws-s3 aws-s3-notifications aws-kms
+# do
+#     npm install "@aws-cdk/${module}@${cdk_release}"
+# done
 
 
 # ./node_modules/aws-cdk/bin/cdk deploy --all \
@@ -67,6 +67,10 @@ done
 #     --context seclog_accountid=$seclog_accountid \
 #     --context linked_accountids=$linked_accountids 
 
-./node_modules/aws-cdk/bin/cdk deploy SECLZ-KmsStack SECLZ-SeclogRoleStackSet SECLZ-CisControlsUpdateStack \
+# ./node_modules/aws-cdk/bin/cdk deploy SECLZ-KmsStack SECLZ-SeclogRoleStackSet SECLZ-CisControlsUpdateStack \
+#     --context seclog_accountid=$seclog_accountid \
+#     --context linked_accountids=$linked_accountids 
+
+./node_modules/aws-cdk/bin/cdk deploy SECLZ-LinkedAccountRoleStackSet SECLZ-SeclogRoleStackSet \
     --context seclog_accountid=$seclog_accountid \
     --context linked_accountids=$linked_accountids 

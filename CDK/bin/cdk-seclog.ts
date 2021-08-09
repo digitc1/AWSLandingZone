@@ -6,10 +6,10 @@ import * as m from  '../conf/manifest.json';
 
 import { LambdaLogShippersStack } from '../lib/LambdaLogShippersStack';
 import { CisControlsUpdateStack } from '../lib/CisControlsUpdateStack';
+import { LinkedAccountRoleStackSet } from '../lib/LinkedAccountRoleStackSet';
 import { SeclogRoleStackSet } from '../lib/SeclogRoleStackSet';
 import { SsmParametersStack } from '../lib/SsmParametersStack';
 import { KmsStack } from '../lib/KmsStack';
-KmsStack
 
 const app = new cdk.App();
 
@@ -62,6 +62,10 @@ const ssmParametersStack = new SsmParametersStack(app, 'SECLZ-SsmParametersStack
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
   // tags : tags,
+});
+
+const linkedAccountRoleStackSet = new LinkedAccountRoleStackSet(app, 'SECLZ-LinkedAccountRoleStackSet', {
+  env: seclog,
 });
 
 const seclogRoleStackSet = new SeclogRoleStackSet(app, 'SECLZ-SeclogRoleStackSet', {

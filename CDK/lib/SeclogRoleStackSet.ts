@@ -1,4 +1,6 @@
 import * as cdk from '@aws-cdk/core';
+import * as iam from '@aws-cdk/aws-iam';
+
 interface SeclogRoleProps extends cdk.StackProps {
   readonly env : cdk.Environment,
   readonly accounts: string[],
@@ -8,10 +10,32 @@ export class SeclogRoleStackSet extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props: SeclogRoleProps) {
     super(scope, id, props);
 
+    // 👇 Create AWSCloudFormationStackSetAdministrationRole on the Seclog
+    const administrationRole = new iam.Role(this, 'AWSCloudFormationStackSetAdministrationRole', {
+      roleName: "AWSCloudFormationStackSetAdministrationRole",
+      assumedBy: new iam.ServicePrincipal('cloudformation.amazonaws.com'),
+      description: 'Creates an IAM Role in the SecLog account to assume a role and give permission to cloudformation to deploy StackSet instances on target accounts. Configure the AWSCloudFormationStackSetAdministrationRole to enable use of AWS CloudFormation StackSets. Create this CloudFormation stack only in the SecLog account',
+    });
+
+    // 👇 Create AssumeRole-AWSCloudFormationStackSetExecutionRole Managed Policy and associate it with the role AWSCloudFormationStackSetAdministrationRole
+    const ExecutionPolicy = new iam.ManagedPolicy(this, 'AssumeRole-AWSCloudFormationStackSetExecutionRole', {
+      description: 'Allows SECLOG to assume the role AWSCloudFormationStackSetExecutionRole on LINKED accounts',
+      statements: [
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['sts:AssumeRole'],
+          resources: ['arn:aws:iam::*:role/AWSCloudFormationStackSetExecutionRole'],
+        }),
+      ],
+      roles: [administrationRole],
+    });
+
+    // Stackset used to deploy roles on the SECLOG and the LINKED accounts in eu-west-1
     new cdk.CfnStackSet(this, "SECLZSeclogRoleCreateStackSet", {
         description: "Deploy the IAM roles required by the SECLOG to manage linked accounts",
         stackSetName: "SECLZSeclogManagedStackSet",
         permissionModel: "SELF_MANAGED",
+        executionRoleName: "AWSCloudFormationStackSetExecutionRole",
         operationPreferences: {
             maxConcurrentCount: 10,
             failureToleranceCount: 9,
