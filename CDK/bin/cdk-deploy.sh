@@ -54,17 +54,19 @@ do
     npm install "@aws-cdk/${module}@${cdk_release}"
 done
 
+
+# ./node_modules/aws-cdk/bin/cdk deploy --all \
+#     --context seclog_accountid=$seclog_accountid \
+#     --context linked_accountids=$linked_accountids 
+
 # ./node_modules/aws-cdk/bin/cdk deploy SECLZ-SsmParametersStack \
 #     --context seclog_accountid=$seclog_accountid \
-#     --context linked_accountids=$linked_accountids \
-#     --context manifest='conf/manifest.json'
+#     --context linked_accountids=$linked_accountids 
 
 # ./node_modules/aws-cdk/bin/cdk deploy SECLZ-KmsStack \
 #     --context seclog_accountid=$seclog_accountid \
-#     --context linked_accountids=$linked_accountids \
-#     --context manifest='conf/manifest.json'
+#     --context linked_accountids=$linked_accountids 
 
 ./node_modules/aws-cdk/bin/cdk deploy SECLZ-KmsStack SECLZ-SeclogRoleStackSet SECLZ-CisControlsUpdateStack \
     --context seclog_accountid=$seclog_accountid \
-    --context linked_accountids=$linked_accountids \
-    --context manifest='conf/manifest.json'
+    --context linked_accountids=$linked_accountids 
