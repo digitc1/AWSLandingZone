@@ -212,11 +212,7 @@ def main(argv):
                     if result != Execution.OK:
                         will_update(stack_actions,'SECLZ-config-cloudtrail-SNS')
                     if result != Execution.NO_ACTION:
-                        seclog_status = result     
-                if version and seclog_status != Execution.FAIL:
-                    result=update_ssm_parameter(cfn, '/org/member/SLZVersion', version)
-                    if result != Execution.NO_ACTION:
-                        seclog_status = result  
+                        seclog_status = result
                 if do_update(ssm_actions, 'cloudtrail-groupname') and seclog_status != Execution.FAIL:
                     result=update_ssm_parameter(cfn, '/org/member/SecLog_cloudtrail-groupname', ssm_actions['cloudtrail-groupname']['value'])
                     if result != Execution.OK:
@@ -402,6 +398,12 @@ def main(argv):
             if not null_empty(manifest, 'cis') and seclog_status != Execution.FAIL:
                 seclog_status = update_cis_controls(rules=cis_actions) 
 
+            #update LZ version
+            if version and seclog_status != Execution.FAIL:
+                    cfn = boto3.client('ssm')
+                    result=update_ssm_parameter(cfn, '/org/member/SLZVersion', version)
+                    if result != Execution.NO_ACTION:
+                        seclog_status = result 
 
             print("")
             print(f"SECLOG account {account_id} update ", end="")
@@ -458,10 +460,6 @@ def main(argv):
                                 will_update(stack_actions,'SECLZ-config-cloudtrail-SNS')
                             if result != Execution.NO_ACTION:
                                 linked_status = result     
-                        if version and linked_status != Execution.FAIL:
-                            result=update_ssm_parameter(cfn, '/org/member/SLZVersion', version)
-                            if result != Execution.NO_ACTION:
-                                linked_status = result  
                         if do_update(ssm_actions, 'cloudtrail-groupname') and linked_status != Execution.FAIL:
                             result=update_ssm_parameter(cfn, '/org/member/SecLog_cloudtrail-groupname', ssm_actions['cloudtrail-groupname']['value'])
                             if result != Execution.OK:
@@ -546,6 +544,16 @@ def main(argv):
                             secretAccessKey=secretAccessKey, 
                             sessionToken=sessionToken
                         ) 
+
+                    #update LZ version
+                    if version and linked_status != Execution.FAIL:
+                        cfn = boto3.client('ssm',  
+                            aws_access_key_id=accessKey,
+                            aws_secret_access_key=secretAccessKey, 
+                            aws_session_token=sessionToken)
+                        result=update_ssm_parameter(cfn, '/org/member/SLZVersion', version)
+                        if result != Execution.NO_ACTION:
+                            linked_status = result 
 
                     print("")
                     print(f"Linked account {linked} update ", end="")
