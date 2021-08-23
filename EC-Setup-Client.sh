@@ -120,11 +120,6 @@ configure_client(){
             sh ./SH/EC-Sanitize-Client-Account.sh $clientaccprofile
           fi
 
-        #   -----------------------------
-        #   Configure the Client account
-        #   -----------------------------
-
-        sh ./SH/EC-Configure-Client-Account.sh $clientaccprofile $seclogprofile
 
         #   -----------------------------------------------------------------------------
         #   Send invitations (Config, GuardDuty, Security Hub) from the SecLog account
@@ -154,6 +149,14 @@ configure_client(){
             read -p "  or CTRL-C to break"
         fi
 
+
+        #   -----------------------------
+        #   Configure the Client account
+        #   -----------------------------
+
+        sh ./SH/EC-Configure-Client-Account.sh $clientaccprofile $seclogprofile
+
+       
         sh ./SH/EC-Invite-from-SecLog-Account.sh $clientaccprofile $seclogprofile $clientaccountemail $batch
         #   -----------------------------------------------------------------------------
         #   Accept invitations (Config, GuardDuty, Security Hub) from the Client account
