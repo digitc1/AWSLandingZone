@@ -33,6 +33,7 @@
 # export seclogprofile=$3
 
 organisation=${organisation:-}
+ou=${ou:-}
 seclogprofile=${seclogprofile:-}
 clientaccprofile=${clientaccprofile:-}
 clientaccountemail=${clientaccountemail:-}
@@ -88,6 +89,7 @@ display_help() {
     echo ""
     echo "   Provide "
     echo "   --organisation       : The orgnisation account as configured in your AWS profile (optional)"
+    echo "   --ou                 : The parent orgnisational unit (optional)"
     echo "   --clientaccprofile   : The client account as configured in your AWS profile"
     echo "   --seclogprofile      : The account profile of the central SecLog account as configured in your AWS profile"
     echo "   --clientaccountemail : The root email address used to create the client account (optional, only required if organisation is not provided)"
@@ -129,8 +131,13 @@ configure_client(){
         #   -----------------------------------------------------------------------------
        
         if [ ! -z "$organisation" ] ; then
-          clientid=`aws --profile $clientaccprofile sts get-caller-identity --query 'Account' --output text`
-          clientaccountemail=`aws organizations --profile $organisation list-accounts --query 'Accounts[*].[Id, Name, Email]' --output text | grep $clientid | awk '{print $NF}'`
+          	clientid=`aws --profile $clientaccprofile sts get-caller-identity --query 'Account' --output text`
+          if [ ! -z "$ou" ] ; then
+            clientaccountemail=`aws organizations --profile $organisation list-accounts-for-parent --parent-id $ou --query 'Accounts[*].[Id, Name, Email]' --output text | grep $clientid | awk '{print $NF}'`
+          else
+            clientaccountemail=`aws organizations --profile $organisation list-accounts --query 'Accounts[*].[Id, Name, Email]' --output text | grep $clientid | awk '{print $NF}'`
+          fi
+        
         fi
 
         echo ""
