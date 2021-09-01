@@ -117,6 +117,7 @@ This script will:
 To configure the Client  account that you just created, we'll need to run the *EC-Setup-Client.sh* script by adding the following parameters:
 
 * --organisation       : The orgnisation account as configured in your AWS profile (optional)
+* --ou                 : The parent orgnisational unit (optional)
 * --clientaccprofile   : The client account as configured in your AWS profile
 * --seclogprofile      : The account profile of the central SecLog account as configured in your AWS profile
 * --clientaccountemail : The root email address used to create the client account (optional, only required if organisation is not provided)
@@ -128,7 +129,13 @@ Run the script
 $ ./EC-Setup-Client.sh --organisation EC_BROKER_ADM --clientaccprofile D3_Acc1 --seclogprofile D3_seclog
 ```
 
-Or
+Or if you're provided with an norganisational unit ID, use the following:
+
+```
+$ ./EC-Setup-Client.sh --organisation EC_BROKER_ADM --ou ou-jh16-abcdefgh --clientaccprofile D3_Acc1 --seclogprofile D3_seclog
+```
+
+Or, if thte organisation account is not available, use the following:
 
 ```
 $ ./EC-Setup-Client.sh --clientaccountemail digit-cloud-tech-account-aXXX@ec.europa.eu --clientaccprofile D3_Acc1 --seclogprofile D3_seclog

@@ -33,6 +33,7 @@
 # export seclogprofile=$3
 
 organisation=${organisation:-}
+ou=${ou:-}
 seclogprofile=${seclogprofile:-}
 clientaccprofile=${clientaccprofile:-}
 clientaccountemail=${clientaccountemail:-}
@@ -88,6 +89,7 @@ display_help() {
     echo ""
     echo "   Provide "
     echo "   --organisation       : The orgnisation account as configured in your AWS profile (optional)"
+    echo "   --ou                 : The parent orgnisational unit (optional)"
     echo "   --clientaccprofile   : The client account as configured in your AWS profile"
     echo "   --seclogprofile      : The account profile of the central SecLog account as configured in your AWS profile"
     echo "   --clientaccountemail : The root email address used to create the client account (optional, only required if organisation is not provided)"
@@ -118,19 +120,19 @@ configure_client(){
             sh ./SH/EC-Sanitize-Client-Account.sh $clientaccprofile
           fi
 
-        #   -----------------------------
-        #   Configure the Client account
-        #   -----------------------------
-
-        sh ./SH/EC-Configure-Client-Account.sh $clientaccprofile $seclogprofile
 
         #   -----------------------------------------------------------------------------
         #   Send invitations (Config, GuardDuty, Security Hub) from the SecLog account
         #   -----------------------------------------------------------------------------
        
         if [ ! -z "$organisation" ] ; then
-          clientid=`aws --profile $clientaccprofile sts get-caller-identity --query 'Account' --output text`
-          clientaccountemail=`aws organizations --profile $organisation list-accounts --query 'Accounts[*].[Id, Name, Email]' --output text | grep $clientid | awk '{print $NF}'`
+          	clientid=`aws --profile $clientaccprofile sts get-caller-identity --query 'Account' --output text`
+          if [ ! -z "$ou" ] ; then
+            clientaccountemail=`aws organizations --profile $organisation list-accounts-for-parent --parent-id $ou --query 'Accounts[*].[Id, Name, Email]' --output text | grep $clientid | awk '{print $NF}'`
+          else
+            clientaccountemail=`aws organizations --profile $organisation list-accounts --query 'Accounts[*].[Id, Name, Email]' --output text | grep $clientid | awk '{print $NF}'`
+          fi
+        
         fi
 
         echo ""
@@ -147,6 +149,14 @@ configure_client(){
             read -p "  or CTRL-C to break"
         fi
 
+
+        #   -----------------------------
+        #   Configure the Client account
+        #   -----------------------------
+
+        sh ./SH/EC-Configure-Client-Account.sh $clientaccprofile $seclogprofile
+
+       
         sh ./SH/EC-Invite-from-SecLog-Account.sh $clientaccprofile $seclogprofile $clientaccountemail $batch
         #   -----------------------------------------------------------------------------
         #   Accept invitations (Config, GuardDuty, Security Hub) from the Client account
