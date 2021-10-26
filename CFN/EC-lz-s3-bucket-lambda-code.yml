@@ -8,6 +8,11 @@ AWSTemplateFormatVersion: 2010-09-09
 
 Description: >-
     Creates S3 bucket for LogShipper Lambda functions 
+Parameters:  
+  CloudtrailKMSarn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: arn for KMS key to encrypt cloudtrail
+    Default: "/org/member/KMSCloudtrailKey_arn"
 
 Resources:
 
@@ -23,6 +28,11 @@ Resources:
               - ""
               - - "lambda-artefacts-"
                 - Ref: AWS::AccountId
+          BucketEncryption:
+              ServerSideEncryptionConfiguration: 
+              - ServerSideEncryptionByDefault:
+                  SSEAlgorithm: aws:kms
+                  KMSMasterKeyID: !Ref CloudtrailKMSarn 
           PublicAccessBlockConfiguration:
             BlockPublicAcls: true
             BlockPublicPolicy: true

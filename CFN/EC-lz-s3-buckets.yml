@@ -30,7 +30,10 @@ Parameters:
       Description: "Stack that deploys the lambdas for log shipping"
       Type: String
       Default: 'SECLZ-LogShipper-Lambdas'
-
+  CloudtrailKMSarn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: arn for KMS key to encrypt cloudtrail
+    Default: "/org/member/KMSCloudtrailKey_arn"
   FilesRetentionInDays:
       Description: 'Specifies the number of days you want to retain log files in the SLZ S3 buckets.'
       Type: Number
@@ -54,6 +57,11 @@ Resources:
               - - "cloudtrail-logs-"
                 - Ref: AWS::AccountId
                 - "-do-not-delete"
+          BucketEncryption:
+              ServerSideEncryptionConfiguration: 
+              - ServerSideEncryptionByDefault:
+                  SSEAlgorithm: aws:kms
+                  KMSMasterKeyID: !Ref CloudtrailKMSarn 
           NotificationConfiguration:
             LambdaConfigurations:
               - Event: s3:ObjectCreated:*
@@ -159,6 +167,11 @@ Resources:
               - - "config-logs-"
                 - Ref: AWS::AccountId
                 - "-do-not-delete"
+          BucketEncryption:
+              ServerSideEncryptionConfiguration: 
+              - ServerSideEncryptionByDefault:
+                  SSEAlgorithm: aws:kms
+                  KMSMasterKeyID: !Ref CloudtrailKMSarn 
           NotificationConfiguration:
             LambdaConfigurations:
               - Event: s3:ObjectCreated:*
@@ -263,6 +276,11 @@ Resources:
           - - "access-logs-"
             - Ref: AWS::AccountId
             - "-do-not-delete"
+        BucketEncryption:
+            ServerSideEncryptionConfiguration: 
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: aws:kms
+                KMSMasterKeyID: !Ref CloudtrailKMSarn 
         AccessControl: LogDeliveryWrite
         PublicAccessBlockConfiguration:
           BlockPublicAcls: true
