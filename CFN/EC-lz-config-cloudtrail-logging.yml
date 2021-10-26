@@ -367,6 +367,7 @@ Resources:
     Type: 'AWS::SNS::Topic'
     Condition: IsSecLogMasterAccount
     Properties:
+      KmsMasterKeyId: !Ref CloudtrailKMSarn
       DisplayName: !Ref NotifyDisplayName
       TopicName: !Ref NotifyTopicName
       Subscription:

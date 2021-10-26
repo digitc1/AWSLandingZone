@@ -22,6 +22,10 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /org/member/SecLog_sns_arn
     Description: "Local Admin SNS Topic for Landing Zone"
+  CloudtrailKMSarn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: arn for KMS key to encrypt cloudtrail
+    Default: "/org/member/KMSCloudtrailKey_arn"
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain notification forwarding log events in the Lambda log group.'
     Type: Number
@@ -32,6 +36,7 @@ Resources:
   LocalSNSNotificationTopic:
     Type: 'AWS::SNS::Topic'
     Properties:
+      KmsMasterKeyId: !Ref CloudtrailKMSarn
       DisplayName: !Ref LocalNotifyDisplayName
       TopicName: !Ref LocalNotificationTopicName
 
