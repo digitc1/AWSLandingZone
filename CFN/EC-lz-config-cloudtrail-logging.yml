@@ -369,6 +369,7 @@ Resources:
     Properties:
       DisplayName: !Ref NotifyDisplayName
       TopicName: !Ref NotifyTopicName
+      KmsMasterKeyId: !Ref CloudtrailKMSarn
       Subscription:
         - Protocol: email
           Endpoint: !Ref NotifyEmail
