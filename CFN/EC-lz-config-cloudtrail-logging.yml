@@ -194,6 +194,9 @@ Resources:
       S3BucketName: !Sub "cloudtrail-logs-${SecLogMasterAccountId}-do-not-delete"
       KMSKeyId: !Ref CloudtrailKMSarn
       IsLogging: true
+      InsightSelectors: 
+        - InsightType : 'ApiCallRateInsight'
+        - InsightType : 'ApiErrorRateInsight'
       EnableLogFileValidation: true
       CloudWatchLogsLogGroupArn: !GetAtt TrailLogGroup.Arn
       CloudWatchLogsRoleArn: !GetAtt TrailLogGroupRole.Arn
