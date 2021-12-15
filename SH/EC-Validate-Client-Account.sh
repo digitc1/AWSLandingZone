@@ -195,8 +195,8 @@ check_configservice_config $CLIENT_ACC_ID $SECLOG_ACC_ID
 echo ""
 
 #	Check for correct SNS Topic Configuration
-check_sns_topic
-echo ""
+#check_sns_topic
+#echo ""
 
 echo ""
 echo "VALIDATION COMPLETED"
