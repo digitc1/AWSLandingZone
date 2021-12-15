@@ -57,6 +57,7 @@ def main(argv):
     verbosity = logging.ERROR
     ssm_actions = []
     stack_actions = []
+    securityhub_actions = []
     stacksets_actions = []
     cis_actions = []
     version=None
@@ -186,6 +187,9 @@ def main(argv):
 
         if not null_empty(manifest, 'accounts'):
             all_regions = manifest['accounts']
+        
+        if not null_empty(manifest, 'securityhub'):
+            securityhub_actions = manifest['securityhub']
 
         seclog_status = Execution.NO_ACTION
         
@@ -394,6 +398,12 @@ def main(argv):
                 if result != Execution.NO_ACTION:
                     seclog_status = result
 
+            #securityhub actions
+            if securityhub_actions:
+                cfn = boto3.client('securityhub')
+                print("Enable SecurityHub Multi-region findings", end="")
+                toggle_securityhub_multiregion_findings(cfn, securityhub_actions['multiregion-findings']['enable'])
+                
             #cis controls
             if not null_empty(manifest, 'cis') and seclog_status != Execution.FAIL:
                 seclog_status = update_cis_controls(rules=cis_actions) 
@@ -751,6 +761,38 @@ def get_controls(client, region, sub_arn, NextToken=None):
         return controls['Controls'] + get_controls(client, region, sub_arn, NextToken=controls['NextToken'])
     else:
         return controls['Controls']
+
+def toggle_securityhub_multiregion_findings(client, enable=True):
+    
+    response0 = client.list_finding_aggregators()
+
+    if len(response0['FindingAggregators']) == 0 and enable:
+        try:
+            response = client.create_finding_aggregator(
+                RegionLinkingMode='eu-west-1',
+                Regions=[
+                    'ALL_REGIONS',
+                ]
+            )
+            print(f" [{Status.OK.value}]")
+            return Execution.OK
+        except Exception as err:
+            print(f"failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
+            return Execution.FAIL
+    elif len(response0['FindingAggregators']) == 1 and enable == False:
+        try:
+            response = client.delete_finding_aggregator(
+                FindingAggregatorArn=response0['FindingAggregators'][0]['FindingAggregatorArn']
+            )
+            print(f" [{Status.OK.value}]")
+            return Execution.OK
+        except Exception as err:
+            print(f"failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
+            return Execution.FAIL
+    else: 
+        print(f" [{Status.NO_ACTION.value}]")
+        return Execution.NO_ACTION
+
 
 def update_cis_controls(rules,
     accessKey=None,

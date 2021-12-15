@@ -44,6 +44,11 @@
             "update" : false
         } 
     },
+    "securityhub": {
+        "multiregion-findings" : {
+            "enable" :  true
+        }
+    },
     "cis" :  { 
         "cis-aws-foundations-benchmark/v/1.2.0":  {
             "checks" : ["1.11"],
