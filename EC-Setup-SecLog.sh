@@ -501,18 +501,6 @@ configure_seclog() {
     sleep 5
 
     #   ------------------------------------
-    #   Enable cloudtrail insights in seclog master account
-    #   ------------------------------------
-
-    echo ""
-    echo "-  Enable cloudtrail insights in seclog master account"
-    echo "--------------------------------------------------"
-    echo ""
-
-    aws --profile $seclogprofile cloudtrail put-insight-selectors --trail-name lz-cloudtrail-logging --insight-selectors '[{"InsightType": "ApiCallRateInsight"}]'
-
-
-    #   ------------------------------------
     #   Enable guardduty and securityhub in seclog master account
     #   ------------------------------------
 
