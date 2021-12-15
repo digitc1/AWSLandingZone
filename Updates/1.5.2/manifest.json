@@ -44,6 +44,15 @@
             "update" : false
         } 
     },
+    "cis" :  { 
+        "cis-aws-foundations-benchmark/v/1.2.0":  {
+            "checks" : ["1.11"],
+            "disabled" : true,
+            "disabled-reason" : "Managed by Cloud Broker Team",
+            "regions": [],
+            "exclusions" : ["ap-northeast-3"]
+        }
+    },
     "accounts" : {
         "exclude" : [],
         "include" : []
