@@ -14,13 +14,13 @@
             "update" : true
         },
         "SECLZ-LogShipper-Lambdas-Bucket" : {
-            "update" : false
+            "update" : true
         },
         "SECLZ-LogShipper-Lambdas" : {
             "update" : false
         },
         "SECLZ-Central-Buckets" : {
-            "update" : false
+            "update" : true
         },
         "SECLZ-Iam-Password-Policy" : {
             "update" : false
