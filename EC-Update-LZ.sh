@@ -114,7 +114,7 @@ update() {
             
             
 
-            pip3 install $dep &> /dev/null;
+            pip3 install -U $dep &> /dev/null;
             if [[ "$(python3 -c 'import sys, pkgutil; print(True) if pkgutil.find_loader(sys.argv[1]) else print(False)' $idep)" == "True" ]] ; then
                 echo ${EL}"$dep installed [${GREEN}OK${NC}]"
             else
