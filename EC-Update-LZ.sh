@@ -106,24 +106,24 @@ update() {
         if [[ $idep == "pyyaml" ]] ; then
                 idep='yaml'
             fi
-        if [[ "$(python3 -c 'import sys, pkgutil; print(True) if pkgutil.find_loader(sys.argv[1]) else print(False)' $idep)" == "True" ]] ; then
-            echo "$dep installed [${GREEN}OK${NC}]"
-        else
-            echo -ne "Installing $dep... \033[0K\r"
+        #if [[ "$(python3 -c 'import sys, pkgutil; print(True) if pkgutil.find_loader(sys.argv[1]) else print(False)' $idep)" == "True" ]] ; then
+        #    echo "$dep installed [${GREEN}OK${NC}]"
+        #else
+        echo -ne "Installing $dep... \033[0K\r"
             
             
             
 
-            pip3 install -U $dep &> /dev/null;
-            if [[ "$(python3 -c 'import sys, pkgutil; print(True) if pkgutil.find_loader(sys.argv[1]) else print(False)' $idep)" == "True" ]] ; then
-                echo ${EL}"$dep installed [${GREEN}OK${NC}]"
-            else
-                echo "${EL}$dep installed [${RED}FAIL${NC}]"
-                echo "Exiting..."
-                exit 1
-            fi
-            
+        pip3 install -U $dep &> /dev/null;
+        if [[ "$(python3 -c 'import sys, pkgutil; print(True) if pkgutil.find_loader(sys.argv[1]) else print(False)' $idep)" == "True" ]] ; then
+            echo ${EL}"$dep installed [${GREEN}OK${NC}]"
+        else
+            echo "${EL}$dep installed [${RED}FAIL${NC}]"
+            echo "Exiting..."
+            exit 1
         fi
+            
+        #fi
     done
 
 #run python update script
