@@ -117,49 +117,52 @@ configure_client() {
     echo "    - /org/member/SecLog_guardduty-groupname"
     echo "    - /org/member/SecLog_securityhub-groupname"
     echo "    - /org/member/SecLog_config-groupname"
-    aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value "SeeSecLog@seclogaccount" --overwrite
-    aws --profile $CLIENT ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $AWS_ACC_NUM --overwrite
-    aws --profile $CLIENT ssm put-parameter --name /org/member/SecLogOU --type String --value $OrgOuId --overwrite
-    aws --profile $CLIENT ssm put-parameter --name /org/member/KMSCloudtrailKey_arn --type String --value $KMS_KEY_ARN --overwrite
-    aws --profile $CLIENT ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite
+
+    tags=`cat $CFN_TAGS_FILE`
+
+    aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value "SeeSecLog@seclogaccount" --overwrite --tags $tags 
+    aws --profile $CLIENT ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $AWS_ACC_NUM --overwrite --tags $tags 
+    aws --profile $CLIENT ssm put-parameter --name /org/member/SecLogOU --type String --value $OrgOuId --overwrite --tags $tags 
+    aws --profile $CLIENT ssm put-parameter --name /org/member/KMSCloudtrailKey_arn --type String --value $KMS_KEY_ARN --overwrite --tags $tags 
+    aws --profile $CLIENT ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite --tags $tags 
 
 
     if  [ ! -z "$cloudtrailgroupname" ] ; then
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite --tags $tags 
     else
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail" --overwrite
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail" --overwrite --tags $tags 
     fi
     
     if  [ ! -z "$insightgroupname" ] ; then
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite --tags $tags 
     else
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value "/aws/cloudtrail/insight" --overwrite
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value "/aws/cloudtrail/insight" --overwrite --tags $tags 
     fi
     
     for region in $(aws --profile $CLIENT ec2 describe-regions --output text --query "Regions[?RegionName!='ap-northeast-3'].[RegionName]"); do
         if  [ ! -z "$guarddutygroupname" ] ; then
-            aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
+            aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite --tags $tags 
         else
-            aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value "/aws/events/guardduty" --overwrite
+            aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value "/aws/events/guardduty" --overwrite --tags $tags 
         fi
     done
     
     if  [ ! -z "$securityhubgroupname" ] ; then
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite --tags $tags 
     else
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value "/aws/events/securityhub" --overwrite
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value "/aws/events/securityhub" --overwrite --tags $tags 
     fi
 
     if  [ ! -z "$configgroupname" ] ; then
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite --tags $tags 
     else
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value "/aws/events/config" --overwrite
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value "/aws/events/config" --overwrite --tags $tags 
     fi
 
     if  [ ! -z "$alarmsgroupname" ] ; then
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value $alarmsgroupname --overwrite
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value $alarmsgroupname --overwrite --tags $tags 
     else
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value "/aws/events/cloudwatch-alarms" --overwrite
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value "/aws/events/cloudwatch-alarms" --overwrite --tags $tags 
     fi
 
 
