@@ -221,67 +221,82 @@ configure_seclog() {
 
     tags=`cat $CFN_TAGS_FILE`
 
+
     if  [ ! -z "$cloudtrailgroupname" ] ; then
-        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite --tags $tags 
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite 
+        
     else
         prevcloudtrailgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_cloudtrail-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
         if  [ -z "$prevcloudtrailgroupname" ] ; then
-            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail" --overwrite --tags $tags 
+            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail" --overwrite   --tags \'$tags\' 
         fi
     fi
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_cloudtrail-groupname --tags  file://$CFN_TAGS_FILE
     
     if  [ ! -z "$insightgroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite
     else
         previnsightgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_insight-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
         if  [ -z "$previnsightgroupname" ] ; then
-            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value "/aws/cloudtrail/insight" --overwrite --tags $tags 
+            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value "/aws/cloudtrail/insight" --overwrite   --tags \'$tags\' 
         fi
     fi
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_insight-groupname --tags  file://$CFN_TAGS_FILE
     
     for region in $(aws --profile $seclogprofile ec2 describe-regions --output text --query "Regions[?RegionName!='ap-northeast-3'].[RegionName]"); do
         if  [ ! -z "$guarddutygroupname" ] ; then
-            aws --profile $seclogprofile --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite --tags $tags 
+            aws --profile $seclogprofile --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite   
         else
             prevguarddutygroupname=`aws --profile $seclogprofile --region $region ssm get-parameter --name "/org/member/SecLog_guardduty-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
             if  [ -z "$prevguarddutygroupname" ] ; then
-                aws --profile $seclogprofile --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value "/aws/events/guardduty" --overwrite --tags $tags 
+                aws --profile $seclogprofile --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value "/aws/events/guardduty" --overwrite   
             fi
         fi
     done
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_guardduty-groupname --tags  file://$CFN_TAGS_FILE
     
     if  [ ! -z "$securityhubgroupname" ] ; then
-        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite --tags $tags 
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite   
         
     else
         prevsecurityhubgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_securityhub-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
         if  [ -z "$prevsecurityhubgroupname" ] ; then
-            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value "/aws/events/securityhub" --overwrite --tags $tags 
+            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value "/aws/events/securityhub" --overwrite   
         fi
     fi
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_securityhub-groupname --tags  file://$CFN_TAGS_FILE
 
     if  [ ! -z "$configgroupname" ] ; then
-        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite --tags $tags 
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite   
     else
         prevconfiggroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_config-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
         if  [ -z "$prevconfiggroupname" ] ; then
-            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value "/aws/events/config" --overwrite --tags $tags 
+            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value "/aws/events/config" --overwrite   
         fi
     fi
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_config-groupname --tags  file://$CFN_TAGS_FILE
 
     if  [ ! -z "$alarmsgroupname" ] ; then
-        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value $alarmsgroupname --overwrite --tags $tags 
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value $alarmsgroupname --overwrite   
     else
         prevalarmsgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_alarms-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
         if  [ -z "$prevalarmsgroupname" ] ; then
-            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value "/aws/events/cloudwatch-alarms" --overwrite --tags $tags 
+            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value "/aws/events/cloudwatch-alarms" --overwrite   
         fi
     fi
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_alarms-groupname --tags  file://$CFN_TAGS_FILE
     
-    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value $notificationemail --overwrite --tags $tags 
-    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $SECLOG_ACCOUNT_ID --overwrite --tags $tags 
-    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogOU --type String --value $ORG_OU_ID --overwrite --tags $tags 
-    aws --profile $seclogprofile ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite --tags $tags 
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value $notificationemail --overwrite
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_notification-mail --tags  file://$CFN_TAGS_FILE
+
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $SECLOG_ACCOUNT_ID --overwrite   
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLogMasterAccountId --tags  file://$CFN_TAGS_FILE
+
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogOU --type String --value $ORG_OU_ID --overwrite   
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLogOU --tags  file://$CFN_TAGS_FILE
+
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite   
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SLZVersion --tags  file://$CFN_TAGS_FILE
 
     #   ------------------------------------
     #   Create CFN template for AdministrationRole and ExecutionRole
@@ -295,7 +310,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name SECLZ-StackSetAdministrationRole \
     --template-body file://$CFN_STACKSET_ADMIN_ROLE \
-    --tags file://$CFN_TAGS_FILE \
+     \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -304,7 +319,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name SECLZ-StackSetExecutionRole \
     --template-body file://$CFN_STACKSET_EXEC_ROLE \
-    --tags file://$CFN_TAGS_FILE \
+     \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -321,7 +336,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Cloudtrail-KMS' \
     --template-body file://$CFN_CLOUDTRAIL_KMS \
-    --tags file://$CFN_TAGS_FILE \
+     \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -337,7 +352,8 @@ configure_seclog() {
     KMS_KEY_ARN=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/KMSCloudtrailKey_arn" --output text --query 'Parameter.Value'`
 
     #Storing the KMSCloudTrailKeyArn into SSM Parameter Store
-    aws --profile $seclogprofile ssm put-parameter --name /org/member/KMSCloudtrailKey_arn --type String --value $KMS_KEY_ARN --overwrite --tags $tags  &>/dev/null
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/KMSCloudtrailKey_arn --type String --value $KMS_KEY_ARN --overwrite    &>/dev/null
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/KMSCloudtrailKey_arn --tags  file://$CFN_TAGS_FILE
 
 
     #   ------------------------------------
@@ -355,7 +371,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-LogShipper-Lambdas-Bucket' \
     --template-body file://$CFN_LAMBDAS_BUCKET_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
+     \
     --capabilities CAPABILITY_NAMED_IAM \
     --enable-termination-protection \
     --profile $seclogprofile
@@ -411,7 +427,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Central-Buckets' \
     --template-body file://$CFN_BUCKETS_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
+     \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -435,7 +451,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Iam-Password-Policy' \
     --template-body file://$CFN_IAM_PWD_POLICY \
-    --tags file://$CFN_TAGS_FILE \
+     \
     --capabilities CAPABILITY_IAM \
     --enable-termination-protection \
     --profile $seclogprofile
@@ -488,7 +504,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-config-cloudtrail-SNS' \
     --template-body file://$CFN_LOG_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
+     \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile \
@@ -519,7 +535,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Guardduty-detector' \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
+     \
     --enable-termination-protection \
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile \
@@ -535,7 +551,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-SecurityHub' \
     --template-body file://$CFN_SECURITYHUB_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
+     \
     --enable-termination-protection \
     --profile $seclogprofile
 
@@ -568,7 +584,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Notifications-Cloudtrail' \
     --template-body file://$CFN_NOTIFICATIONS_CT_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
+     \
     --enable-termination-protection \
     --profile $seclogprofile
 
@@ -600,7 +616,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-CloudwatchLogs-SecurityHub' \
     --template-body file://$CFN_SECURITYHUB_LOG_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
+     \
     --enable-termination-protection \
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile \
