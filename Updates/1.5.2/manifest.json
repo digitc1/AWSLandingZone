@@ -9,6 +9,40 @@
         { "Key": "Confidentiality","Value": "confidential" },
         { "Key": "ApplicationRole","Value": "security" }
     ],
+    "ssm" : {
+        "seclog-ou" : {
+            "update" : false,
+            "tags" : true
+        },
+        "notification-mail" : {
+            "update" : false,
+            "tags" : true
+        },
+        "cloudtrail-groupname" : {
+            "update" : false,
+            "tags" : true
+        },
+        "insight-groupname" : {
+            "update" : false,
+            "tags" : true
+        },
+        "guardduty-groupname" : {
+            "update" : false,
+            "tags" : true
+        },
+        "securityhub-groupname" : {
+            "update" : false,
+            "tags" : true
+        },
+        "config-groupname" : {
+            "update" : false,
+            "tags" : true
+        },
+        "alarms-groupname" : {
+            "update" : false,
+            "tags" : true
+        }
+    },
     "stacks" : {
         "SECLZ-Cloudtrail-KMS" : {
             "update" : true

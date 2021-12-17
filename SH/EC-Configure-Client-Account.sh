@@ -120,50 +120,72 @@ configure_client() {
 
     tags=`cat $CFN_TAGS_FILE`
 
-    aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value "SeeSecLog@seclogaccount" --overwrite --tags $tags 
-    aws --profile $CLIENT ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $AWS_ACC_NUM --overwrite --tags $tags 
-    aws --profile $CLIENT ssm put-parameter --name /org/member/SecLogOU --type String --value $OrgOuId --overwrite --tags $tags 
-    aws --profile $CLIENT ssm put-parameter --name /org/member/KMSCloudtrailKey_arn --type String --value $KMS_KEY_ARN --overwrite --tags $tags 
-    aws --profile $CLIENT ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite --tags $tags 
+    aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value "SeeSecLog@seclogaccount" --overwrite 
+    aws --profile $CLIENT ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_notification-mail --tags  file://$CFN_TAGS_FILE
+
+    aws --profile $CLIENT ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $AWS_ACC_NUM --overwrite 
+    aws --profile $CLIENT ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLogMasterAccountId --tags  file://$CFN_TAGS_FILE
+    
+    aws --profile $CLIENT ssm put-parameter --name /org/member/SecLogOU --type String --value $OrgOuId --overwrite 
+    aws --profile $CLIENT ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLogOU --tags  file://$CFN_TAGS_FILE
+    
+    aws --profile $CLIENT ssm put-parameter --name /org/member/KMSCloudtrailKey_arn --type String --value $KMS_KEY_ARN --overwrite 
+    aws --profile $CLIENT ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/KMSCloudtrailKey_arn --tags  file://$CFN_TAGS_FILE
+    
+    aws --profile $CLIENT ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite 
+    aws --profile $CLIENT ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SLZVersion --tags  file://$CFN_TAGS_FILE
+    
 
 
     if  [ ! -z "$cloudtrailgroupname" ] ; then
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite --tags $tags 
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite 
     else
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail" --overwrite --tags $tags 
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail" --overwrite 
     fi
+    aws --profile $CLIENT ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_cloudtrail-groupname --tags  file://$CFN_TAGS_FILE
+    
     
     if  [ ! -z "$insightgroupname" ] ; then
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite --tags $tags 
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite 
     else
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value "/aws/cloudtrail/insight" --overwrite --tags $tags 
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value "/aws/cloudtrail/insight" --overwrite 
     fi
+    aws --profile $CLIENT ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_insight-groupname --tags  file://$CFN_TAGS_FILE
+    
     
     for region in $(aws --profile $CLIENT ec2 describe-regions --output text --query "Regions[?RegionName!='ap-northeast-3'].[RegionName]"); do
         if  [ ! -z "$guarddutygroupname" ] ; then
-            aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite --tags $tags 
+            aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite 
         else
-            aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value "/aws/events/guardduty" --overwrite --tags $tags 
+            aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value "/aws/events/guardduty" --overwrite 
         fi
+        aws --profile $CLIENT --region $region  ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_guardduty-groupname --tags  file://$CFN_TAGS_FILE
+    
     done
     
     if  [ ! -z "$securityhubgroupname" ] ; then
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite --tags $tags 
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite 
     else
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value "/aws/events/securityhub" --overwrite --tags $tags 
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value "/aws/events/securityhub" --overwrite 
     fi
+    aws --profile $CLIENT ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_securityhub-groupname --tags  file://$CFN_TAGS_FILE
+    
 
     if  [ ! -z "$configgroupname" ] ; then
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite --tags $tags 
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite 
     else
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value "/aws/events/config" --overwrite --tags $tags 
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value "/aws/events/config" --overwrite 
     fi
+    aws --profile $CLIENT ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_config-groupname --tags  file://$CFN_TAGS_FILE
+    
 
     if  [ ! -z "$alarmsgroupname" ] ; then
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value $alarmsgroupname --overwrite --tags $tags 
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value $alarmsgroupname --overwrite 
     else
-        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value "/aws/events/cloudwatch-alarms" --overwrite --tags $tags 
+        aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value "/aws/events/cloudwatch-alarms" --overwrite 
     fi
+    aws --profile $CLIENT ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_alarms-groupname --tags  file://$CFN_TAGS_FILE
+    
 
 
     #   Create ExecRole
