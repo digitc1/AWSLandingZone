@@ -870,7 +870,6 @@ def toggle_securityhub_multiregion_findings(client, enable=True):
     if len(response0['FindingAggregators']) == 0 and enable:
         try:
             response = client.create_finding_aggregator(
-                FindingAggregationRegion='eu-west-1',
                 RegionLinkingMode='ALL_REGIONS'
             )
             print(f" [{Status.OK.value}]")
