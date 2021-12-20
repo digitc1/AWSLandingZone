@@ -560,15 +560,15 @@ configure_seclog() {
 
     
     #   ------------------------------------
-    #   Enable cloudtrail insights in seclog master account
+    #   AWS Security Hub adds support for cross-Region aggregation of findings
     #   ------------------------------------
 
     echo ""
-    echo "-  Enable cloudtrail insights in seclog master account"
+    echo "-  AWS Security Hub add support for cross-Region aggregation of findings"
     echo "--------------------------------------------------"
     echo ""
 
-    aws --profile $seclogprofile cloudtrail put-insight-selectors --trail-name lz-cloudtrail-logging --insight-selectors '[{"InsightType": "ApiCallRateInsight"}]'
+    aws --profile $seclogprofile securityhub create-finding-aggregator --region eu-west-1 --region-linking-mode ALL_REGIONS
 
 
 
