@@ -250,16 +250,22 @@ def main(argv):
                     seclog_status = add_tags_parameter(cfnssm, '/org/member/SecLog_insight-groupname')
 
                 if  do_update(ssm_actions, 'guardduty-groupname') and seclog_status != Execution.FAIL:
-                    result=update_ssm_parameter(cfnssm, '/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname']['value'])
-                    if result != Execution.OK:
-                        will_update(stack_actions,'SECLZ-Guardduty-detector')
-                        will_update(stacksets_actions,'SECLZ-Enable-Guardduty-Globally')
-                    if result != Execution.NO_ACTION:
-                        seclog_status = result  
+                    for region in all_regions:
+                        cfnssm = boto3.client('ssm', region_name=region)
+                        result=update_ssm_parameter(cfnssm, '/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname']['value'], region)
+                        if result != Execution.OK:
+                            will_update(stack_actions,'SECLZ-Guardduty-detector')
+                            will_update(stacksets_actions,'SECLZ-Enable-Guardduty-Globally')
+                        if result != Execution.NO_ACTION:
+                            seclog_status = result  
+                    cfnssm = boto3.client('ssm')
                 #add tags
                 if 'tags' in ssm_actions['guardduty-groupname'] and ssm_actions['seclog-ou']['tags'] == True:
-                    seclog_status = add_tags_parameter(cfnssm, '/org/member/SecLog_guardduty-groupname')
-
+                    for region in all_regions:
+                        cfnssm = boto3.client('ssm', region_name=region)
+                        seclog_status = add_tags_parameter(cfnssm, '/org/member/SecLog_guardduty-groupname', region)
+                
+                    cfnssm = boto3.client('ssm')
                 if  do_update(ssm_actions, 'securityhub-groupname') and seclog_status != Execution.FAIL:
                     result=update_ssm_parameter(cfnssm, '/org/member/SecLog_securityhub-groupname', ssm_actions['securityhub-groupname']['value'])
                     if result != Execution.OK:
@@ -425,19 +431,34 @@ def main(argv):
                 result = update_stackset(cfn, 'SECLZ-Enable-Config-SecurityHub-Globally', stacksets, get_params(stacksets_actions,'SECLZ-Enable-Config-SecurityHub-Globally'))
                 if result != Execution.NO_ACTION:
                     seclog_status = result
-            
+           
             #stackset Enable-Guardduty-Globally
             if do_update(stacksets_actions, 'SECLZ-Enable-Guardduty-Globally') and seclog_status != Execution.FAIL:            
                 result = update_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', stacksets, get_params(stacksets_actions,'SECLZ-Enable-Guardduty-Globally'))
                 if result != Execution.NO_ACTION:
                     seclog_status = result
 
+            #stackset add stack Enable-Config-SecurityHub
+            if do_add_stack(stacksets_actions, 'SECLZ-Enable-Config-SecurityHub-Globally') and seclog_status != Execution.FAIL and len(linked_accounts) > 0:            
+                result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Config-SecurityHub-Globally', linked_accounts, stacksets_actions['deploy'])
+                if result != Execution.NO_ACTION:
+                    seclog_status = result
+            
+            #stackset  add stack Enable-Guardduty-Globally
+            if do_add_stack(stacksets_actions, 'SECLZ-Enable-Guardduty-Globally') and seclog_status != Execution.FAIL and len(linked_accounts) > 0:            
+                result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', linked_accounts, stacksets_actions['deploy'])
+                if result != Execution.NO_ACTION:
+                    seclog_status = result
+
+             
+
             #securityhub actions
             if securityhub_actions:
                 cfn = boto3.client('securityhub')
                 print("Enable SecurityHub Multi-region findings", end="")
                 toggle_securityhub_multiregion_findings(cfn, securityhub_actions['multiregion-findings']['enable'])
-                
+            
+
             #cis controls
             if not null_empty(manifest, 'cis') and seclog_status != Execution.FAIL:
                 seclog_status = update_cis_controls(rules=cis_actions) 
@@ -541,14 +562,32 @@ def main(argv):
 
 
                         if  do_update(ssm_actions, 'guardduty-groupname') and linked_status != Execution.FAIL:
-                            result=update_ssm_parameter(cfn, '/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname']['value'])
-                            if result != Execution.OK:
-                                will_update(stack_actions,'SECLZ-Guardduty-detector')
-                            if result != Execution.NO_ACTION:
-                                linked_status = result  
+                            for region in all_regions:
+                                cfn = boto3.client('ssm', aws_access_key_id=accessKey,
+                                    aws_secret_access_key=secretAccessKey, 
+                                    aws_session_token=sessionToken,
+                                    region_name=region)
+                                result=update_ssm_parameter(cfn, '/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname']['value'])
+                                if result != Execution.OK:
+                                    will_update(stack_actions,'SECLZ-Guardduty-detector')
+                                if result != Execution.NO_ACTION:
+                                    linked_status = result  
+                            cfn = boto3.client('ssm',  
+                                aws_access_key_id=accessKey,
+                                aws_secret_access_key=secretAccessKey, 
+                                aws_session_token=sessionToken)
                         #add tags
                         if 'tags' in ssm_actions['guardduty-groupname'] and ssm_actions['guardduty-groupname']['tags'] == True:
-                            linked_status = add_tags_parameter(cfn, '/org/member/SecLog_guardduty-groupname')
+                            for region in all_regions:
+                                cfn = boto3.client('ssm', aws_access_key_id=accessKey,
+                                    aws_secret_access_key=secretAccessKey, 
+                                    aws_session_token=sessionToken,
+                                    region_name=region)
+                                linked_status = add_tags_parameter(cfn, '/org/member/SecLog_guardduty-groupname')
+                            cfn = boto3.client('ssm',  
+                                aws_access_key_id=accessKey,
+                                aws_secret_access_key=secretAccessKey, 
+                                aws_session_token=sessionToken)
 
 
                         if  do_update(ssm_actions, 'securityhub-groupname') and linked_status != Execution.FAIL:
@@ -746,6 +785,15 @@ def do_update(dict, key):
         return True
     else: return False
 
+def do_add_stack(dict, key):
+    """
+    Function that checks if the a key exists in the dict and the value is not empty
+        :return: true or false
+    """
+    if not null_empty(dict, key) and 'deploy' in dict[key] and dict[key]['deploy']:
+        return True
+    else: return False
+
 def will_update(dict, key):
     """
     Function that sets a stack to be updated
@@ -818,7 +866,7 @@ def add_tags_parameter(client,parameter):
         return Execution.FAIL
     
 
-def update_ssm_parameter(client, parameter, value):
+def update_ssm_parameter(client, parameter, value, region=None):
     """
     Function used to update an SSM parameter if the value is different
         :paremter:      parameter name
@@ -826,8 +874,11 @@ def update_ssm_parameter(client, parameter, value):
         :return:        execution status
     """
     exists = True
-    
-    print(f"SSM parameter {parameter} update ", end="")
+    if region:
+        print(f"SSM parameter {parameter} update [{region}]", end="")
+    else:
+        print(f"SSM parameter {parameter} update ", end="")
+
     try:
         response = client.get_parameter(Name=parameter)
     except Exception as err:
@@ -1125,6 +1176,71 @@ def update_stack(client, stack, templates, params=[]):
                 return Execution.NO_ACTION
             else:
                 print(f"\033[2K\033[1GStack {stack} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
+        
+        return Execution.FAIL
+
+def add_stack_to_stackset(client, stackset, accounts, regions):
+    """
+    Function that updates a stackset defined in the parameters
+        :stackset:         The stackset name
+        :template_data: dict holding CFT details
+        :params:        parameters to be passed to the stackset
+        :return:        True or False
+    """
+    
+
+    print(f"Adding stacks to StackSet {stackset} ", end="")
+    response = client.describe_stack_set(StackSetName=stackset)
+   
+    if response['StackSet']['Status'] not in ('ACTIVE'):
+        print(f"Cannot update stackset {stackset} instances. Current stackset status is : {response['StackSet']['Status']} [{Status.FAIL.value}]")
+        return Execution.FAIL
+
+    accounts.append(get_account_id())
+
+    
+        
+    print("in progress ", end="")
+    with Spinner():
+        try:
+            operationPreferences={
+                'RegionConcurrencyType': 'PARALLEL',
+                'FailureToleranceCount': 9,
+                'MaxConcurrentCount': 10,
+            }
+            client.create_stack_instances(
+                StackSetName=stackset, 
+                Regions=regions, 
+                Accounts=accounts,
+                OperationPreferences=operationPreferences
+                )
+            updated=False
+        
+            while updated == False:
+                try:
+                    time.sleep(1)
+                    response = client.describe_stack_set(StackSetName=stackset)
+                    if 'ACTIVE' in response['StackSet']['Status'] :
+                        print(f"\033[2K\033[1GStackSet {stackset} update [{Status.OK.value}]")
+                        updated=True
+                        break
+                except ClientError as err:
+                    if err.response['Error']['Code'] == 'ThrottlingException':
+                        continue
+                    else:
+                        raise err
+                
+                
+            return Execution.OK
+        
+        except ClientError as err:
+            if err.response['Error']['Code'] == 'AmazonCloudFormationException':
+                print(f"\033[2K\033[1GStackSet {stackset} not found : {err.response['Error']['Message']} [{Status.FAIL.value}]")
+            elif err.response['Error']['Code'] == 'ValidationError' and err.response['Error']['Message'] == 'No updates are to be performed.':
+                print(f"\033[2K\033[1GStackSet {stackset} update [{Status.NO_ACTION.value}]")
+                return Execution.NO_ACTION
+            else:
+                print(f"\033[2K\033[1GStackSet {stackset} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
         
         return Execution.FAIL
 
