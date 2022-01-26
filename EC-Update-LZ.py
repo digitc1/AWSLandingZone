@@ -442,7 +442,7 @@ def main(argv):
 
             
             if do_add_stack(stacksets_actions, 'SECLZ-Enable-Config-SecurityHub-Globally') and seclog_status != Execution.FAIL: 
-                stacksetacc = linked_accounts
+                stacksetacc = linked_accounts.copy()
                 stacksetacc.append(get_account_id())
                 result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Config-SecurityHub-Globally', stacksetacc,  stacksets_actions['SECLZ-Enable-Config-SecurityHub-Globally']['deploy'])
                 if result != Execution.NO_ACTION:
@@ -450,7 +450,7 @@ def main(argv):
             
             #stackset  add stack Enable-Guardduty-Globally
             if do_add_stack(stacksets_actions, 'SECLZ-Enable-Guardduty-Globally') and seclog_status != Execution.FAIL:
-                stacksetacc = linked_accounts
+                stacksetacc = linked_accounts.copy()
                 stacksetacc.append(get_account_id())
                 result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', stacksetacc, stacksets_actions['SECLZ-Enable-Guardduty-Globally']['deploy'])
                 if result != Execution.NO_ACTION:
@@ -491,11 +491,11 @@ def main(argv):
         if seclog_status == Execution.FAIL and len(linked_accounts) > 0:
             print("Skipping linked accounts update")
         else:
-            if len(all_regions['include']) > 0:
-                linked_accounts = [d for d in all_regions['include'] if d != account_id]
+            if len(accounts['include']) > 0:
+                linked_accounts = [d for d in accounts['include'] if d != account_id]
 
             for linked in linked_accounts:
-                if len(all_regions['exclude']) > 0 and linked in all_regions['exclude']:
+                if len(accounts['exclude']) > 0 and linked in accounts['exclude']:
                     print(f"Skipping linked account {linked}")
                 else:
                     sts = boto3.client('sts')
@@ -1192,8 +1192,7 @@ def add_stack_to_stackset(client, stackset, accounts, regions):
     """
     Function that updates a stackset defined in the parameters
         :stackset:         The stackset name
-        :template_data: dict holding CFT details
-        :params:        parameters to be passed to the stackset
+        :regions:        parameters to be passed to the stackset
         :return:        True or False
     """
     
@@ -1205,7 +1204,6 @@ def add_stack_to_stackset(client, stackset, accounts, regions):
         print(f"Cannot add stacks to stackset {stackset}. Current stackset status is : {response['StackSet']['Status']} [{Status.FAIL.value}]")
         return Execution.FAIL
 
-    accounts.append(get_account_id())
     print("in progress ", end="")
    
     try:
