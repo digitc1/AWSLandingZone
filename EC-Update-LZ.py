@@ -186,7 +186,7 @@ def main(argv):
             all_regions = manifest['regions']
 
         if not null_empty(manifest, 'accounts'):
-            all_regions = manifest['accounts']
+            accounts = manifest['accounts']
         
         if not null_empty(manifest, 'securityhub'):
             securityhub_actions = manifest['securityhub']
@@ -195,7 +195,7 @@ def main(argv):
         
         #update seclog stacks
 
-        if len(all_regions['exclude']) > 0 and account_id in all_regions['exclude']:
+        if len(accounts['exclude']) > 0 and account_id in accounts['exclude']:
             print(f"Skipping SECLOG account {account_id}")
         else:
         
@@ -440,13 +440,13 @@ def main(argv):
 
             #stackset add stack Enable-Config-SecurityHub
             if do_add_stack(stacksets_actions, 'SECLZ-Enable-Config-SecurityHub-Globally') and seclog_status != Execution.FAIL and len(linked_accounts) > 0:            
-                result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Config-SecurityHub-Globally', linked_accounts, stacksets_actions['deploy'])
+                result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Config-SecurityHub-Globally', linked_accounts, get_params(stacksets_actions,'SECLZ-Enable-Config-SecurityHub-Globally'))
                 if result != Execution.NO_ACTION:
                     seclog_status = result
             
             #stackset  add stack Enable-Guardduty-Globally
             if do_add_stack(stacksets_actions, 'SECLZ-Enable-Guardduty-Globally') and seclog_status != Execution.FAIL and len(linked_accounts) > 0:            
-                result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', linked_accounts, stacksets_actions['deploy'])
+                result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', linked_accounts, get_params(stacksets_actions,'SECLZ-Enable-Guardduty-Globally'))
                 if result != Execution.NO_ACTION:
                     seclog_status = result
 
@@ -847,13 +847,13 @@ def add_tags_parameter(client,parameter,region=None):
     global tags
 
     if region:
-        print(f"Adding tags to SSM parameter {parameter} [{region}]", end="")
-    else 
+        print(f"Adding tags to SSM parameter {parameter} [{region}] ", end="")
+    else:
         print(f"Adding tags to SSM parameter {parameter} ", end="")
     try:
         response = client.get_parameter(Name=parameter)
     except Exception as err:
-        print(f"\033[2K\033[1GSSM parameter {parameter} tag update failed, reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
+        print(f"failed, reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
         return Execution.FAIL
     try:
         response=client.add_tags_to_resource(
@@ -861,11 +861,12 @@ def add_tags_parameter(client,parameter,region=None):
         ResourceId=parameter,
         Tags=tags)
 
-        print(f"\033[2K\033[1GAdding tags to SSM parameter {parameter} [{Status.OK.value}]")
+   
+        print(f"[{Status.OK.value}]")
         return Execution.OK
     
     except Exception as err:
-        print(f"\033[2K\033[1GSSM parameter {parameter} tag update failed failed, reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
+        print(f"failed, reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
         return Execution.FAIL
     
 
@@ -878,14 +879,13 @@ def update_ssm_parameter(client, parameter, value, region=None):
     """
     exists = True
     if region:
-        print(f"SSM parameter {parameter} update [{region}]", end="")
+        print(f"SSM parameter {parameter} update [{region}] ", end="")
     else:
         print(f"SSM parameter {parameter} update ", end="")
 
     try:
         response = client.get_parameter(Name=parameter)
     except Exception as err:
-        print(f"\033[2K\033[1GSSM parameter {parameter} does not exist. Creating...", end="")
         exists=False
     try:
         if not exists or ('Value' in response['Parameter'] and value != response['Parameter']['Value']):
@@ -895,12 +895,12 @@ def update_ssm_parameter(client, parameter, value, region=None):
                 Type='String',
                 Overwrite=True|False)
             if response['Version']:
-                print(f"\033[2K\033[1GSSM parameter {parameter} update [{Status.OK.value}]")
+                print(f"[{Status.OK.value}]")
                 return Execution.OK
         
     
     except Exception as err:
-        print(f"\033[2K\033[1GSSM parameter {parameter} update failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
+        print(f"failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
         return Execution.FAIL
     
     print(f"[{Status.NO_ACTION.value}]")
@@ -1182,7 +1182,7 @@ def update_stack(client, stack, templates, params=[]):
         
         return Execution.FAIL
 
-def add_stack_to_stackset(client, stackset, accounts, regions):
+def add_stack_to_stackset(client, stackset, accounts, params):
     """
     Function that updates a stackset defined in the parameters
         :stackset:         The stackset name
@@ -1200,7 +1200,7 @@ def add_stack_to_stackset(client, stackset, accounts, regions):
         return Execution.FAIL
 
     accounts.append(get_account_id())
-
+    regions = params["deploy"]
     
         
     print("in progress ", end="")
