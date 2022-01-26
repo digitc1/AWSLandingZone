@@ -440,13 +440,13 @@ def main(argv):
 
             #stackset add stack Enable-Config-SecurityHub
             if do_add_stack(stacksets_actions, 'SECLZ-Enable-Config-SecurityHub-Globally') and seclog_status != Execution.FAIL and len(linked_accounts) > 0:            
-                result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Config-SecurityHub-Globally', linked_accounts, get_params(stacksets_actions,'SECLZ-Enable-Config-SecurityHub-Globally'))
+                result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Config-SecurityHub-Globally', linked_accounts,  stacksets_actions['SECLZ-Enable-Config-SecurityHub-Globally']['deploy'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result
             
             #stackset  add stack Enable-Guardduty-Globally
             if do_add_stack(stacksets_actions, 'SECLZ-Enable-Guardduty-Globally') and seclog_status != Execution.FAIL and len(linked_accounts) > 0:            
-                result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', linked_accounts, get_params(stacksets_actions,'SECLZ-Enable-Guardduty-Globally'))
+                result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', linked_accounts, stacksets_actions['SECLZ-Enable-Guardduty-Globally']['deploy'])
                 if result != Execution.NO_ACTION:
                     seclog_status = result
 
@@ -1182,7 +1182,7 @@ def update_stack(client, stack, templates, params=[]):
         
         return Execution.FAIL
 
-def add_stack_to_stackset(client, stackset, accounts, params):
+def add_stack_to_stackset(client, stackset, accounts, regions):
     """
     Function that updates a stackset defined in the parameters
         :stackset:         The stackset name
@@ -1196,56 +1196,32 @@ def add_stack_to_stackset(client, stackset, accounts, params):
     response = client.describe_stack_set(StackSetName=stackset)
    
     if response['StackSet']['Status'] not in ('ACTIVE'):
-        print(f"Cannot update stackset {stackset} instances. Current stackset status is : {response['StackSet']['Status']} [{Status.FAIL.value}]")
+        print(f"Cannot add stacks to stackset {stackset}. Current stackset status is : {response['StackSet']['Status']} [{Status.FAIL.value}]")
         return Execution.FAIL
 
     accounts.append(get_account_id())
-    regions = params["deploy"]
-    
-        
     print("in progress ", end="")
-    with Spinner():
-        try:
-            operationPreferences={
-                'RegionConcurrencyType': 'PARALLEL',
-                'FailureToleranceCount': 9,
-                'MaxConcurrentCount': 10,
-            }
-            client.create_stack_instances(
-                StackSetName=stackset, 
-                Regions=regions, 
-                Accounts=accounts,
-                OperationPreferences=operationPreferences
-                )
-            updated=False
-        
-            while updated == False:
-                try:
-                    time.sleep(1)
-                    response = client.describe_stack_set(StackSetName=stackset)
-                    if 'ACTIVE' in response['StackSet']['Status'] :
-                        print(f"\033[2K\033[1GStackSet {stackset} update [{Status.OK.value}]")
-                        updated=True
-                        break
-                except ClientError as err:
-                    if err.response['Error']['Code'] == 'ThrottlingException':
-                        continue
-                    else:
-                        raise err
-                
-                
-            return Execution.OK
-        
-        except ClientError as err:
-            if err.response['Error']['Code'] == 'AmazonCloudFormationException':
-                print(f"\033[2K\033[1GStackSet {stackset} not found : {err.response['Error']['Message']} [{Status.FAIL.value}]")
-            elif err.response['Error']['Code'] == 'ValidationError' and err.response['Error']['Message'] == 'No updates are to be performed.':
-                print(f"\033[2K\033[1GStackSet {stackset} update [{Status.NO_ACTION.value}]")
-                return Execution.NO_ACTION
-            else:
-                print(f"\033[2K\033[1GStackSet {stackset} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
-        
-        return Execution.FAIL
+   
+    try:
+        operationPreferences={
+            'RegionConcurrencyType': 'PARALLEL',
+            'FailureToleranceCount': 9,
+            'MaxConcurrentCount': 10,
+        }
+        client.create_stack_instances(
+            StackSetName=stackset, 
+            Regions=regions, 
+            Accounts=accounts,
+            OperationPreferences=operationPreferences
+            )
+      
+        print(f"\033[2K\033[1GAdding stacks to StackSet {stackset} [{Status.OK.value}]")
+        return Execution.OK
+    
+    except ClientError as err:
+        print(f"\033[2K\033[1GAdding stacks to StackSet {stackset} failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
+    
+    return Execution.FAIL
 
 def update_stackset(client, stackset, templates, params=[]):
     """
