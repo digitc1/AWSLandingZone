@@ -1205,7 +1205,16 @@ def add_stack_to_stackset(client, stackset, accounts, regions):
         return Execution.FAIL
 
     print("in progress ", end="")
-   
+    with Spinner():
+        filter={
+            'Name': 'DETAILED_STATUS',
+            'Values': 'PENDING'
+        }
+        response = client.list_stack_instances(StackSetName=stackset,Filters=filter)
+        while(response['summaries'] > 0):
+            time.sleep(1)
+            response = client.list_stack_instances(StackSetName=stackset,Filters=filter)
+
     try:
         operationPreferences={
             'RegionConcurrencyType': 'PARALLEL',
