@@ -250,9 +250,9 @@ def main(argv):
                     seclog_status = add_tags_parameter(cfnssm, '/org/member/SecLog_insight-groupname')
 
                 if  do_update(ssm_actions, 'guardduty-groupname') and seclog_status != Execution.FAIL:
-                    for region in all_regions:
-                        cfnssm = boto3.client('ssm', region_name=region)
-                        result=update_ssm_parameter(cfnssm, '/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname']['value'], region)
+                    for reg in all_regions:
+                        cfnssm = boto3.client('ssm', region_name=reg)
+                        result=update_ssm_parameter(cfnssm, '/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname']['value'], reg)
                         if result != Execution.OK:
                             will_update(stack_actions,'SECLZ-Guardduty-detector')
                             will_update(stacksets_actions,'SECLZ-Enable-Guardduty-Globally')
@@ -261,9 +261,9 @@ def main(argv):
                     cfnssm = boto3.client('ssm')
                 #add tags
                 if 'tags' in ssm_actions['guardduty-groupname'] and ssm_actions['seclog-ou']['tags'] == True:
-                    for region in all_regions:
-                        cfnssm = boto3.client('ssm', region_name=region)
-                        seclog_status = add_tags_parameter(cfnssm, '/org/member/SecLog_guardduty-groupname', region)
+                    for reg in all_regions:
+                        cfnssm = boto3.client('ssm', region_name=reg)
+                        seclog_status = add_tags_parameter(cfnssm, '/org/member/SecLog_guardduty-groupname', reg)
                 
                     cfnssm = boto3.client('ssm')
                 if  do_update(ssm_actions, 'securityhub-groupname') and seclog_status != Execution.FAIL:
@@ -842,11 +842,14 @@ def merge_params(list1, list2):
 def get_params(actions, key):
     return actions[key]['params'] if key in actions and 'params' in actions[key] else []
 
-def add_tags_parameter(client,parameter):
+def add_tags_parameter(client,parameter,region=None):
 
     global tags
 
-    print(f"Adding tags to SSM parameter {parameter} ", end="")
+    if region:
+        print(f"Adding tags to SSM parameter {parameter} [{region}]", end="")
+    else 
+        print(f"Adding tags to SSM parameter {parameter} ", end="")
     try:
         response = client.get_parameter(Name=parameter)
     except Exception as err:
