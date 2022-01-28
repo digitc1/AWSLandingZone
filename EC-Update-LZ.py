@@ -573,7 +573,7 @@ def main(argv):
                                     aws_secret_access_key=secretAccessKey, 
                                     aws_session_token=sessionToken,
                                     region_name=region)
-                                result=update_ssm_parameter(cfn, '/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname']['value'])
+                                result=update_ssm_parameter(cfn, '/org/member/SecLog_guardduty-groupname', ssm_actions['guardduty-groupname']['value'], region)
                                 if result != Execution.OK:
                                     will_update(stack_actions,'SECLZ-Guardduty-detector')
                                 if result != Execution.NO_ACTION:
@@ -589,7 +589,7 @@ def main(argv):
                                     aws_secret_access_key=secretAccessKey, 
                                     aws_session_token=sessionToken,
                                     region_name=region)
-                                linked_status = add_tags_parameter(cfn, '/org/member/SecLog_guardduty-groupname')
+                                linked_status = add_tags_parameter(cfn, '/org/member/SecLog_guardduty-groupname', region)
                             cfn = boto3.client('ssm',  
                                 aws_access_key_id=accessKey,
                                 aws_secret_access_key=secretAccessKey, 
@@ -1173,8 +1173,18 @@ def update_stack(client, stack, templates, params=[]):
                         continue
                     else:
                         raise err
+            
+            #check if stackset has been deployed correctly
+            filter=[{
+                'Name': 'DETAILED_STATUS',
+                'Values': 'PENDING'
+                }]
+            response = client.list_stack_instances(StackSetName=stack,Filters=filter)
+
+            while(len(response['Summaries']) > 0):
+                time.sleep(1)
+                response = client.list_stack_instances(StackSetName=stack,Filters=filter)
                 
-               
             return Execution.OK
         
         except ClientError as err:
