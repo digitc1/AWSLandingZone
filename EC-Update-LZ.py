@@ -431,7 +431,7 @@ def main(argv):
                 result = update_stackset(cfn, 'SECLZ-Enable-Config-SecurityHub-Globally', stacksets, get_params(stacksets_actions,'SECLZ-Enable-Config-SecurityHub-Globally'))
                 if result != Execution.NO_ACTION:
                     seclog_status = result
-           
+            
             #stackset Enable-Guardduty-Globally
             if do_update(stacksets_actions, 'SECLZ-Enable-Guardduty-Globally') and seclog_status != Execution.FAIL:            
                 result = update_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', stacksets, get_params(stacksets_actions,'SECLZ-Enable-Guardduty-Globally'))
@@ -440,7 +440,7 @@ def main(argv):
             
 
             #securityhub actions
-            if securityhub_actions:
+            if securityhub_actions and seclog_status != Execution.FAIL:
                 cfn = boto3.client('securityhub')
                 print("Enable SecurityHub Multi-region findings", end="")
                 toggle_securityhub_multiregion_findings(cfn, securityhub_actions['multiregion-findings']['enable'])
@@ -697,6 +697,28 @@ def main(argv):
         
         print("")
         print(f"Adding stacks to Stacksets from SECLOG {account_id} ", end="")
+        if has_profile:
+            if p  < len(profiles):
+                profile = profiles[p]
+                p=p+1
+                try:
+                    print(f"Using AWS profile : {profile}")
+                    boto3.setup_default_session(profile_name=profile)
+                    get_account_id(True)
+                except ProfileNotFound as err:
+                    print(f"{err} [{Status.FAIL.value}]")
+                    print("Exiting...")
+                    sys.exit(1)
+            else:
+                break
+        else:
+            loop = False 
+
+        if (is_seclog() == False):
+            print(f"Not a SECLOG account. [{Status.FAIL.value}]")
+            print("Exiting...")
+            sys.exit(1)
+            
         cfn = boto3.client('cloudformation',config=boto3_config)
         print("")
         #stackset add stack Enable-Config-SecurityHub
