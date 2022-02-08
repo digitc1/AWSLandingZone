@@ -647,23 +647,6 @@ def main(argv):
                         if result != Execution.NO_ACTION:
                             linked_status = result
                     
-                    print("Adding stacks to Stacksets")
-                    #stackset add stack Enable-Config-SecurityHub
-                    if do_add_stack(stacksets_actions, 'SECLZ-Enable-Config-SecurityHub-Globally') and seclog_status != Execution.FAIL: 
-                        stacksetacc = []
-                        stacksetacc.append(linked)
-                        result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Config-SecurityHub-Globally', stacksetacc,  stacksets_actions['SECLZ-Enable-Config-SecurityHub-Globally']['deploy'])
-                        if result != Execution.NO_ACTION:
-                            seclog_status = result
-                    
-                    #stackset  add stack Enable-Guardduty-Globally
-                    if do_add_stack(stacksets_actions, 'SECLZ-Enable-Guardduty-Globally') and seclog_status != Execution.FAIL:
-                        stacksetacc = []
-                        stacksetacc.append(linked)
-                        result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', stacksetacc, stacksets_actions['SECLZ-Enable-Guardduty-Globally']['deploy'])
-                        if result != Execution.NO_ACTION:
-                            seclog_status = result
-
 
                     #cis controls
                     if not null_empty(manifest, 'cis') and linked_status != Execution.FAIL:
@@ -718,7 +701,7 @@ def main(argv):
             print(f"Not a SECLOG account. [{Status.FAIL.value}]")
             print("Exiting...")
             sys.exit(1)
-            
+
         cfn = boto3.client('cloudformation',config=boto3_config)
         print("")
         #stackset add stack Enable-Config-SecurityHub
