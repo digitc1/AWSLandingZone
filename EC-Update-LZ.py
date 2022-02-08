@@ -437,26 +437,7 @@ def main(argv):
                 result = update_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', stacksets, get_params(stacksets_actions,'SECLZ-Enable-Guardduty-Globally'))
                 if result != Execution.NO_ACTION:
                     seclog_status = result
-
-            #stackset add stack Enable-Config-SecurityHub
-
             
-            if do_add_stack(stacksets_actions, 'SECLZ-Enable-Config-SecurityHub-Globally') and seclog_status != Execution.FAIL: 
-                stacksetacc = linked_accounts.copy()
-                stacksetacc.append(get_account_id())
-                result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Config-SecurityHub-Globally', stacksetacc,  stacksets_actions['SECLZ-Enable-Config-SecurityHub-Globally']['deploy'])
-                if result != Execution.NO_ACTION:
-                    seclog_status = result
-            
-            #stackset  add stack Enable-Guardduty-Globally
-            if do_add_stack(stacksets_actions, 'SECLZ-Enable-Guardduty-Globally') and seclog_status != Execution.FAIL:
-                stacksetacc = linked_accounts.copy()
-                stacksetacc.append(get_account_id())
-                result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', stacksetacc, stacksets_actions['SECLZ-Enable-Guardduty-Globally']['deploy'])
-                if result != Execution.NO_ACTION:
-                    seclog_status = result
-
-             
 
             #securityhub actions
             if securityhub_actions:
@@ -665,6 +646,24 @@ def main(argv):
                         result = update_stack(cfn, 'SECLZ-local-SNS-topic', stacks, get_params(stack_actions,'SECLZ-local-SNS-topic'))
                         if result != Execution.NO_ACTION:
                             linked_status = result
+                    
+                    print("Adding stacks to Stacksets")
+                    #stackset add stack Enable-Config-SecurityHub
+                    if do_add_stack(stacksets_actions, 'SECLZ-Enable-Config-SecurityHub-Globally') and seclog_status != Execution.FAIL: 
+                        stacksetacc = []
+                        stacksetacc.append(linked)
+                        result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Config-SecurityHub-Globally', stacksetacc,  stacksets_actions['SECLZ-Enable-Config-SecurityHub-Globally']['deploy'])
+                        if result != Execution.NO_ACTION:
+                            seclog_status = result
+                    
+                    #stackset  add stack Enable-Guardduty-Globally
+                    if do_add_stack(stacksets_actions, 'SECLZ-Enable-Guardduty-Globally') and seclog_status != Execution.FAIL:
+                        stacksetacc = []
+                        stacksetacc.append(linked)
+                        result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', stacksetacc, stacksets_actions['SECLZ-Enable-Guardduty-Globally']['deploy'])
+                        if result != Execution.NO_ACTION:
+                            seclog_status = result
+
 
                     #cis controls
                     if not null_empty(manifest, 'cis') and linked_status != Execution.FAIL:
@@ -696,7 +695,25 @@ def main(argv):
                         print(f"[{Status.NO_ACTION.value}]")
                     print("")
         
+        print("")
+        print(f"Adding stacks to Stacksets from SECLOG {account_id} ", end="")
+        cfn = boto3.client('cloudformation',config=boto3_config)
+        print("")
+        #stackset add stack Enable-Config-SecurityHub
+        if do_add_stack(stacksets_actions, 'SECLZ-Enable-Config-SecurityHub-Globally') and seclog_status != Execution.FAIL and linked_status != Execution.FAIL: 
+            stacksetacc = get_linked_accounts.copy()
+            stacksetacc.append(get_account_id())
+            result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Config-SecurityHub-Globally', stacksetacc,  stacksets_actions['SECLZ-Enable-Config-SecurityHub-Globally']['deploy'])
+            if result != Execution.NO_ACTION:
+                seclog_status = result
         
+        #stackset  add stack Enable-Guardduty-Globally
+        if do_add_stack(stacksets_actions, 'SECLZ-Enable-Guardduty-Globally') and seclog_status != Execution.FAIL and linked_status != Execution.FAIL:
+            stacksetacc = get_linked_accounts.copy()
+            stacksetacc.append(get_account_id())
+            result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', stacksetacc, stacksets_actions['SECLZ-Enable-Guardduty-Globally']['deploy'])
+            if result != Execution.NO_ACTION:
+                seclog_status = result
                 
 
     print("")

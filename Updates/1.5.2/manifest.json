@@ -29,7 +29,7 @@
         "guardduty-groupname" : {
             "update" : true,
             "tags" : true,
-            "value": "/org/member/SecLog_guardduty-groupname"
+            "value": "/aws/events/guardduty"
         },
         "securityhub-groupname" : {
             "update" : false,
