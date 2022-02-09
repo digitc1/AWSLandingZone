@@ -471,6 +471,7 @@ def main(argv):
         #update linked account stacks
         if seclog_status == Execution.FAIL and len(linked_accounts) > 0:
             print("Skipping linked accounts update")
+            linked_status = Execution.NO_ACTION
         else:
             if len(accounts['include']) > 0:
                 linked_accounts = [d for d in accounts['include'] if d != account_id]
@@ -677,37 +678,42 @@ def main(argv):
                     else:
                         print(f"[{Status.NO_ACTION.value}]")
                     print("")
+
+        if seclog_status != Execution.FAIL and linked_status != Execution.FAIL:
+            print("")
+            print(f"Adding stacks to Stacksets from SECLOG {account_id} ")
+            print("")
+            cfn = boto3.client('cloudformation',config=boto3_config)
         
-        print("")
-        print(f"Adding stacks to Stacksets from SECLOG {account_id} ")
-        print("")
-        cfn = boto3.client('cloudformation',config=boto3_config)
-     
-        #stackset add stack SECLZ-Enable-Config-SecurityHub-Globally
-        if do_add_stack(stacksets_actions, 'SECLZ-Enable-Config-SecurityHub-Globally') and seclog_status != Execution.FAIL and linked_status != Execution.FAIL: 
-            stacksetacc = linked_accounts.copy()
-            stacksetacc.append(get_account_id())
-            result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Config-SecurityHub-Globally', stacksetacc,  stacksets_actions['SECLZ-Enable-Config-SecurityHub-Globally']['deploy'])
-            if result != Execution.NO_ACTION:
-                seclog_status = result
-        
-        #stackset add stack SECLZ-Enable-Guardduty-Globally
-        if do_add_stack(stacksets_actions, 'SECLZ-Enable-Guardduty-Globally') and seclog_status != Execution.FAIL and linked_status != Execution.FAIL:
-            stacksetacc = linked_accounts.copy()
-            stacksetacc.append(get_account_id())
-            result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', stacksetacc, stacksets_actions['SECLZ-Enable-Guardduty-Globally']['deploy'])
-            if result != Execution.NO_ACTION:
-                seclog_status = result
-        
-        print("")
-        print(f"Adding stacks to Stacksets from SECLOG {account_id} ", end="")
-        if linked_status == Execution.FAIL:
-            print(f"[{Status.FAIL.value}]")
-        elif linked_status == Execution.OK:
-            print(f"[{Status.OK.value}]")
+            #stackset add stack SECLZ-Enable-Config-SecurityHub-Globally
+            if do_add_stack(stacksets_actions, 'SECLZ-Enable-Config-SecurityHub-Globally'): 
+                stacksetacc = linked_accounts.copy()
+                stacksetacc.append(get_account_id())
+                result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Config-SecurityHub-Globally', stacksetacc,  stacksets_actions['SECLZ-Enable-Config-SecurityHub-Globally']['deploy'])
+                if result != Execution.NO_ACTION:
+                    seclog_status = result
+            
+            #stackset add stack SECLZ-Enable-Guardduty-Globally
+            if do_add_stack(stacksets_actions, 'SECLZ-Enable-Guardduty-Globally') and seclog_status != Execution.FAIL:
+                stacksetacc = linked_accounts.copy()
+                stacksetacc.append(get_account_id())
+                result = add_stack_to_stackset(cfn, 'SECLZ-Enable-Guardduty-Globally', stacksetacc, stacksets_actions['SECLZ-Enable-Guardduty-Globally']['deploy'])
+                if result != Execution.NO_ACTION:
+                    seclog_status = result
+            
+            print("")
+            print(f"Adding stacks to Stacksets from SECLOG {account_id} ", end="")
+            if seclog_status == Execution.FAIL:
+                print(f"[{Status.FAIL.value}]")
+            elif seclog_status == Execution.OK:
+                print(f"[{Status.OK.value}]")
+            else:
+                print(f"[{Status.NO_ACTION.value}]")
+            print("")
         else:
-            print(f"[{Status.NO_ACTION.value}]")
-        print("")
+            print("")
+            print(f"Skipping adding stacks to Stacksets from SECLOG {account_id} ")
+            print("")
                 
 
     print("")
