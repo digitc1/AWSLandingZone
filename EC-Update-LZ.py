@@ -446,9 +446,7 @@ def main(argv):
                 toggle_securityhub_multiregion_findings(cfn, securityhub_actions['multiregion-findings']['enable'])
             
 
-            #cis controls
-            if not null_empty(manifest, 'cis') and seclog_status != Execution.FAIL:
-                seclog_status = update_cis_controls(rules=cis_actions) 
+            
 
             #update LZ version
             if version and seclog_status != Execution.FAIL:
@@ -649,14 +647,7 @@ def main(argv):
                             linked_status = result
                     
 
-                    #cis controls
-                    if not null_empty(manifest, 'cis') and linked_status != Execution.FAIL:
-                        linked_status = update_cis_controls(
-                            rules=cis_actions, 
-                            accessKey=accessKey,
-                            secretAccessKey=secretAccessKey, 
-                            sessionToken=sessionToken
-                        ) 
+                    
 
                     #update LZ version
                     if version and linked_status != Execution.FAIL:
@@ -714,6 +705,40 @@ def main(argv):
             print("")
             print(f"Skipping adding stacks to Stacksets from SECLOG {account_id} ")
             print("")
+
+        #cis controls SECLOG
+        if not null_empty(manifest, 'cis') and seclog_status != Execution.FAIL:
+            seclog_status = update_cis_controls(rules=cis_actions) 
+
+        #cis controls linked accounts
+        if seclog_status == Execution.FAIL and len(linked_accounts) > 0 and null_empty(manifest, 'cis'):
+            print("Skipping linked accounts CIS controls update")
+            linked_status = Execution.NO_ACTION
+        else:
+            if len(accounts['include']) > 0:
+                linked_accounts = [d for d in accounts['include'] if d != account_id]
+
+            for linked in linked_accounts:
+                if len(accounts['exclude']) > 0 and linked in accounts['exclude']:
+                    print(f"Skipping linked account {linked}")
+                else:
+                    sts = boto3.client('sts')
+                    assumedRole = sts.assume_role(
+                        RoleArn=f"arn:aws:iam::{linked}:role/AWSCloudFormationStackSetExecutionRole",
+                        RoleSessionName='CloudFormationSession'
+                    )
+                    credentials = assumedRole['Credentials']
+                    accessKey = credentials['AccessKeyId']
+                    secretAccessKey = credentials['SecretAccessKey']
+                    sessionToken = credentials['SessionToken']
+
+                    if not null_empty(manifest, 'cis') and linked_status != Execution.FAIL:
+                        linked_status = update_cis_controls(
+                            rules=cis_actions, 
+                            accessKey=accessKey,
+                            secretAccessKey=secretAccessKey, 
+                            sessionToken=sessionToken
+                        ) 
                 
 
     print("")
