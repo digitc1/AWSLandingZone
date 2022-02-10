@@ -194,6 +194,9 @@ Resources:
       S3BucketName: !Sub "cloudtrail-logs-${SecLogMasterAccountId}-do-not-delete"
       KMSKeyId: !Ref CloudtrailKMSarn
       IsLogging: true
+      InsightSelectors: 
+        - InsightType : 'ApiCallRateInsight'
+        - InsightType : 'ApiErrorRateInsight'
       EnableLogFileValidation: true
       CloudWatchLogsLogGroupArn: !GetAtt TrailLogGroup.Arn
       CloudWatchLogsRoleArn: !GetAtt TrailLogGroupRole.Arn
@@ -369,6 +372,7 @@ Resources:
     Properties:
       DisplayName: !Ref NotifyDisplayName
       TopicName: !Ref NotifyTopicName
+      KmsMasterKeyId: !Ref CloudtrailKMSarn
       Subscription:
         - Protocol: email
           Endpoint: !Ref NotifyEmail
