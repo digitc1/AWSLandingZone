@@ -1005,11 +1005,23 @@ def update_cis_controls(rules,
     try:
         with Spinner():
             #enable all rules
+            if is_seclog():
+                client = boto3.client('cloudformation')
+                
+                filter=[{
+                'Name': 'DETAILED_STATUS',
+                'Values': 'PENDING'
+                }]
+
+                response = client.list_stack_instances(StackSetName='SECLZ-Enable-Config-SecurityHub-Globally',Filters=filter)
+
+                while(len(response['Summaries']) > 0):
+                    time.sleep(1)
+                    response = client.list_stack_instances(StackSetName='SECLZ-Enable-Config-SecurityHub-Globally',Filters=filter)
           
-            regions = [d for d in all_regions if d  != 'ap-northeast-3']
             
             failed_regions = []
-            for region in regions:
+            for region in all_regions:
                 try:
                     client = boto3.client('securityhub',aws_access_key_id=accessKey,
                         aws_secret_access_key=secretAccessKey, 
