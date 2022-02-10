@@ -167,6 +167,24 @@ Resources:
                   - - "arn:aws:cloudtrail:*:"
                     - Ref: AWS::AccountId
                     - ":trail/*"
+          -
+            Sid: "Allow Guardduty to encrypt logs"
+            Effect: "Allow"
+            Principal:
+              Service: guardduty.amazonaws.com
+            Action: kms:GenerateDataKey*
+            Resource: "*"
+            Condition: 
+              StringEquals:
+                kms:CallerAccount: !Ref AWS::AccountId
+          - 
+            Sid: "Allow Guardduty to describe key"
+            Effect: "Allow"
+            Principal:
+              Service: guardduty.amazonaws.com
+            Action:
+              - "kms:DescribeKey"
+            Resource: "*"
 
   myKeyAlias:
     Type: AWS::KMS::Alias

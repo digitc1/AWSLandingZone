@@ -3,19 +3,16 @@
 #   --------------------------------------------------------
 #
 #	Automates the following:
-#	- AWS Account creation (Within an AWS Org)
-#	- AWS CLI Role Profile creation for the new account
+#	- AWS  Defaut VPC deletion
 #
 #       Usage
-#       $ ./EC-Create-Account.sh ACCOUNT_Name
+#       $ ./EC-Delete-Default-VPC.sh ACCOUNT_Name
 #        ex:
-#          $ ./EC-Create-Account.sh DIGITS3_Drupal1
+#          $ ./EC-Delete-Default-VPC.sh DIGITS3_Drupal1
 #
 #   Version History
 #
-#   v1.0    J. Vandenbergen   Initial Version
-#   v1.1    A. Levret         Add 'jq' package installed check
-#   v1.2    A. Levret         Remove 'jq' dependencies
+#   v1.0    L. Leonard   Initial Version
 #   --------------------------------------------------------
 
 #   --------------------
@@ -61,6 +58,16 @@ delete_vpc() {
       continue
     else
       echo "Found default vpc ${vpc}"
+
+      ec2=$(aws ec2 describe-instances --profile $ACC_NAME  \
+	    --region ${region} \
+	    --filters "Name=vpc-id,Values=vpc-1234abcd" \
+	    --query 'Reservations[*].Instances[*].InstanceId[]')
+
+        if [ -z ${ec2} ]
+            echo "Default vpc ${vpc} currently in use. Skipping deletion..."
+            continue
+        fi
     fi
 
     # get internet gateway

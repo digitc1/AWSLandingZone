@@ -62,7 +62,7 @@ export i=1
 export sp="/-\|"
 
 AWS_REGION='eu-west-1'
-ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
+ALL_REGIONS_EXCEPT_IRELAND='["ap-northeast-1","ap-northeast-2","ap-northeast-3","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]'
 
 
 # get version number
@@ -219,15 +219,19 @@ configure_seclog() {
     echo "    - /org/member/SecLog_securityhub-groupname"
     echo "    - /org/member/SecLog_config-groupname"
 
+    tags=`cat $CFN_TAGS_FILE`
+
 
     if  [ ! -z "$cloudtrailgroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value $cloudtrailgroupname --overwrite
+        
     else
         prevcloudtrailgroupname=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/SecLog_cloudtrail-groupname" --output text --query 'Parameter.Value' 2> /dev/null`
         if  [ -z "$prevcloudtrailgroupname" ] ; then
             aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail" --overwrite
         fi
     fi
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_cloudtrail-groupname --tags  file://$CFN_TAGS_FILE
     
     if  [ ! -z "$insightgroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite
@@ -237,8 +241,9 @@ configure_seclog() {
             aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value "/aws/cloudtrail/insight" --overwrite
         fi
     fi
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_insight-groupname --tags  file://$CFN_TAGS_FILE
     
-    for region in $(aws --profile $seclogprofile ec2 describe-regions --output text --query "Regions[?RegionName!='ap-northeast-3'].[RegionName]"); do
+    for region in $(aws --profile $seclogprofile ec2 describe-regions --output text --query "Regions[*].[RegionName]"); do
         if  [ ! -z "$guarddutygroupname" ] ; then
             aws --profile $seclogprofile --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
         else
@@ -247,7 +252,9 @@ configure_seclog() {
                 aws --profile $seclogprofile --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value "/aws/events/guardduty" --overwrite
             fi
         fi
+        aws --profile $seclogprofile --region $region ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_guardduty-groupname --tags  file://$CFN_TAGS_FILE
     done
+    
     
     if  [ ! -z "$securityhubgroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value $securityhubgroupname --overwrite
@@ -258,6 +265,7 @@ configure_seclog() {
             aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_securityhub-groupname --type String --value "/aws/events/securityhub" --overwrite
         fi
     fi
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_securityhub-groupname --tags  file://$CFN_TAGS_FILE
 
     if  [ ! -z "$configgroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite
@@ -267,6 +275,7 @@ configure_seclog() {
             aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value "/aws/events/config" --overwrite
         fi
     fi
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_config-groupname --tags  file://$CFN_TAGS_FILE
 
     if  [ ! -z "$alarmsgroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value $alarmsgroupname --overwrite
@@ -276,11 +285,19 @@ configure_seclog() {
             aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value "/aws/events/cloudwatch-alarms" --overwrite
         fi
     fi
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_alarms-groupname --tags  file://$CFN_TAGS_FILE
     
     aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_notification-mail --type String --value $notificationemail --overwrite
-    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $SECLOG_ACCOUNT_ID --overwrite
-    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogOU --type String --value $ORG_OU_ID --overwrite
-    aws --profile $seclogprofile ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_notification-mail --tags  file://$CFN_TAGS_FILE
+
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogMasterAccountId --type String --value $SECLOG_ACCOUNT_ID --overwrite   
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLogMasterAccountId --tags  file://$CFN_TAGS_FILE
+
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLogOU --type String --value $ORG_OU_ID --overwrite   
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLogOU --tags  file://$CFN_TAGS_FILE
+
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/SLZVersion --type String --value $LZ_VERSION --overwrite   
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SLZVersion --tags  file://$CFN_TAGS_FILE
 
     #   ------------------------------------
     #   Create CFN template for AdministrationRole and ExecutionRole
@@ -294,7 +311,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name SECLZ-StackSetAdministrationRole \
     --template-body file://$CFN_STACKSET_ADMIN_ROLE \
-    --tags file://$CFN_TAGS_FILE \
+    --tags  file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -303,7 +320,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name SECLZ-StackSetExecutionRole \
     --template-body file://$CFN_STACKSET_EXEC_ROLE \
-    --tags file://$CFN_TAGS_FILE \
+    --tags  file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -320,7 +337,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Cloudtrail-KMS' \
     --template-body file://$CFN_CLOUDTRAIL_KMS \
-    --tags file://$CFN_TAGS_FILE \
+    --tags  file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -336,7 +353,8 @@ configure_seclog() {
     KMS_KEY_ARN=`aws --profile $seclogprofile ssm get-parameter --name "/org/member/KMSCloudtrailKey_arn" --output text --query 'Parameter.Value'`
 
     #Storing the KMSCloudTrailKeyArn into SSM Parameter Store
-    aws --profile $seclogprofile ssm put-parameter --name /org/member/KMSCloudtrailKey_arn --type String --value $KMS_KEY_ARN --overwrite &>/dev/null
+    aws --profile $seclogprofile ssm put-parameter --name /org/member/KMSCloudtrailKey_arn --type String --value $KMS_KEY_ARN --overwrite    &>/dev/null
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/KMSCloudtrailKey_arn --tags  file://$CFN_TAGS_FILE
 
 
     #   ------------------------------------
@@ -354,7 +372,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-LogShipper-Lambdas-Bucket' \
     --template-body file://$CFN_LAMBDAS_BUCKET_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
+    --tags  file://$CFN_TAGS_FILE \
     --capabilities CAPABILITY_NAMED_IAM \
     --enable-termination-protection \
     --profile $seclogprofile
@@ -410,7 +428,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Central-Buckets' \
     --template-body file://$CFN_BUCKETS_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
+    --tags  file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
@@ -434,7 +452,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Iam-Password-Policy' \
     --template-body file://$CFN_IAM_PWD_POLICY \
-    --tags file://$CFN_TAGS_FILE \
+    --tags  file://$CFN_TAGS_FILE \
     --capabilities CAPABILITY_IAM \
     --enable-termination-protection \
     --profile $seclogprofile
@@ -487,7 +505,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-config-cloudtrail-SNS' \
     --template-body file://$CFN_LOG_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
+    --tags  file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile \
@@ -499,18 +517,6 @@ configure_seclog() {
     aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
     sleep 5
-
-    #   ------------------------------------
-    #   Enable cloudtrail insights in seclog master account
-    #   ------------------------------------
-
-    echo ""
-    echo "-  Enable cloudtrail insights in seclog master account"
-    echo "--------------------------------------------------"
-    echo ""
-
-    aws --profile $seclogprofile cloudtrail put-insight-selectors --trail-name lz-cloudtrail-logging --insight-selectors '[{"InsightType": "ApiCallRateInsight"}]'
-
 
     #   ------------------------------------
     #   Enable guardduty and securityhub in seclog master account
@@ -530,7 +536,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Guardduty-detector' \
     --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
+    --tags  file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile \
@@ -546,11 +552,31 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-SecurityHub' \
     --template-body file://$CFN_SECURITYHUB_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
+    --tags  file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --profile $seclogprofile
 
+
+    StackName="SECLZ-SecurityHub"
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
     sleep 5
+
+    
+    #   ------------------------------------
+    #   AWS Security Hub adds support for cross-Region aggregation of findings
+    #   ------------------------------------
+
+    echo ""
+    echo "-  AWS Security Hub add support for cross-Region aggregation of findings"
+    echo "--------------------------------------------------"
+    echo ""
+
+    aws --profile $seclogprofile securityhub create-finding-aggregator --region eu-west-1 --region-linking-mode ALL_REGIONS
+
+
 
     #   ------------------------------------
     #   Enable Notifications for CIS cloudtrail metrics filters
@@ -565,7 +591,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-Notifications-Cloudtrail' \
     --template-body file://$CFN_NOTIFICATIONS_CT_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
+    --tags  file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --profile $seclogprofile
 
@@ -597,7 +623,7 @@ configure_seclog() {
     aws cloudformation create-stack \
     --stack-name 'SECLZ-CloudwatchLogs-SecurityHub' \
     --template-body file://$CFN_SECURITYHUB_LOG_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
+    --tags  file://$CFN_TAGS_FILE \
     --enable-termination-protection \
     --capabilities CAPABILITY_IAM \
     --profile $seclogprofile \
@@ -610,6 +636,8 @@ configure_seclog() {
 
 
     sleep 5
+
+  
 
     #   ------------------------------------
     #   Set Resource Policy to send Events to LogGroups
@@ -675,6 +703,7 @@ EOM
     --template-body file://$CFN_STACKSET_CONFIG_SECHUB_GLOBAL \
     --parameters ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID \
     --capabilities CAPABILITY_IAM \
+    --tags  file://$CFN_TAGS_FILE \
     --profile $seclogprofile
 
     # Create StackInstances (globally except Ireland)
@@ -704,6 +733,7 @@ EOM
     --parameters ParameterKey=SecLogMasterAccountId,ParameterValue=$SECLOG_ACCOUNT_ID ParameterKey=EnableSecLogIntegrationFoGuardDutyParam,ParameterValue=$guarddutyintegration \
     --template-body file://$CFN_GUARDDUTY_TEMPLATE_GLOBAL \
     --capabilities CAPABILITY_IAM \
+    --tags  file://$CFN_TAGS_FILE \
     --profile $seclogprofile
 
     # Create StackInstances (globally excluding Ireland)
