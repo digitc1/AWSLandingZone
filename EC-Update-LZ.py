@@ -708,7 +708,7 @@ def main(argv):
 
         #cis controls SECLOG
         if not null_empty(manifest, 'cis') and seclog_status != Execution.FAIL:
-            seclog_status = update_cis_controls(rules=cis_actions) 
+            seclog_status = update_cis_controls(rules=cis_actions,accountid=account_id) 
 
         #cis controls linked accounts
         if seclog_status == Execution.FAIL and len(linked_accounts) > 0 and null_empty(manifest, 'cis'):
@@ -734,7 +734,8 @@ def main(argv):
 
                     if not null_empty(manifest, 'cis') and linked_status != Execution.FAIL:
                         linked_status = update_cis_controls(
-                            rules=cis_actions, 
+                            rules=cis_actions,
+                            accountid=linked,
                             accessKey=accessKey,
                             secretAccessKey=secretAccessKey, 
                             sessionToken=sessionToken
@@ -994,14 +995,14 @@ def toggle_securityhub_multiregion_findings(client, enable=True):
         return Execution.NO_ACTION
 
 
-def update_cis_controls(rules,
+def update_cis_controls(rules, accountid,
     accessKey=None,
     secretAccessKey=None, 
     sessionToken=None): 
     
     global all_regions
    
-    print(f"CIS controls update ", end="")
+    print(f"CIS controls update [{accountid}]", end="")
     try:
         with Spinner():
             #enable all rules
@@ -1257,32 +1258,32 @@ def add_stack_to_stackset(client, stackset, accounts, regions):
             time.sleep(1)
             response = client.list_stack_instances(StackSetName=stackset,Filters=filter)
 
-    try:
-        operationPreferences={
-            'RegionConcurrencyType': 'PARALLEL',
-            'FailureToleranceCount': 9,
-            'MaxConcurrentCount': 10,
-        }
-        client.create_stack_instances(
-            StackSetName=stackset, 
-            Regions=regions, 
-            Accounts=accounts,
-            OperationPreferences=operationPreferences
-            )
+        try:
+            operationPreferences={
+                'RegionConcurrencyType': 'PARALLEL',
+                'FailureToleranceCount': 9,
+                'MaxConcurrentCount': 10,
+            }
+            client.create_stack_instances(
+                StackSetName=stackset, 
+                Regions=regions, 
+                Accounts=accounts,
+                OperationPreferences=operationPreferences
+                )
 
-        response = client.list_stack_set_operations(StackSetName=stackset)
-
-        while(any(x['Status'] == "RUNNING" for x in response['Summaries'])):
-            time.sleep(2)
+            time.sleep(10)
             response = client.list_stack_set_operations(StackSetName=stackset)
+            while(any(x['Status'] == "RUNNING" for x in response['Summaries'])):
+                time.sleep(2)
+                response = client.list_stack_set_operations(StackSetName=stackset)
+            
         
-      
-        print(f"\033[2K\033[1GAdding stacks to StackSet {stackset} [{Status.OK.value}]")
-        return Execution.OK
-    
-    except ClientError as err:
-        print(f"\033[2K\033[1GAdding stacks to StackSet {stackset} failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
-    
+            print(f"\033[2K\033[1GAdding stacks to StackSet {stackset} [{Status.OK.value}]")
+            return Execution.OK
+        
+        except ClientError as err:
+            print(f"\033[2K\033[1GAdding stacks to StackSet {stackset} failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
+        
     return Execution.FAIL
 
 def update_stackset(client, stackset, templates, params=[]):
