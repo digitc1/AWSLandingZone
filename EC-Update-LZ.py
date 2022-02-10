@@ -1005,20 +1005,6 @@ def update_cis_controls(rules,
     try:
         with Spinner():
             #enable all rules
-            if is_seclog():
-                client = boto3.client('cloudformation')
-                
-                filter=[{
-                'Name': 'DETAILED_STATUS',
-                'Values': 'PENDING'
-                }]
-
-                response = client.list_stack_instances(StackSetName='SECLZ-Enable-Config-SecurityHub-Globally',Filters=filter)
-
-                while(len(response['Summaries']) > 0):
-                    time.sleep(1)
-                    response = client.list_stack_instances(StackSetName='SECLZ-Enable-Config-SecurityHub-Globally',Filters=filter)
-          
             
             failed_regions = []
             for region in all_regions:
@@ -1283,6 +1269,18 @@ def add_stack_to_stackset(client, stackset, accounts, regions):
             Accounts=accounts,
             OperationPreferences=operationPreferences
             )
+
+        filter=[{
+        'Name': 'DETAILED_STATUS',
+        'Values': 'PENDING'
+        }]
+
+        response = client.list_stack_instances(StackSetName=stackset,Filters=filter)
+
+        while(len(response['Summaries']) > 0):
+            time.sleep(1)
+            response = client.list_stack_instances(StackSetName=stackset,Filters=filter)
+        
       
         print(f"\033[2K\033[1GAdding stacks to StackSet {stackset} [{Status.OK.value}]")
         return Execution.OK
