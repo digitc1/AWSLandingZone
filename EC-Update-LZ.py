@@ -1270,16 +1270,11 @@ def add_stack_to_stackset(client, stackset, accounts, regions):
             OperationPreferences=operationPreferences
             )
 
-        filter=[{
-        'Name': 'DETAILED_STATUS',
-        'Values': 'PENDING'
-        }]
+        response = client.list_stack_set_operations(StackSetName=stackset)
 
-        response = client.list_stack_instances(StackSetName=stackset,Filters=filter)
-
-        while(len(response['Summaries']) > 0):
-            time.sleep(1)
-            response = client.list_stack_instances(StackSetName=stackset,Filters=filter)
+        while(any(x['Status'] == "RUNNING" for x in response['Summaries'])):
+            time.sleep(2)
+            response = client.list_stack_set_operations(StackSetName=stackset)
         
       
         print(f"\033[2K\033[1GAdding stacks to StackSet {stackset} [{Status.OK.value}]")
