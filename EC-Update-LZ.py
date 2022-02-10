@@ -1191,16 +1191,7 @@ def update_stack(client, stack, templates, params=[]):
                     else:
                         raise err
             
-            #check if stackset has been deployed correctly
-            filter=[{
-                'Name': 'DETAILED_STATUS',
-                'Values': 'PENDING'
-                }]
-            response = client.list_stack_instances(StackSetName=stack,Filters=filter)
-
-            while(len(response['Summaries']) > 0):
-                time.sleep(1)
-                response = client.list_stack_instances(StackSetName=stack,Filters=filter)
+            
                 
             return Execution.OK
         
