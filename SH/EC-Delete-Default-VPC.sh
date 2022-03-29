@@ -52,8 +52,7 @@ delete_vpc() {
     vpc=$(aws --profile $ACC_NAME ec2 --region ${region} \
         describe-vpcs --filter Name=isDefault,Values=true \
         --output text --query 'Vpcs[*].VpcId')
-    if [ -z ${vpc} ]
-    then
+    if [ -z ${vpc} ]; then
       echo "No default vpc found"
       continue
     else
@@ -64,7 +63,7 @@ delete_vpc() {
 	    --filters "Name=vpc-id,Values=vpc-1234abcd" \
 	    --query 'Reservations[*].Instances[*].InstanceId[]')
 
-        if [ -z ${ec2} ]
+        if [ -z ${ec2} ]; then
             echo "Default vpc ${vpc} currently in use. Skipping deletion..."
             continue
         fi
