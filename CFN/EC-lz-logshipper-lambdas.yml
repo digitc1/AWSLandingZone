@@ -149,7 +149,7 @@ Resources:
       Handler: 'CloudtrailLogShipper.lambda_handler'
       MemorySize: 128
       Role: !GetAtt LogShipperLambdaExecutionRole.Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -196,7 +196,7 @@ Resources:
       Code: ##configCodeURI##
       Handler: 'ConfigLogShipper.lambda_handler'
       Role: !GetAtt LogShipperLambdaExecutionRole.Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
