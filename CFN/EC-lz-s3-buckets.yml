@@ -140,8 +140,7 @@ Resources:
                 -
                   Sid: "AWSCloudTrailgBucketSSL"
                   Action: s3:*
-                  Principal:
-                    Service: cloudtrail.amazonaws.com
+                  Principal: "*"
                   Effect: Deny
                   Resource:
                     - Fn::Join:
@@ -248,8 +247,7 @@ Resources:
                 -
                   Sid: "AWSConfigBucketSSL"
                   Action: "s3:*"
-                  Principal:
-                    Service: config.amazonaws.com
+                  Principal: "*"
                   Effect: Deny
                   Resource:
                     - Fn::Join:
@@ -306,8 +304,7 @@ Resources:
                   Sid: "AWSAccessLogsBucketSSL"
                   Action: "s3:*"
                   Effect: Deny
-                  Principal:
-                    Service: cloudwatch.amazonaws.com
+                  Principal: "*"
                   Resource:
                     - Fn::Join:
                       - ""
