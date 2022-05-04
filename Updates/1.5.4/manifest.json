@@ -21,6 +21,14 @@
         },
         "SECLZ-Central-Buckets" : {
             "update" : true
+        },
+        "SECLZ-config-cloudtrail-SNS" : {
+            "update" : true
+        }
+    },
+    "stacksets" : {
+        "SECLZ-Enable-Config-SecurityHub-Globally" : {
+            "update" : true
         }
     },
     "accounts" : {
