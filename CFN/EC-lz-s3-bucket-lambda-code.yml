@@ -62,12 +62,30 @@ Resources:
                   - "s3:GetObjectAcl"
                   - "s3:GetObjectVersion"
                   - "s3:PutObject"
-                  - "s3:PutObjectAcl"
                   Resource:
                     Fn::Join:
                       - ""
                       -
                         - !GetAtt LambdaArtefactsBucket.Arn
                         - "/*"
+                -
+                  Sid: "LambdaBucketSSL"
+                  Action: s3:*
+                  Principal: "*"
+                  Effect: Deny
+                  Resource:
+                    - Fn::Join:
+                      - ""
+                      -
+                        - !GetAtt LambdaArtefactsBucket.Arn
+                    - Fn::Join:
+                      - ""
+                      -
+                        - !GetAtt LambdaArtefactsBucket.Arn
+                        - "/*"
+                  Condition:
+                    Bool:
+                      "aws:SecureTransport": "false"
+
                 
       

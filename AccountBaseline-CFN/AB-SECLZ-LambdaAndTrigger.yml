@@ -118,7 +118,7 @@ Resources:
         Fn::GetAtt:
         - rLambdaRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Tags: []
   EventRuleRole:
     Type: AWS::IAM::Role
