@@ -1,7 +1,7 @@
 # Instructions Secure Landing Zone
 
 Detailed instruction on how to setup a Secure Landing Zone solution can be found on following confluence page:
-- https://citnet.tech.ec.europa.eu/CITnet/confluence/display/CLOUDLZ/AWS
+- https://webgate.ec.europa.eu/fpfis/wikis/pages/viewpage.action?spaceKey=CVTF&title=AWS+Secure+Landing+Zone
 
 
 ## Before you begin
@@ -19,15 +19,7 @@ $ cd AWSLandingZone
 
 ### Create the SecLog account (if it doesn't exist)
 
-To create the SecLog, we'll need to run the "EC-Create-Account.sh" script by adding two parameters:
-- The name of the SecLog account you wish (for example 'D3_seclog')
-- The email address of the SecLog account you wish (for example 'D3_seclog@ec.europa.eu')
-
-Run the script
-```
-$ ./EC-Create-Account.sh D3_seclog D3_seclog@ec.europa.eu
-```
-
+Follow the instructions given on the following page: https://webgate.ec.europa.eu/fpfis/wikis/display/CVTF/%5BAWS%5D+Account+creation+broker+procedure
 
 ### Configure the SecLog account
 
@@ -93,16 +85,7 @@ $ ./EC-Setup-SecLog.sh--seclogprofile D3_seclog --splunkprofile EC_DIGIT_C2-SPLU
 
 ### Create a client account (only for new account)
 
-To create a new project account, we'll need to run the "EC-Create-Account.sh" script by adding two parameters:
-- The name of the project account you wish (for example 'D3_Acc1' --> this will be stored in your profile and in AWS organizations)
-- The email address of this account you wish (for example 'D3_Acc1@ec.europa.eu')
-
-Run the script
-```
-$ ./EC-Create-Account.sh D3_Acc1 D3_Acc1@ec.europa.eu
-```
-
-Run this script for every new project accounts you wish to create.
+Follow the instructions given on the following page: https://webgate.ec.europa.eu/fpfis/wikis/display/CVTF/%5BAWS%5D+Account+creation+broker+procedure
 
 ### Configure the client account (run this script on a new or existing account you whish to add)
 
