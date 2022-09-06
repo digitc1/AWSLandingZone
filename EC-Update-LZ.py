@@ -58,6 +58,7 @@ def main(argv):
     ssm_actions = []
     stack_actions = []
     securityhub_actions = []
+    guardduty_actions = []
     stacksets_actions = []
     cis_actions = []
     version=None
@@ -190,6 +191,10 @@ def main(argv):
         
         if not null_empty(manifest, 'securityhub'):
             securityhub_actions = manifest['securityhub']
+        
+        if not null_empty(manifest, 'guardduty'):
+            guarddutyactions = manifest['guardduty']
+
 
         seclog_status = Execution.NO_ACTION
         
@@ -444,6 +449,12 @@ def main(argv):
                 cfn = boto3.client('securityhub')
                 print("Enable SecurityHub Multi-region findings", end="")
                 toggle_securityhub_multiregion_findings(cfn, securityhub_actions['multiregion-findings']['enable'])
+            
+            #guardduty actions
+            if guardduty_actions and seclog_status != Execution.FAIL:
+                cfn = boto3.client('guardduty')
+                print("Enable Guardduty Malware protection", end="")
+                toggle_guardduty_malware(cfn, guardduty_actions['malware']['enable'])
             
 
             
@@ -993,6 +1004,11 @@ def toggle_securityhub_multiregion_findings(client, enable=True):
     else: 
         print(f" [{Status.NO_ACTION.value}]")
         return Execution.NO_ACTION
+
+def toggle_guardduty_malware(client, enable=True):
+    return Execution.NO_ACTION
+
+
 
 
 def update_cis_controls(rules, accountid,
