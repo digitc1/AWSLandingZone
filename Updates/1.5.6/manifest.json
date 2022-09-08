@@ -22,6 +22,12 @@
     "guardduty": {
         "malware" : {
             "enable" :  true
+        },
+        "kubernetes" : {
+            "enable" :  true
+        },
+        "s3logs" : {
+            "enable" :  true
         }
     },
     "accounts" : {
