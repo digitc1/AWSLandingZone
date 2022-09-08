@@ -448,14 +448,19 @@ def main(argv):
             if securityhub_actions and seclog_status != Execution.FAIL:
                 cfn = boto3.client('securityhub')
                 print("Enable SecurityHub Multi-region findings", end="")
-                toggle_securityhub_multiregion_findings(cfn, securityhub_actions['multiregion-findings']['enable'])
-            
+                result = toggle_securityhub_multiregion_findings(cfn, securityhub_actions['multiregion-findings']['enable'])
+                if result != Execution.NO_ACTION:
+                        seclog_status = result
+
             #guardduty actions
             if guardduty_actions and seclog_status != Execution.FAIL:
                 cfn = boto3.client('guardduty')
                 print("Enable Guardduty Malware protection", end="")
-                toggle_guardduty_malware(cfn, guardduty_actions['malware']['enable'])
-            
+                result = toggle_guardduty_malware(cfn, guardduty_actions['malware']['enable'],
+                                                        guardduty_actions['kubernetes']['enable'],
+                                                        guardduty_actions['s3logs']['enable'])
+                if result != Execution.NO_ACTION:
+                    seclog_status = result
 
             
 
@@ -1005,8 +1010,48 @@ def toggle_securityhub_multiregion_findings(client, enable=True):
         print(f" [{Status.NO_ACTION.value}]")
         return Execution.NO_ACTION
 
-def toggle_guardduty_malware(client, enable=True):
-    return Execution.NO_ACTION
+def toggle_guardduty_malware(client, malware=True, kubernetes=True, s3logs=True):
+
+    member_accounts = []
+    
+    try:
+        with Spinner():
+            accountId = get_account_id()
+            response = client.list_detectors()
+            
+            if response['DetectorIds'][0] != '':
+                detectorId = response['DetectorIds'][0]
+                data = client.list_members(DetectorId=detectorId)
+                
+                for member in data['Members']:
+                    if member['RelationshipStatus'] == 'Enabled':
+                        member_accounts.append(member['AccountId'])
+
+                response = client.update_member_detectors(
+                    DetectorId=detectorId,
+                    AccountIds=member_accounts,
+                    DataSources={
+                        'S3Logs': {
+                            'Enable': s3logs
+                        },
+                        'Kubernetes': {
+                            'AuditLogs': {
+                                'Enable': kubernetes
+                            }
+                        },
+                        'MalwareProtection': {
+                            'ScanEc2InstanceWithFindings': {
+                                'EbsVolumes': s3logs
+                            }
+                        }
+                    }
+                )
+    except Exception as err:
+        print(f"failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
+        return Execution.FAIL
+    
+    print(f" [{Status.OK.value}]")
+            return Execution.OK
 
 
 
