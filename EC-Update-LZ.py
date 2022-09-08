@@ -1051,7 +1051,7 @@ def toggle_guardduty_malware(client, malware=True, kubernetes=True, s3logs=True)
         return Execution.FAIL
     
     print(f" [{Status.OK.value}]")
-            return Execution.OK
+    return Execution.OK
 
 
 
