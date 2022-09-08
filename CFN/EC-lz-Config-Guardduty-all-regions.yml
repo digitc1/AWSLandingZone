@@ -118,7 +118,48 @@ Resources:
     Properties:
         Enable: true
         FindingPublishingFrequency: FIFTEEN_MINUTES
+        DataSources:
+          Kubernetes:
+            AuditLogs:
+              Enable: true
+          S3Logs:
+            Enable: true
+          MalwareProtection:
+            ScanEc2InstanceWithFindings: 
+              EbsVolumes: true
   
+  GuardDutyMalwareProtectionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SECLZ-GuardDuty-Malware-Protection
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: guardduty:*
+            Resource: "*"
+          - Effect: Allow
+            Action: iam:CreateServiceLinkedRole
+            Resource: "*"
+            Condition:
+              StringLike:
+                iam:AWSServiceName:
+                - guardduty.amazonaws.com
+                - malware-protection.guardduty.amazonaws.com
+          - Effect: Allow
+            Action:
+            - organizations:EnableAWSServiceAccess
+            - organizations:RegisterDelegatedAdministrator
+            - organizations:ListDelegatedAdministrators
+            - organizations:ListAWSServiceAccessForOrganization
+            - organizations:DescribeOrganizationalUnit
+            - organizations:DescribeAccount
+            - organizations:DescribeOrganization
+            Resource: "*"
+          - Effect: Allow
+            Action: iam:GetRole
+            Resource: arn:aws:iam::*:role/*AWSServiceRoleForAmazonGuardDutyMalwareProtection
+
   # Enable notifications for AWS GuardDuty Rule compliance changes in client account to event bus
   GuardDutyRuleComplianceChangeEvent:
     Type: AWS::Events::Rule
