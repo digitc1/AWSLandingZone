@@ -193,7 +193,7 @@ def main(argv):
             securityhub_actions = manifest['securityhub']
         
         if not null_empty(manifest, 'guardduty'):
-            guarddutyactions = manifest['guardduty']
+            guardduty_actions = manifest['guardduty']
 
 
         seclog_status = Execution.NO_ACTION
@@ -1046,6 +1046,8 @@ def toggle_guardduty_malware(client, malware=True, kubernetes=True, s3logs=True)
                         }
                     }
                 )
+
+                print(response)
     except Exception as err:
         print(f"failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
         return Execution.FAIL
@@ -1268,7 +1270,8 @@ def update_stack(client, stack, templates, params=[]):
                         updated=True
                         break
                     elif 'FAILED' in response['Stacks'][0]['StackStatus'] or 'ROLLBACK' in response['Stacks'][0]['StackStatus'] :
-                        print(f"\033[2K\033[1GStack {stack} update failed. Reason {response['Stacks'][0]['StackStatusReason']} [{Status.FAIL.value}]")
+                        reason = response['Stacks'][0].get('StackStatusReason', response['Stacks'][0]['StackStatus'])
+                        print(f"\033[2K\033[1GStack {stack} update failed. Reason {reason} [{Status.FAIL.value}]")
                         return Execution.FAIL
                 except ClientError as err:
                     if err.response['Error']['Code'] == 'ThrottlingException':
