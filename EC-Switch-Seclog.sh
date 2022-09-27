@@ -17,7 +17,8 @@ venv='.venv'
 #   --------------------
 
 account=${account:-}
-seclog=${seclog:-}
+sseclog=${sseclog:-}
+tseclog=${tseclog:-}
 
 # Parameter parsing
 while [ $# -gt 0 ]; do
@@ -39,7 +40,8 @@ display_help() {
     echo ""
     echo "   Provide "
     echo "   --account      : The account profile of the Linked account to be moved as configured in your AWS profile"
-    echo "   --seclog       : The account profile of the target SECLOG account as configured in your AWS profile"
+    echo "   --sseclog       : The account profile of the source SECLOG account as configured in your AWS profile"
+    echo "   --tseclog       : The account profile of the target SECLOG account as configured in your AWS profile"
     echo ""
     exit 1
 }
@@ -131,8 +133,8 @@ echo "#######"
 echo ""
 
 params="-a $account"
-if  [ ! -z "$seclog" ] ; then
-    params="$params -s $seclog"
+if  [ ! -z "$sseclog" ] && [ ! -z "$tseclog" ]; then
+    params="$params -s $sseclog -t $tseclog"
 fi
 
 
@@ -145,7 +147,7 @@ deactivate
 
 
 # Check to validate number of parameters entered
-if  [ -z "$account" ] || [ -z "$seclog" ]  ; then
+if  [ -z "$account" ] || [ -z "$sseclog" ] || [ -z "$tseclog" ]  ; then
     display_help
     exit 0
 fi
