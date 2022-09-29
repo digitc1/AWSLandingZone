@@ -1,5 +1,5 @@
 #!/usr/bin/python -u
-
+import signal
 import sys, getopt
 import subprocess, pkg_resources
 import os
@@ -8,12 +8,12 @@ import shlex
 import logging
 import time
 import boto3
+import boto3.session
 import botocore
 import json
 import threading
 import cursor
 import yaml
-from cfn_tools import load_yaml, dump_yaml
 
 from datetime import datetime
 from enum import Enum
@@ -22,7 +22,13 @@ from botocore.exceptions import BotoCoreError, ClientError, ProfileNotFound
 from botocore.config import Config
 
 regions = ["ap-northeast-1","ap-northeast-2","ap-northeast-3","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]
-    
+
+def exit_handler(signum, frame):
+    print("Exiting...")
+    sys.exit(1)
+
+
+signal.signal(signal.SIGINT, exit_handler)
 
 def main(argv):
     
@@ -35,23 +41,17 @@ def main(argv):
     tseclog_profile = None
     tseclog_id = None
     tseclog_SecLog_sns_arn = None
+    tseclog_KMSCloudtrailKey_arn = None
 
     account_profile = None
     account_id = None
     account_email = None
     stored_SecLog_sns_arn = None
+    stored_KMSCloudtrailKey_arn = None
 
     organisation_profile = None
     organisation_id = None
     
-
-
-    
-    boto3_config = Config(
-        retries = dict(
-            max_attempts = 10
-        )
-    )
 
     try:
         opts, args = getopt.getopt(argv,"hva:s:t:o:",["account", "sseclog", "tseclog", "org", "verbose"])
@@ -104,22 +104,17 @@ def main(argv):
     
     logging.basicConfig(level=verbosity)
 
-    # Identify accounts
-
-    
-
     # linked account
+    
     print(f"Account to be moved : {account_profile}")
-    boto3.setup_default_session(
-        profile_name=account_profile,
-        region_name='eu-west-1',
-    )
-    account_id = get_account_id()
+    account_session=boto3.Session(profile_name=account_profile, region_name ='eu-west-1')
+    
+    account_id = get_account_id(account_session)
 
     print(f"Account ID : {account_id}")
     
     # get stored seclog_id from ssm parameter
-    ssm = boto3.client('ssm')
+    ssm = account_session.client('ssm')
     response = ssm.get_parameter(Name='/org/member/SecLogMasterAccountId')
     if 'Value' in response['Parameter']:
         stored_sseclog_id = response['Parameter']['Value']
@@ -135,17 +130,25 @@ def main(argv):
         print(f"SecLog_sns_arn not configured on this account. [{Status.FAIL.value}]")
         print("Exiting...")
         sys.exit(1)
+
+    response = ssm.get_parameter(Name='/org/member/KMSCloudtrailKey_arn')
+    if 'Value' in response['Parameter']:
+        stored_KMSCloudtrailKey_arn = response['Parameter']['Value']
+    else:
+        print(f"KMSCloudtrailKey_arn not configured on this account. [{Status.FAIL.value}]")
+        print("Exiting...")
+        sys.exit(1)
     print(f"Linked account identified. [{Status.OK.value}]")
     print("")
 
     # organisation account
+
     print(f"Organisation account : {organisation_profile}")
-    boto3.setup_default_session(
-        profile_name=organisation_profile,
-        region_name='eu-west-1',
-    )
-    organisation_id = get_account_id()
-    organizations = boto3.client('organizations')
+    
+    org_session=boto3.Session(profile_name=organisation_profile, region_name ='eu-west-1')
+
+    organisation_id = get_account_id(org_session)
+    organizations = org_session.client('organizations')
     response = organizations.describe_account(AccountId=account_id)
     account_email = response['Account']['Email']
 
@@ -155,13 +158,12 @@ def main(argv):
 
     # original seclog account
     print(f"Original SECLOG account : {sseclog_profile}")
-    boto3.setup_default_session(
-        profile_name=sseclog_profile,
-        region_name='eu-west-1',
-    )
-    sseclog_id = get_account_id()
+   
+    sseclog_session=boto3.Session(profile_name=sseclog_profile, region_name ='eu-west-1')
+
+    sseclog_id = get_account_id(sseclog_session)
     print(f"Account ID : {sseclog_id}")
-    if (is_seclog() == False):
+    if (is_seclog(sseclog_session) == False):
         print(f"Not a SECLOG account. [{Status.FAIL.value}]")
         print("Exiting...")
         sys.exit(1)
@@ -175,19 +177,18 @@ def main(argv):
 
     # target seclog account
     print(f"Target SECLOG account : {tseclog_profile}")
-    boto3.setup_default_session(
-        profile_name=tseclog_profile,
-        region_name='eu-west-1',
-    )
-    tseclog_id = get_account_id()
+    
+    tseclog_session=boto3.Session(profile_name=tseclog_profile, region_name ='eu-west-1')
+
+    tseclog_id = get_account_id(tseclog_session)
     print(f"Account ID : {tseclog_id}")
-    if (is_seclog() == False):
+    if (is_seclog(tseclog_session) == False):
         print(f"Not a SECLOG account. [{Status.FAIL.value}]")
         print("Exiting...")
         sys.exit(1)
     else:
         print(f"Target SECLOG account identified. [{Status.OK.value}]")
-        ssm = boto3.client('ssm')
+        ssm = tseclog_session.client('ssm')
         response = ssm.get_parameter(Name='/org/member/SecLog_sns_arn')
         if 'Value' in response['Parameter']:
             tseclog_SecLog_sns_arn = response['Parameter']['Value']
@@ -195,79 +196,50 @@ def main(argv):
             print(f"SecLog_sns_arn not configured on this account. [{Status.FAIL.value}]")
             print("Exiting...")
             sys.exit(1)
-    print("")
 
-
-    # Cleaning up linked account
-
-    print(f"Migrating linked account {account_profile} from SECLOG {sseclog_profile} to SECLOG {tseclog_profile}")
-    print("")
-    boto3.setup_default_session(
-        profile_name=account_profile,
-        region_name='eu-west-1',
-    )
-
-    # guardduty
-    guardduty = boto3.client('guardduty')
-    detector_response = guardduty.list_detectors()
-    for detector in detector_response['DetectorIds']:
-        try:
-            response = guardduty.disassociate_from_master_account(
-                DetectorId=detector
-            )
-            response = guardduty.delete_invitations(AccountIds=[
-                sseclog_id,
-            ])
-            print(f"Disassociate GuardDuty from master account: [{Status.OK.value}]")
-        except botocore.exceptions.ClientError as error:
-            if error.response['Error']['Code'] == 'BadRequestException':
-                if 'is not associated' in error.response['Error']['Message']:
-                    print(f"Disassociate GuardDuty from master account [{Status.NO_ACTION.value}]")
-                else:
-                    print(f"Disassociate GuardDuty from master account [{Status.FAIL.value}]")
-                    print(error.response['Error']['Message'])
-                    print("Exiting...")
-                    sys.exit(1)
-            else:
-                print(f"Disassociate GuardDuty from master account [{Status.FAIL.value}]")
-                print(error.response['Error']['Message'])
-                print("Exiting...")
-                sys.exit(1)
-
-    # security hub
-    securityhub = boto3.client('securityhub')
-    try:
-        response = securityhub.disassociate_from_master_account()
-        response = securityhub.delete_invitations(AccountIds=[
-            sseclog_id,
-        ])
-        print(f"Disassociate SecurityHub from master account: [{Status.OK.value}]")
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'BadRequestException':
-            if 'is not associated' in error.response['Error']['Message']:
-                print(f"Disassociate SecurityHub from administrator account [{Status.NO_ACTION.value}]")
-            else:
-                print(f"Disassociate SecurityHub from administrator account [{Status.FAIL.value}]")
-                print(error.response['Error']['Message'])
-                print("Exiting...")
-                sys.exit(1)
+        ssm = tseclog_session.client('ssm')
+        response = ssm.get_parameter(Name='/org/member/KMSCloudtrailKey_arn')
+        if 'Value' in response['Parameter']:
+            tseclog_KMSCloudtrailKey_arn = response['Parameter']['Value']
         else:
-            print(f"Disassociate SecurityHub from administrator account [{Status.FAIL.value}]")
-            print(error.response['Error']['Message'])
+            print(f"KMSCloudtrailKey_arn not configured on this account. [{Status.FAIL.value}]")
             print("Exiting...")
             sys.exit(1)
 
-    # SSM parameter
-    ssm = boto3.client('ssm')
+            
+    print("")
+
+    input(f"####### All seems in good shape. Press any key to continue (Ctrl+C to cancel)")
+
+    print("")
+
+    # Cleaning up linked account
+    print("#######")
+    print(f"####### Migrating linked account {account_profile} from SECLOG {sseclog_profile} to SECLOG {tseclog_profile}")
+    print("#######")
+    print("")
+
+    # deactivate guardduty from source SECLOG
+    deactivate_guardduty(sseclog_id,account_session)
+
+    # deactivate securityhub from source SECLOG
+    deactivate_securityhub(sseclog_id,account_session)
+
+    # deactivate config from source SECLOG
+    deactivate_config(account_id,sseclog_id,account_session,sseclog_session)
+    
+    # Update SSM parameter
+   
+    ssm = account_session.client('ssm')
     if stored_sseclog_id == tseclog_id:
         print(f"Update SecLogMasterAccountId SSM parameter [{Status.NO_ACTION.value}]")
     else:
         try:
-            client.put_parameter(
+            ssm.put_parameter(
                 Name='/org/member/SecLogMasterAccountId',
                 Value=tseclog_id,
                 Type='String',
-                Overwrite=True|False)
+                Overwrite=True)
             print(f"Update SecLogMasterAccountId SSM parameter [{Status.OK.value}]")
         except botocore.exceptions.ClientError as error:
             print(f"Update SecLogMasterAccountId SSM parameter [{Status.FAIL.value}]")
@@ -279,11 +251,11 @@ def main(argv):
         print(f"Update SecLog_sns_arn SSM parameter [{Status.NO_ACTION.value}]")
     else:
         try:
-            client.put_parameter(
+            ssm.put_parameter(
                 Name='/org/member/SecLog_sns_arn',
                 Value=tseclog_SecLog_sns_arn,
                 Type='String',
-                Overwrite=True|False)
+                Overwrite=True)
             print(f"Update SecLog_sns_arn SSM parameter [{Status.OK.value}]")
         except botocore.exceptions.ClientError as error:
             print(f"Update SecLog_sns_arn SSM parameter [{Status.FAIL.value}]")
@@ -291,177 +263,48 @@ def main(argv):
             print("Exiting...")
             sys.exit(1)
 
+    if stored_KMSCloudtrailKey_arn == tseclog_KMSCloudtrailKey_arn:
+        print(f"Update KMSCloudtrailKey_arn SSM parameter [{Status.NO_ACTION.value}]")
+    else:
+        try:
+            ssm.put_parameter(
+                Name='/org/member/KMSCloudtrailKey_arn',
+                Value=tseclog_KMSCloudtrailKey_arn,
+                Type='String',
+                Overwrite=True)
+            print(f"Update KMSCloudtrailKey_arn SSM parameter [{Status.OK.value}]")
+        except botocore.exceptions.ClientError as error:
+            print(f"Update KMSCloudtrailKey_arn SSM parameter [{Status.FAIL.value}]")
+            print(error.response['Error']['Message'])
+            print("Exiting...")
+            sys.exit(1)
+
     # Delete instances from original seclog account
-
-    boto3.setup_default_session(
-        profile_name=sseclog_profile,
-        region_name='eu-west-1',
-    )
-
-    #remove_stacks_from_stackset('SECLZ-Enable-Config-SecurityHub-Globally', account_id)
-    #remove_stacks_from_stackset('SECLZ-Enable-Guardduty-Globally', account_id)
+   
+    remove_stacks_from_stackset('SECLZ-Enable-Config-SecurityHub-Globally', account_id,sseclog_session)
+    remove_stacks_from_stackset('SECLZ-Enable-Guardduty-Globally', account_id,sseclog_session)
 
     # Re-apply CFN
-    boto3.setup_default_session(
-        profile_name=account_profile,
-        region_name='eu-west-1',
-    )
+  
+    update_stack('SECLZ-StackSetExecutionRole',account_session)
+    update_stack('SECLZ-Guardduty-detector',account_session)
+    update_stack('SECLZ-Notifications-Cloudtrail',account_session)
+    update_stack('SECLZ-config-cloudtrail-SNS',account_session)
+    update_stack('SECLZ-local-SNS-topic',account_session)
 
-    #update_stack('SECLZ-StackSetExecutionRole')
-    #update_stack('SECLZ-config-cloudtrail-SNS')
-    #update_stack('SECLZ-Guardduty-detector')
-    #update_stack('SECLZ-SecurityHub')
-    #update_stack('SECLZ-Notifications-Cloudtrail')
-    
-    # Re-apply Stackset from Target SECLOG
-    boto3.setup_default_session(
-        profile_name=tseclog_profile,
-        region_name='eu-west-1',
-    )
-
-    #add_stacks_from_stackset('SECLZ-Enable-Config-SecurityHub-Globally', account_id)
-    #add_stacks_from_stackset('SECLZ-Enable-Guardduty-Globally', account_id)
-    
-    # associate guardduty with new SECLOG
-    # issue invitation
-    guardduty = boto3.client('guardduty')
-    detector_response = guardduty.list_detectors()
-    for detector in detector_response['DetectorIds']:
-        try:
-           
-            response = guardduty.create_members(
-                DetectorId=detector,
-                AccountDetails=[
-                    {
-                        'AccountId': account_id,
-                        'Email': account_email
-                    },
-                ]
-            )
-            response = guardduty.invite_members(
-                DetectorId=detector,
-                AccountIds=[
-                    account_id,
-                ],
-                DisableEmailNotification=True
-            )
-            print(f"Issue invitation for GuardDuty from SECLOG {tseclog_profile} account [{Status.OK.value}]")
-        except botocore.exceptions.ClientError as error:
-            if error.response['Error']['Code'] == 'BadRequestException':
-                if 'is not associated' in error.response['Error']['Message']:
-                    print(f"Issue invitation for GuardDuty from SECLOG {tseclog_profile} account [{Status.NO_ACTION.value}]")
-                else:
-                    print(f"Issue invitation for GuardDuty from SECLOG {tseclog_profile} account [{Status.FAIL.value}]")
-                    print(error.response['Error']['Message'])
-                    print("Exiting...")
-                    sys.exit(1)
-            else:
-                print(f"Issue invitation for GuardDuty from SECLOG {tseclog_profile} account [{Status.FAIL.value}]")
-                print(error.response['Error']['Message'])
-                print("Exiting...")
-                sys.exit(1)
-
-    # accept invitation
-    boto3.setup_default_session(
-        profile_name=account_profile,
-        region_name='eu-west-1',
-    )
-
-    guardduty = boto3.client('guardduty')
-    detector_response = guardduty.list_detectors()
-    for detector in detector_response['DetectorIds']:
-        try:
-            response = guardduty.list_invitations()
-            response = guardduty.accept_invitation(
-                DetectorId=detector,
-                MasterId=tseclog_id,
-                InvitationId=response['Invitations'][0]['InvitationId']
-            )
-            
-            print(f"Aassociate GuardDuty detector linked account to SECLOG {tseclog_profile} account [{Status.OK.value}]")
-        except botocore.exceptions.ClientError as error:
-            if error.response['Error']['Code'] == 'BadRequestException':
-                if 'is not associated' in error.response['Error']['Message']:
-                    print(f"Aassociate GuardDuty from linked account to SECLOG {tseclog_profile} account [{Status.NO_ACTION.value}]")
-                else:
-                    print(f"Aassociate GuardDuty from linked account to SECLOG {tseclog_profile} account [{Status.FAIL.value}]")
-                    print(error.response['Error']['Message'])
-                    print("Exiting...")
-                    sys.exit(1)
-            else:
-                print(f"Aassociate GuardDuty from linked account to SECLOG {tseclog_profile} account [{Status.FAIL.value}]")
-                print(error.response['Error']['Message'])
-                print("Exiting...")
-                sys.exit(1)
-
-    # associate securityhub with new SECLOG
-    # issue invitation
-    boto3.setup_default_session(
-        profile_name=tseclog_profile,
-        region_name='eu-west-1',
-    )
-
-    securityhub = boto3.client('securityhub')
-    try:
-        response = securityhub.create_members(
-            AccountDetails=[
-                {
-                    'AccountId': account_id,
-                    'Email': account_email
-                },
-            ]
-        )
-        response = securityhub.invite_members(
-            AccountIds=[
-                account_id,
-            ]
-        )
-        print(f"Issue invitation for SecurityHub from SECLOG {tseclog_profile} account: [{Status.OK.value}]")
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'BadRequestException':
-            if 'is not associated' in error.response['Error']['Message']:
-                print(f"Issue invitation for SecurityHub from SECLOG {tseclog_profile} account [{Status.NO_ACTION.value}]")
-            else:
-                print(f"Issue invitation for SecurityHub from SECLOG {tseclog_profile} account [{Status.FAIL.value}]")
-                print(error.response['Error']['Message'])
-                print("Exiting...")
-                sys.exit(1)
-        else:
-            print(f"Issue invitation for SecurityHub from SECLOG {tseclog_profile} account [{Status.FAIL.value}]")
-            print(error.response['Error']['Message'])
-            print("Exiting...")
-            sys.exit(1)
+       # Re-apply CFN
    
-    # accept invitation
-    boto3.setup_default_session(
-        profile_name=account_profile,
-        region_name='eu-west-1',
-    )
-
-    securityhub = boto3.client('securityhub')
-    try:
-        response = securityhub.list_invitations()
-        response = securityhub.accept_invitation(
-            MasterId=tseclog_id,
-            InvitationId=response['Invitations'][0]['InvitationId']
-        )
-        
-        print(f"Aassociate SecurityHub detector linked account to SECLOG {tseclog_profile} account [{Status.OK.value}]")
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'BadRequestException':
-            if 'is not associated' in error.response['Error']['Message']:
-                print(f"Aassociate SecurityHub from linked account to SECLOG {tseclog_profile} account [{Status.NO_ACTION.value}]")
-            else:
-                print(f"Aassociate SecurityHub from linked account to SECLOG {tseclog_profile} account [{Status.FAIL.value}]")
-                print(error.response['Error']['Message'])
-                print("Exiting...")
-                sys.exit(1)
-        else:
-            print(f"Aassociate SecurityHub from linked account to SECLOG {tseclog_profile} account [{Status.FAIL.value}]")
-            print(error.response['Error']['Message'])
-            print("Exiting...")
-            sys.exit(1)
-
+    # Re-apply Stackset from Target SECLOG
+    add_stacks_from_stackset('SECLZ-Enable-Config-SecurityHub-Globally', account_id,tseclog_session)
+    add_stacks_from_stackset('SECLZ-Enable-Guardduty-Globally', account_id,tseclog_session)
+    
+    # associate config with target SECLOG
+    activate_config(account_id,account_session,tseclog_id,tseclog_session)
+    # associate guardduty with target SECLOG
+    activate_guardduty(account_id, account_email,account_session,tseclog_id,tseclog_session)
+    # associate securityhub with target SECLOG
+    activate_securityhub(account_id, account_email,account_session,tseclog_id,tseclog_session)
+    
     print("")
     print(f"####### AWS Landing Zone switch SECLOG script finished. Executed in {time.time() - start_time} seconds")
     print("#######")
@@ -483,15 +326,15 @@ def usage():
     print('   -v --verbose         : Debug mode - optional')
 
 
-def get_account_id():
+def get_account_id(session):
     """
     This function gets te id of the account defined in the profile
         :param force: flag to force the retrieval of the account ID 
         :return: a string with the account id 
     """
 
-    sts = boto3.client('sts')
     try:
+        sts = session.client('sts')
         response = sts.get_caller_identity()
         return response['Account']
     except ClientError as error:
@@ -502,25 +345,25 @@ def get_account_id():
         else:
             raise error
 
-def is_seclog():
+def is_seclog(session):
     """
     Function that checks if the account is a seclog account
         :return: true or false
     """
-    client = boto3.client('ssm')
-    seclog_account_id = get_account_id()
+    client = session.client('ssm')
+    seclog_account_id = get_account_id(session)
     response = client.get_parameter(Name='/org/member/SecLogMasterAccountId')
     if not 'Value' not in response or seclog_account_id != response['Parameter']['Value']:
         return False
     return True
 
-def remove_stacks_from_stackset(stackset,account_id):
+def remove_stacks_from_stackset(stackset,account_id, session):
     
     global regions
 
     print(f"Remove stacks from StackSet {stackset} in progress ", end="")
 
-    cfn = boto3.client('cloudformation')
+    cfn = session.client('cloudformation')
     response = cfn.describe_stack_set(StackSetName=stackset)
    
     if response['StackSet']['Status'] not in ('ACTIVE'):
@@ -568,13 +411,13 @@ def remove_stacks_from_stackset(stackset,account_id):
             print("Exiting...")
             sys.exit(1)
 
-def add_stacks_from_stackset(stackset,account_id):
+def add_stacks_from_stackset(stackset,account_id,session):
     
     global regions
 
     print(f"Add stacks from StackSet {stackset} in progress ", end="")
 
-    cfn = boto3.client('cloudformation')
+    cfn = session.client('cloudformation')
     response = cfn.describe_stack_set(StackSetName=stackset)
    
     if response['StackSet']['Status'] not in ('ACTIVE'):
@@ -623,7 +466,7 @@ def add_stacks_from_stackset(stackset,account_id):
 
 
 
-def update_stack(stack):
+def update_stack(stack,session):
     """
     Function that updates a stack defined in the parameters
         :stack:         The stack name
@@ -631,14 +474,14 @@ def update_stack(stack):
         :params:        parameters to be passed to the stack
         :return:        True or False
     """
-    client = boto3.client('cloudformation')
+    client = session.client('cloudformation')
     
-    capabilities = None
-    tags = None
-    parameters = None
+    capabilities = []
+    tags = []
+    parameters = []
     template_body = None
     
-    print(f"Stack {stack} update ", end="")
+    print(f"Update {stack} stack ", end="")
 
     try:
         describe = client.describe_stacks(StackName=stack)
@@ -662,14 +505,10 @@ def update_stack(stack):
         template_body = response['TemplateBody']
 
     except ClientError as err:
-        print(f"\033[2K\033[1GStack {stack} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
+        print(f"\033[2K\033[1GUpdate Stack {stack} failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
         print("Exiting...")
         sys.exit(1)
-    
 
-   
-
-        
     print("in progress ", end="")
     
     with Spinner():
@@ -687,11 +526,11 @@ def update_stack(stack):
                     time.sleep(1)
                     response = client.describe_stacks(StackName=stack)
                     if 'COMPLETE' in response['Stacks'][0]['StackStatus'] :
-                        print(f"\033[2K\033[1GStack {stack} update [{Status.OK.value}]")
+                        print(f"\033[2K\033[1GUpdate stack {stack} [{Status.OK.value}]")
                         updated=True
                         break
                     elif 'FAILED' in response['Stacks'][0]['StackStatus'] or 'ROLLBACK' in response['Stacks'][0]['StackStatus'] :
-                        print(f"\033[2K\033[1GStack {stack} update failed. Reason {response['Stacks'][0]['StackStatusReason']} [{Status.FAIL.value}]")
+                        print(f"\033[2K\033[1GUpdate stack  {stack} failed. Reason {response['Stacks'][0]['StackStatusReason']} [{Status.FAIL.value}]")
                         print("Exiting...")
                         sys.exit(1)
                 except ClientError as err:
@@ -705,9 +544,312 @@ def update_stack(stack):
             if err.response['Error']['Code'] == 'AmazonCloudFormationException':
                 print(f"\033[2K\033[1GStack {stack} not found : {err.response['Error']['Message']} [{Status.FAIL.value}]")
             elif err.response['Error']['Code'] == 'ValidationError' and err.response['Error']['Message'] == 'No updates are to be performed.':
-                print(f"\033[2K\033[1GStack {stack} update [{Status.NO_ACTION.value}]")
+                print(f"\033[2K\033[1GUpdate stack {stack} [{Status.NO_ACTION.value}]")
             else:
-                print(f"\033[2K\033[1GStack {stack} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
+                print(f"\033[2K\033[1GUpdate stack  {stack} failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
+
+
+def deactivate_config(account_id,sseclog_id,account_session,sseclog_session):
+    
+    global allRegions
+    
+    
+    try:
+
+      
+        configservice = account_session.client('config')
+
+        configservice.delete_aggregation_authorization(
+            AuthorizedAccountId=sseclog_id,
+            AuthorizedAwsRegion='eu-west-1'
+        )
+
+        client = sseclog_session.client('config')
+
+        response = client.describe_configuration_aggregators(
+            ConfigurationAggregatorNames=[
+                'SecLogAggregator',
+            ]
+        )
+       
+        for aggregationSources in response['ConfigurationAggregators'][0]['AccountAggregationSources']:
+            accountsIds = aggregationSources['AccountIds']
+          
+            if account_id in aggregationSources['AccountIds']:
+                accountsIds.remove(account_id)
+
+        client.put_configuration_aggregator(
+            ConfigurationAggregatorName='SecLogAggregator',
+            AccountAggregationSources=[
+                {
+                   'AccountIds': accountsIds,
+                    'AllAwsRegions': True
+                },
+           ]
+        )
+
+        print(f"Disassociate AWSConfig from source SECLOG account [{Status.OK.value}]")
+    except botocore.exceptions.ClientError as error:
+            if error.response['Error']['Code'] == 'BadRequestException':
+                if 'is not associated' in error.response['Error']['Message']:
+                    print(f"Disassociate AWSConfig from source SECLOG account [{Status.NO_ACTION.value}]")
+                else:
+                    print(f"Disassociate AWSConfig from source SECLOG account [{Status.FAIL.value}]")
+                    print(error.response['Error']['Message'])
+                    print("Exiting...")
+                    sys.exit(1)
+            else:
+                print(f"Disassociate AWSConfig from source SECLOG account [{Status.FAIL.value}]")
+                print(error.response['Error']['Message'])
+                print("Exiting...")
+                sys.exit(1)
+
+
+def activate_config(account_id,account_session,tseclog_id,tseclog_session):
+    
+    global allRegions
+    
+    
+    try:
+
+       
+        client = tseclog_session.client('config')
+
+        response = client.describe_configuration_aggregators(
+            ConfigurationAggregatorNames=[
+                'SecLogAggregator',
+            ]
+        )
+       
+        for aggregationSources in response['ConfigurationAggregators'][0]['AccountAggregationSources']:
+            accountsIds = aggregationSources['AccountIds']
+          
+            if account_id not in aggregationSources['AccountIds']:
+                accountsIds.append(account_id)
+
+        client.put_configuration_aggregator(
+            ConfigurationAggregatorName='SecLogAggregator',
+            AccountAggregationSources=[
+                {
+                   'AccountIds': accountsIds,
+                    'AllAwsRegions': True
+                },
+           ]
+        )
+
+       
+        client = account_session.client('config')
+
+        response = client.describe_pending_aggregation_requests()
+        
+        for pendingAggregationRequests in response['PendingAggregationRequests']:
+           if tseclog_id in pendingAggregationRequests['RequesterAccountId']:
+                client.put_aggregation_authorization(
+                    AuthorizedAccountId=tseclog_id,
+                    AuthorizedAwsRegion='eu-west-1'
+                )
+
+
+        print(f"Asassociate AWSConfig linked account to target SECLOG account [{Status.OK.value}]")
+    except botocore.exceptions.ClientError as error:
+            if error.response['Error']['Code'] == 'BadRequestException':
+                if 'is not associated' in error.response['Error']['Message']:
+                    print(f"Associate AWSConfig linked account to target SECLOG account [{Status.NO_ACTION.value}]")
+                else:
+                    print(f"Associate AWSConfig linked account to target SECLOG account [{Status.FAIL.value}]")
+                    print(error.response['Error']['Message'])
+                    print("Exiting...")
+                    sys.exit(1)
+            else:
+                print(f"Asssociate AWSConfig linked account to target SECLOG account [{Status.FAIL.value}]")
+                print(error.response['Error']['Message'])
+                print("Exiting...")
+                sys.exit(1)
+
+
+
+def deactivate_guardduty(sseclog_id, session):
+    guardduty = session.client('guardduty')
+    
+    detector_response = guardduty.list_detectors()
+    for detector in detector_response['DetectorIds']:
+        try:
+            response = guardduty.disassociate_from_master_account(
+                DetectorId=detector
+            )
+            response = guardduty.delete_invitations(AccountIds=[
+                sseclog_id,
+            ])
+            print(f"Disassociate GuardDuty from source SECLOG account [{Status.OK.value}]")
+        except botocore.exceptions.ClientError as error:
+            if error.response['Error']['Code'] == 'BadRequestException':
+                if 'is not associated' in error.response['Error']['Message']:
+                    print(f"Disassociate GuardDuty from master account [{Status.NO_ACTION.value}]")
+                else:
+                    print(f"Disassociate GuardDuty from master account [{Status.FAIL.value}]")
+                    print(error.response['Error']['Message'])
+                    print("Exiting...")
+                    sys.exit(1)
+            else:
+                print(f"Disassociate GuardDuty from master account [{Status.FAIL.value}]")
+                print(error.response['Error']['Message'])
+                print("Exiting...")
+                sys.exit(1)
+    
+def activate_guardduty(account_id, account_email,account_session,tseclog_id,tseclog_session):
+
+
+    guardduty = tseclog_session.client('guardduty')
+    detector_response = guardduty.list_detectors()
+    for detector in detector_response['DetectorIds']:
+        try:
+           
+            response = guardduty.create_members(
+                DetectorId=detector,
+                AccountDetails=[
+                    {
+                        'AccountId': account_id,
+                        'Email': account_email
+                    },
+                ]
+            )
+            response = guardduty.invite_members(
+                DetectorId=detector,
+                AccountIds=[
+                    account_id,
+                ],
+                DisableEmailNotification=True
+            )
+            print(f"Issue invitation for GuardDuty from target SECLOG account [{Status.OK.value}]")
+        except botocore.exceptions.ClientError as error:
+            if error.response['Error']['Code'] == 'BadRequestException':
+                if 'is not associated' in error.response['Error']['Message']:
+                    print(f"Issue invitation for GuardDuty from target SECLOG account [{Status.NO_ACTION.value}]")
+                else:
+                    print(f"Issue invitation for GuardDuty from target SECLOG account [{Status.FAIL.value}]")
+                    print(error.response['Error']['Message'])
+                    print("Exiting...")
+                    sys.exit(1)
+            else:
+                print(f"Issue invitation for GuardDuty from target SECLOG account [{Status.FAIL.value}]")
+                print(error.response['Error']['Message'])
+                print("Exiting...")
+                sys.exit(1)
+
+    # accept invitation
+ 
+
+    guardduty = account_session.client('guardduty')
+    detector_response = guardduty.list_detectors()
+    for detector in detector_response['DetectorIds']:
+        try:
+            response = guardduty.list_invitations()
+            response = guardduty.accept_invitation(
+                DetectorId=detector,
+                MasterId=tseclog_id,
+                InvitationId=response['Invitations'][0]['InvitationId']
+            )
+            
+            print(f"Aassociate GuardDuty from linked account to target SECLOG  account [{Status.OK.value}]")
+        except botocore.exceptions.ClientError as error:
+            if error.response['Error']['Code'] == 'BadRequestException':
+                if 'is not associated' in error.response['Error']['Message']:
+                    print(f"Aassociate GuardDuty from linked account to target SECLOG account [{Status.NO_ACTION.value}]")
+                else:
+                    print(f"Aassociate GuardDuty from linked account to target SECLOG account [{Status.FAIL.value}]")
+                    print(error.response['Error']['Message'])
+                    print("Exiting...")
+                    sys.exit(1)
+            else:
+                print(f"Aassociate GuardDuty from linked account to target SECLOG account [{Status.FAIL.value}]")
+                print(error.response['Error']['Message'])
+                print("Exiting...")
+                sys.exit(1)
+
+   
+
+def deactivate_securityhub(sseclog_id,session):
+    securityhub = session.client('securityhub')
+
+    try:
+        response = securityhub.disassociate_from_master_account()
+        response = securityhub.delete_invitations(AccountIds=[
+            sseclog_id,
+        ])
+        print(f"Disassociate SecurityHub from source SECLOG account [{Status.OK.value}]")
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'BadRequestException':
+            if 'is not associated' in error.response['Error']['Message']:
+                print(f"Disassociate SecurityHub from source SECLOG account [{Status.NO_ACTION.value}]")
+            else:
+                print(f"Disassociate SecurityHub from source SECLOG account [{Status.FAIL.value}]")
+                print(error.response['Error']['Message'])
+                print("Exiting...")
+                sys.exit(1)
+        else:
+            print(f"Disassociate SecurityHub from source SECLOG account [{Status.FAIL.value}]")
+            print(error.response['Error']['Message'])
+            print("Exiting...")
+            sys.exit(1)
+
+def activate_securityhub(account_id, account_email,account_session,tseclog_id,tseclog_session):
+
+    securityhub = tseclog_session.client('securityhub')
+    try:
+        response = securityhub.create_members(
+            AccountDetails=[
+                {
+                    'AccountId': account_id,
+                    'Email': account_email
+                },
+            ]
+        )
+        response = securityhub.invite_members(
+            AccountIds=[
+                account_id,
+            ]
+        )
+        print(f"Issue invitation for SecurityHub from target SECLOG account: [{Status.OK.value}]")
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'BadRequestException':
+            if 'is not associated' in error.response['Error']['Message']:
+                print(f"Issue invitation for SecurityHub from target SECLOG account [{Status.NO_ACTION.value}]")
+            else:
+                print(f"Issue invitation for SecurityHub from target SECLOG account [{Status.FAIL.value}]")
+                print(error.response['Error']['Message'])
+                print("Exiting...")
+                sys.exit(1)
+        else:
+            print(f"Issue invitation for SecurityHub from target SECLOG account [{Status.FAIL.value}]")
+            print(error.response['Error']['Message'])
+            print("Exiting...")
+            sys.exit(1)
+   
+    # accept invitation
+   
+    securityhub = account_session.client('securityhub')
+    try:
+        response = securityhub.list_invitations()
+        response = securityhub.accept_invitation(
+            MasterId=tseclog_id,
+            InvitationId=response['Invitations'][0]['InvitationId']
+        )
+        
+        print(f"Aassociate SecurityHub linked account to SECLOG account [{Status.OK.value}]")
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'BadRequestException':
+            if 'is not associated' in error.response['Error']['Message']:
+                print(f"Aassociate SecurityHub from linked account to target SECLOG account [{Status.NO_ACTION.value}]")
+            else:
+                print(f"Aassociate SecurityHub from linked account to target SECLOG account [{Status.FAIL.value}]")
+                print(error.response['Error']['Message'])
+                print("Exiting...")
+                sys.exit(1)
+        else:
+            print(f"Aassociate SecurityHub from linked account to target SECLOG account [{Status.FAIL.value}]")
+            print(error.response['Error']['Message'])
+            print("Exiting...")
+            sys.exit(1)
 
 
 class Status(Enum):

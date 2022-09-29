@@ -19,6 +19,7 @@ venv='.venv'
 account=${account:-}
 sseclog=${sseclog:-}
 tseclog=${tseclog:-}
+org=${org:-}
 
 # Parameter parsing
 while [ $# -gt 0 ]; do
@@ -40,8 +41,9 @@ display_help() {
     echo ""
     echo "   Provide "
     echo "   --account      : The account profile of the Linked account to be moved as configured in your AWS profile"
-    echo "   --sseclog       : The account profile of the source SECLOG account as configured in your AWS profile"
-    echo "   --tseclog       : The account profile of the target SECLOG account as configured in your AWS profile"
+    echo "   --sseclog      : The account profile of the source SECLOG account as configured in your AWS profile"
+    echo "   --tseclog      : The account profile of the target SECLOG account as configured in your AWS profile"
+    echo "   --org          : The account profile of the organisation account as configured in your AWS profile"
     echo ""
     exit 1
 }
@@ -97,7 +99,7 @@ update() {
     
     
     
-    DEPENDENCIES=(boto3 botocore time json colorama zipfile shlex cursor pyyaml cfn_flip)
+    DEPENDENCIES=(boto3 botocore time json colorama zipfile shlex cursor pyyaml cfn_flip signal)
     
     #installing python dependencies
     for dep in "${DEPENDENCIES[@]}" 
@@ -132,11 +134,7 @@ echo "####### Environment is in good shape. Starting update script..."
 echo "#######"
 echo ""
 
-params="-a $account"
-if  [ ! -z "$sseclog" ] && [ ! -z "$tseclog" ]; then
-    params="$params -s $sseclog -t $tseclog"
-fi
-
+params="-a $account -s $sseclog -t $tseclog -o $org"
 
 python3 ./EC-Switch-Seclog.py $params
 
@@ -147,7 +145,7 @@ deactivate
 
 
 # Check to validate number of parameters entered
-if  [ -z "$account" ] || [ -z "$sseclog" ] || [ -z "$tseclog" ]  ; then
+if  [ -z "$account" ] || [ -z "$sseclog" ] || [ -z "$tseclog" ] || [ -z "$org" ]  ; then
     display_help
     exit 0
 fi
