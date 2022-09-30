@@ -240,13 +240,13 @@ def main(argv):
     print("")
 
     # deactivate guardduty from source SECLOG
-    #deactivate_guardduty(sseclog_id,account_session)
+    deactivate_guardduty(sseclog_id,account_session)
 
     # deactivate securityhub from source SECLOG
-    #deactivate_securityhub(sseclog_id,account_session)
+    deactivate_securityhub(sseclog_id,account_session)
 
     # deactivate config from source SECLOG
-    #deactivate_config(account_id,sseclog_id,account_session,sseclog_session)
+    deactivate_config(account_id,sseclog_id,account_session,sseclog_session)
     
     # Update SSM parameter
    
@@ -324,11 +324,11 @@ def main(argv):
 
     # Re-apply CFN
   
-    #update_stack('SECLZ-StackSetExecutionRole',account_session)
-    #update_stack('SECLZ-Guardduty-detector',account_session)
-    ##update_stack('SECLZ-Notifications-Cloudtrail',account_session) ##new parameter values not being used 
-    #update_stack('SECLZ-config-cloudtrail-SNS',account_session)
-    #update_stack('SECLZ-local-SNS-topic',account_session)
+    update_stack('SECLZ-StackSetExecutionRole',account_session)
+    update_stack('SECLZ-Guardduty-detector',account_session)
+    #update_stack('SECLZ-Notifications-Cloudtrail',account_session) ##new parameter values not being used 
+    update_stack('SECLZ-config-cloudtrail-SNS',account_session)
+    update_stack('SECLZ-local-SNS-topic',account_session)
 
        # Re-apply CFN
    
@@ -339,9 +339,9 @@ def main(argv):
     # associate config with target SECLOG
     activate_config(account_id,account_session,tseclog_id,tseclog_session)
     # associate guardduty with target SECLOG
-    #activate_guardduty(account_id, account_email,account_session,tseclog_id,tseclog_session)
+    activate_guardduty(account_id, account_email,account_session,tseclog_id,tseclog_session)
     # associate securityhub with target SECLOG
-    #activate_securityhub(account_id, account_email,account_session,tseclog_id,tseclog_session)
+    activate_securityhub(account_id, account_email,account_session,tseclog_id,tseclog_session)
     
     print("")
     print(f"####### AWS Landing Zone switch SECLOG script finished. Executed in {time.time() - start_time} seconds")
@@ -603,7 +603,9 @@ def deactivate_config(account_id,sseclog_id,account_session,sseclog_session):
                 except ClientError as error:
                     if  error.response['Error']['Code'] != 'AccessDeniedException':
                         raise error
-                    
+                    else:
+                        print(f"{error}{region}")
+            
 
             client = sseclog_session.client('config')
 
@@ -655,13 +657,14 @@ def activate_config(account_id,account_session,tseclog_id,tseclog_session):
         try:
 
        
-            client = tseclog_session.client('config')
+            tseclog_cl = tseclog_session.client('config')
 
-            response = client.describe_configuration_aggregators(
+            response = tseclog_cl.describe_configuration_aggregators(
                 ConfigurationAggregatorNames=[
                     'SecLogAggregator',
                 ]
             )
+
         
             for aggregationSources in response['ConfigurationAggregators'][0]['AccountAggregationSources']:
                 accountsIds = aggregationSources['AccountIds']
@@ -669,31 +672,59 @@ def activate_config(account_id,account_session,tseclog_id,tseclog_session):
                 if account_id not in aggregationSources['AccountIds']:
                     accountsIds.append(account_id)
 
-            client.put_configuration_aggregator(
+            tseclog_cl.put_configuration_aggregator(
                 ConfigurationAggregatorName='SecLogAggregator',
                 AccountAggregationSources=[
                     {
                     'AccountIds': accountsIds,
                         'AllAwsRegions': True
                     },
-            ]
+                ]
             )
 
-        
-            client = account_session.client('config')
+            response = tseclog_cl.describe_configuration_aggregators(
+                ConfigurationAggregatorNames=[
+                    'SecLogAggregator',
+                ]
+            )
 
-            response = client.describe_pending_aggregation_requests()
+            client_ac = account_session.client('config')
+
+            response = client_ac.describe_pending_aggregation_requests() # first call may return an empty list of PendingAggregationRequests
             
+            count = 0
+            while count <= 10:
+                
+                if response['PendingAggregationRequests']:
+                    break
+                time.sleep(5)
+                count=count+1
+                response = client_ac.describe_pending_aggregation_requests()
+                
+
+            if  not response['PendingAggregationRequests']:
+                print(f"\033[2K\033[1GAssociate AWSConfig linked account to target SECLOG account error: no PendingAggregationRequests found [{Status.FAIL.value}]")
+                print("Exiting...")
+                sys.exit(1)
+
+
             for pendingAggregationRequests in response['PendingAggregationRequests']:
-                print(pendingAggregationRequests)
+                
                 if tseclog_id in pendingAggregationRequests['RequesterAccountId']:
                     for region in all_regions:
-                        client = account_session.client('config', region_name=region)
-                        client.put_aggregation_authorization(
-                            AuthorizedAccountId=tseclog_id,
-                            AuthorizedAwsRegion='eu-west-1'
-                        )
-
+                        try:
+                            client_acr = account_session.client('config', region_name=region)
+                            response = client_acr.put_aggregation_authorization(
+                                AuthorizedAccountId=tseclog_id,
+                                AuthorizedAwsRegion='eu-west-1'
+                            )
+                        except ClientError as error:
+                            if  error.response['Error']['Code'] != 'AccessDeniedException':
+                                raise error
+                            else:
+                                print(f"{error}{region}")
+                        
+                    
 
             print(f"\033[2K\033[1GAsassociate AWSConfig linked account to target SECLOG account [{Status.OK.value}]")
         except botocore.exceptions.ClientError as error:
