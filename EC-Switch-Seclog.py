@@ -22,6 +22,7 @@ from botocore.exceptions import BotoCoreError, ClientError, ProfileNotFound
 from botocore.config import Config
 
 regions = ["ap-northeast-1","ap-northeast-2","ap-northeast-3","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]
+all_regions = ["ap-northeast-1","ap-northeast-2","ap-northeast-3","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-1","eu-west-2","eu-west-3","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"]
 
 def exit_handler(signum, frame):
     print("Exiting...")
@@ -42,12 +43,14 @@ def main(argv):
     tseclog_id = None
     tseclog_SecLog_sns_arn = None
     tseclog_KMSCloudtrailKey_arn = None
+    tseclog_SecLogOU = None
 
     account_profile = None
     account_id = None
     account_email = None
     stored_SecLog_sns_arn = None
     stored_KMSCloudtrailKey_arn = None
+    stored_SecLogOU = None
 
     organisation_profile = None
     organisation_id = None
@@ -115,29 +118,38 @@ def main(argv):
     
     # get stored seclog_id from ssm parameter
     ssm = account_session.client('ssm')
-    response = ssm.get_parameter(Name='/org/member/SecLogMasterAccountId')
-    if 'Value' in response['Parameter']:
+    try:
+        response = ssm.get_parameter(Name='/org/member/SecLogMasterAccountId')
         stored_sseclog_id = response['Parameter']['Value']
-    else:
+    except ClientError as err:
         print(f"LZ not configured on this account. [{Status.FAIL.value}]")
         print("Exiting...")
         sys.exit(1)
-        
-    response = ssm.get_parameter(Name='/org/member/SecLog_sns_arn')
-    if 'Value' in response['Parameter']:
+
+    try:
+        response = ssm.get_parameter(Name='/org/member/SecLog_sns_arn')
         stored_SecLog_sns_arn = response['Parameter']['Value']
-    else:
+    except ClientError as err:
         print(f"SecLog_sns_arn not configured on this account. [{Status.FAIL.value}]")
         print("Exiting...")
         sys.exit(1)
 
-    response = ssm.get_parameter(Name='/org/member/KMSCloudtrailKey_arn')
-    if 'Value' in response['Parameter']:
+    try:
+        response = ssm.get_parameter(Name='/org/member/KMSCloudtrailKey_arn')
         stored_KMSCloudtrailKey_arn = response['Parameter']['Value']
-    else:
+    except ClientError as err:
         print(f"KMSCloudtrailKey_arn not configured on this account. [{Status.FAIL.value}]")
         print("Exiting...")
         sys.exit(1)
+
+    try:
+        response = ssm.get_parameter(Name='/org/member/SecLogOU')
+        stored_SecLogOU = response['Parameter']['Value']
+    except ClientError as err:
+        print(f"SecLogOU not configured on this account. [{Status.FAIL.value}]")
+        print("Exiting...")
+        sys.exit(1)
+
     print(f"Linked account identified. [{Status.OK.value}]")
     print("")
 
@@ -188,21 +200,29 @@ def main(argv):
         sys.exit(1)
     else:
         print(f"Target SECLOG account identified. [{Status.OK.value}]")
+        
         ssm = tseclog_session.client('ssm')
-        response = ssm.get_parameter(Name='/org/member/SecLog_sns_arn')
-        if 'Value' in response['Parameter']:
+        try:
+            response = ssm.get_parameter(Name='/org/member/SecLog_sns_arn')
             tseclog_SecLog_sns_arn = response['Parameter']['Value']
-        else:
+        except ClientError as err:
             print(f"SecLog_sns_arn not configured on this account. [{Status.FAIL.value}]")
             print("Exiting...")
             sys.exit(1)
 
-        ssm = tseclog_session.client('ssm')
-        response = ssm.get_parameter(Name='/org/member/KMSCloudtrailKey_arn')
-        if 'Value' in response['Parameter']:
+        try:
+            response = ssm.get_parameter(Name='/org/member/KMSCloudtrailKey_arn')
             tseclog_KMSCloudtrailKey_arn = response['Parameter']['Value']
-        else:
+        except ClientError as err:
             print(f"KMSCloudtrailKey_arn not configured on this account. [{Status.FAIL.value}]")
+            print("Exiting...")
+            sys.exit(1)
+
+        try:
+            response = ssm.get_parameter(Name='/org/member/SecLogOU')
+            tseclog_SecLogOU = response['Parameter']['Value']
+        except ClientError as err:
+            print(f"SecLogOU not configured on this account. [{Status.FAIL.value}]")
             print("Exiting...")
             sys.exit(1)
 
@@ -220,13 +240,13 @@ def main(argv):
     print("")
 
     # deactivate guardduty from source SECLOG
-    deactivate_guardduty(sseclog_id,account_session)
+    #deactivate_guardduty(sseclog_id,account_session)
 
     # deactivate securityhub from source SECLOG
-    deactivate_securityhub(sseclog_id,account_session)
+    #deactivate_securityhub(sseclog_id,account_session)
 
     # deactivate config from source SECLOG
-    deactivate_config(account_id,sseclog_id,account_session,sseclog_session)
+    #deactivate_config(account_id,sseclog_id,account_session,sseclog_session)
     
     # Update SSM parameter
    
@@ -278,32 +298,50 @@ def main(argv):
             print(error.response['Error']['Message'])
             print("Exiting...")
             sys.exit(1)
+    
+    if stored_SecLogOU == tseclog_SecLogOU:
+        print(f"Update SecLogOU SSM parameter [{Status.NO_ACTION.value}]")
+    else:
+        try:
+            ssm.put_parameter(
+                Name='/org/member/SecLogOU',
+                Value=tseclog_SecLogOU,
+                Type='String',
+                Overwrite=True)
+            print(f"Update SecLogOU SSM parameter [{Status.OK.value}]")
+        except botocore.exceptions.ClientError as error:
+            print(f"Update SecLogOU SSM parameter [{Status.FAIL.value}]")
+            print(error.response['Error']['Message'])
+            print("Exiting...")
+            sys.exit(1)
+
+
 
     # Delete instances from original seclog account
    
-    remove_stacks_from_stackset('SECLZ-Enable-Config-SecurityHub-Globally', account_id,sseclog_session)
-    remove_stacks_from_stackset('SECLZ-Enable-Guardduty-Globally', account_id,sseclog_session)
+    #remove_stacks_from_stackset('SECLZ-Enable-Config-SecurityHub-Globally', account_id,sseclog_session)
+    #remove_stacks_from_stackset('SECLZ-Enable-Guardduty-Globally', account_id,sseclog_session)
 
     # Re-apply CFN
   
-    update_stack('SECLZ-StackSetExecutionRole',account_session)
-    update_stack('SECLZ-Guardduty-detector',account_session)
-    update_stack('SECLZ-Notifications-Cloudtrail',account_session)
-    update_stack('SECLZ-config-cloudtrail-SNS',account_session)
-    update_stack('SECLZ-local-SNS-topic',account_session)
+    #update_stack('SECLZ-StackSetExecutionRole',account_session)
+    #update_stack('SECLZ-Guardduty-detector',account_session)
+    ##update_stack('SECLZ-Notifications-Cloudtrail',account_session) ##new parameter values not being used 
+    #update_stack('SECLZ-config-cloudtrail-SNS',account_session)
+    #update_stack('SECLZ-local-SNS-topic',account_session)
 
        # Re-apply CFN
    
     # Re-apply Stackset from Target SECLOG
-    add_stacks_from_stackset('SECLZ-Enable-Config-SecurityHub-Globally', account_id,tseclog_session)
-    add_stacks_from_stackset('SECLZ-Enable-Guardduty-Globally', account_id,tseclog_session)
+    #add_stacks_from_stackset('SECLZ-Enable-Config-SecurityHub-Globally', account_id,tseclog_session)
+    #add_stacks_from_stackset('SECLZ-Enable-Guardduty-Globally', account_id,tseclog_session)
     
     # associate config with target SECLOG
     activate_config(account_id,account_session,tseclog_id,tseclog_session)
     # associate guardduty with target SECLOG
-    activate_guardduty(account_id, account_email,account_session,tseclog_id,tseclog_session)
+    #activate_guardduty(account_id, account_email,account_session,tseclog_id,tseclog_session)
     # associate securityhub with target SECLOG
-    activate_securityhub(account_id, account_email,account_session,tseclog_id,tseclog_session)
+    #activate_securityhub(account_id, account_email,account_session,tseclog_id,tseclog_session)
     
     print("")
     print(f"####### AWS Landing Zone switch SECLOG script finished. Executed in {time.time() - start_time} seconds")
@@ -551,120 +589,127 @@ def update_stack(stack,session):
 
 def deactivate_config(account_id,sseclog_id,account_session,sseclog_session):
     
-    global allRegions
-    
-    
-    try:
+    global all_regions
+    print("Disassociate AWSConfig from source SECLOG account ", end="")
+    with Spinner():
+        try:
+            for region in all_regions:
+                try:
+                    configservice = account_session.client('config', region_name=region)
+                    configservice.delete_aggregation_authorization(
+                        AuthorizedAccountId=sseclog_id,
+                        AuthorizedAwsRegion='eu-west-1'
+                    )
+                except ClientError as error:
+                    if  error.response['Error']['Code'] != 'AccessDeniedException':
+                        raise error
+                    
 
-      
-        configservice = account_session.client('config')
+            client = sseclog_session.client('config')
 
-        configservice.delete_aggregation_authorization(
-            AuthorizedAccountId=sseclog_id,
-            AuthorizedAwsRegion='eu-west-1'
-        )
+            response = client.describe_configuration_aggregators(
+                ConfigurationAggregatorNames=[
+                    'SecLogAggregator',
+                ]
+            )
+        
+            for aggregationSources in response['ConfigurationAggregators'][0]['AccountAggregationSources']:
+                accountsIds = aggregationSources['AccountIds']
+            
+                if account_id in aggregationSources['AccountIds']:
+                    accountsIds.remove(account_id)
 
-        client = sseclog_session.client('config')
-
-        response = client.describe_configuration_aggregators(
-            ConfigurationAggregatorNames=[
-                'SecLogAggregator',
+            client.put_configuration_aggregator(
+                ConfigurationAggregatorName='SecLogAggregator',
+                AccountAggregationSources=[
+                    {
+                    'AccountIds': accountsIds,
+                        'AllAwsRegions': True
+                    },
             ]
-        )
-       
-        for aggregationSources in response['ConfigurationAggregators'][0]['AccountAggregationSources']:
-            accountsIds = aggregationSources['AccountIds']
-          
-            if account_id in aggregationSources['AccountIds']:
-                accountsIds.remove(account_id)
+            )
 
-        client.put_configuration_aggregator(
-            ConfigurationAggregatorName='SecLogAggregator',
-            AccountAggregationSources=[
-                {
-                   'AccountIds': accountsIds,
-                    'AllAwsRegions': True
-                },
-           ]
-        )
-
-        print(f"Disassociate AWSConfig from source SECLOG account [{Status.OK.value}]")
-    except botocore.exceptions.ClientError as error:
-            if error.response['Error']['Code'] == 'BadRequestException':
-                if 'is not associated' in error.response['Error']['Message']:
-                    print(f"Disassociate AWSConfig from source SECLOG account [{Status.NO_ACTION.value}]")
+            print(f"\033[2K\033[1GDisassociate AWSConfig from source SECLOG account [{Status.OK.value}]")
+        except botocore.exceptions.ClientError as error:
+                if error.response['Error']['Code'] == 'BadRequestException':
+                    if 'is not associated' in error.response['Error']['Message']:
+                        print(f"\033[2K\033[1GDisassociate AWSConfig from source SECLOG account [{Status.NO_ACTION.value}]")
+                    else:
+                        print(f"\033[2K\033[1GDisassociate AWSConfig from source SECLOG account. Error: {error} [{Status.FAIL.value}]")
+                        print(error.response['Error']['Message'])
+                        print("Exiting...")
+                        sys.exit(1)
                 else:
-                    print(f"Disassociate AWSConfig from source SECLOG account [{Status.FAIL.value}]")
+                    print(f"\033[2K\033[1GDisassociate AWSConfig from source SECLOG account. Error: {error} [{Status.FAIL.value}]")
                     print(error.response['Error']['Message'])
                     print("Exiting...")
                     sys.exit(1)
-            else:
-                print(f"Disassociate AWSConfig from source SECLOG account [{Status.FAIL.value}]")
-                print(error.response['Error']['Message'])
-                print("Exiting...")
-                sys.exit(1)
 
 
 def activate_config(account_id,account_session,tseclog_id,tseclog_session):
     
-    global allRegions
+    global all_regions
     
-    
-    try:
+    print("Asassociate AWSConfig from source SECLOG account ", end="")
+    with Spinner():
+        try:
 
        
-        client = tseclog_session.client('config')
+            client = tseclog_session.client('config')
 
-        response = client.describe_configuration_aggregators(
-            ConfigurationAggregatorNames=[
-                'SecLogAggregator',
-            ]
-        )
-       
-        for aggregationSources in response['ConfigurationAggregators'][0]['AccountAggregationSources']:
-            accountsIds = aggregationSources['AccountIds']
-          
-            if account_id not in aggregationSources['AccountIds']:
-                accountsIds.append(account_id)
-
-        client.put_configuration_aggregator(
-            ConfigurationAggregatorName='SecLogAggregator',
-            AccountAggregationSources=[
-                {
-                   'AccountIds': accountsIds,
-                    'AllAwsRegions': True
-                },
-           ]
-        )
-
-       
-        client = account_session.client('config')
-
-        response = client.describe_pending_aggregation_requests()
+            response = client.describe_configuration_aggregators(
+                ConfigurationAggregatorNames=[
+                    'SecLogAggregator',
+                ]
+            )
         
-        for pendingAggregationRequests in response['PendingAggregationRequests']:
-           if tseclog_id in pendingAggregationRequests['RequesterAccountId']:
-                client.put_aggregation_authorization(
-                    AuthorizedAccountId=tseclog_id,
-                    AuthorizedAwsRegion='eu-west-1'
-                )
+            for aggregationSources in response['ConfigurationAggregators'][0]['AccountAggregationSources']:
+                accountsIds = aggregationSources['AccountIds']
+            
+                if account_id not in aggregationSources['AccountIds']:
+                    accountsIds.append(account_id)
+
+            client.put_configuration_aggregator(
+                ConfigurationAggregatorName='SecLogAggregator',
+                AccountAggregationSources=[
+                    {
+                    'AccountIds': accountsIds,
+                        'AllAwsRegions': True
+                    },
+            ]
+            )
+
+        
+            client = account_session.client('config')
+
+            response = client.describe_pending_aggregation_requests()
+            
+            for pendingAggregationRequests in response['PendingAggregationRequests']:
+                print(pendingAggregationRequests)
+                if tseclog_id in pendingAggregationRequests['RequesterAccountId']:
+                    for region in all_regions:
+                        client = account_session.client('config', region_name=region)
+                        client.put_aggregation_authorization(
+                            AuthorizedAccountId=tseclog_id,
+                            AuthorizedAwsRegion='eu-west-1'
+                        )
 
 
-        print(f"Asassociate AWSConfig linked account to target SECLOG account [{Status.OK.value}]")
-    except botocore.exceptions.ClientError as error:
-            if error.response['Error']['Code'] == 'BadRequestException':
-                if 'is not associated' in error.response['Error']['Message']:
-                    print(f"Associate AWSConfig linked account to target SECLOG account [{Status.NO_ACTION.value}]")
+            print(f"\033[2K\033[1GAsassociate AWSConfig linked account to target SECLOG account [{Status.OK.value}]")
+        except botocore.exceptions.ClientError as error:
+                if error.response['Error']['Code'] == 'BadRequestException':
+                    if 'is not associated' in error.response['Error']['Message']:
+                        print(f"\033[2K\033[1GAssociate AWSConfig linked account to target SECLOG account [{Status.NO_ACTION.value}]")
+                    else:
+                        print(f"\033[2K\033[1GAssociate AWSConfig linked account to target SECLOG account [{Status.FAIL.value}]")
+                        print(error.response['Error']['Message'])
+                        print("Exiting...")
+                        sys.exit(1)
                 else:
-                    print(f"Associate AWSConfig linked account to target SECLOG account [{Status.FAIL.value}]")
+                    print(f"\033[2K\033[1GAsssociate AWSConfig linked account to target SECLOG account [{Status.FAIL.value}]")
                     print(error.response['Error']['Message'])
                     print("Exiting...")
                     sys.exit(1)
-            else:
-                print(f"Asssociate AWSConfig linked account to target SECLOG account [{Status.FAIL.value}]")
-                print(error.response['Error']['Message'])
-                print("Exiting...")
-                sys.exit(1)
 
 
 
