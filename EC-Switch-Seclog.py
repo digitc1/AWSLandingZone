@@ -319,8 +319,8 @@ def main(argv):
 
     # Delete instances from original seclog account
    
-    #remove_stacks_from_stackset('SECLZ-Enable-Config-SecurityHub-Globally', account_id,sseclog_session)
-    #remove_stacks_from_stackset('SECLZ-Enable-Guardduty-Globally', account_id,sseclog_session)
+    remove_stacks_from_stackset('SECLZ-Enable-Config-SecurityHub-Globally', account_id,sseclog_session)
+    remove_stacks_from_stackset('SECLZ-Enable-Guardduty-Globally', account_id,sseclog_session)
 
     # Re-apply CFN
   
@@ -333,8 +333,8 @@ def main(argv):
        # Re-apply CFN
    
     # Re-apply Stackset from Target SECLOG
-    #add_stacks_from_stackset('SECLZ-Enable-Config-SecurityHub-Globally', account_id,tseclog_session)
-    #add_stacks_from_stackset('SECLZ-Enable-Guardduty-Globally', account_id,tseclog_session)
+    add_stacks_from_stackset('SECLZ-Enable-Config-SecurityHub-Globally', account_id,tseclog_session)
+    add_stacks_from_stackset('SECLZ-Enable-Guardduty-Globally', account_id,tseclog_session)
     
     # associate config with target SECLOG
     activate_config(account_id,account_session,tseclog_id,tseclog_session)
@@ -702,7 +702,7 @@ def activate_config(account_id,account_session,tseclog_id,tseclog_session):
                 response = client_ac.describe_pending_aggregation_requests()
                 
 
-            if  not response['PendingAggregationRequests']:
+            if  'PendingAggregationRequests' not in response or not response['PendingAggregationRequests']:
                 print(f"\033[2K\033[1GAssociate AWSConfig linked account to target SECLOG account error: no PendingAggregationRequests found [{Status.FAIL.value}]")
                 print("Exiting...")
                 sys.exit(1)
