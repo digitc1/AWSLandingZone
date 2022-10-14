@@ -1041,7 +1041,7 @@ def toggle_guardduty_malware(client, malware=True, kubernetes=True, s3logs=True)
                         },
                         'MalwareProtection': {
                             'ScanEc2InstanceWithFindings': {
-                                'EbsVolumes': s3logs
+                                'EbsVolumes': malware
                             }
                         }
                     }
