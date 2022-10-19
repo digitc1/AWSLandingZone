@@ -102,7 +102,7 @@ def main(argv):
                     print("Exiting...")
                     sys.exit(1)
                 except AttributeError:
-                    print("fManifest file {arg} is not a valid json [{Status.FAIL.value}]")
+                    print(f"Manifest file {arg} is not a valid json [{Status.FAIL.value}]")
                     print("Exiting...")
                     sys.exit(1)
         elif opt in ("-o", "--org"):
