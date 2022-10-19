@@ -47,7 +47,7 @@ display_help() {
 #   ---------------------
 #   Environment setup
 #   ---------------------
-update() {
+delete() {
 
     echo "" 
     echo "#######"
@@ -132,7 +132,7 @@ echo ""
 
 params="-a $account -s $seclog"
 
-python3 ./EC-delete-LandingZone.py $params
+python3 ./EC-Delete-LandingZone.py $params
 
 #deactivating pyton runtime environment
 deactivate
@@ -146,4 +146,4 @@ if  [ -z "$account" ] || [ -z "$seclog" ] ; then
     exit 0
 fi
 
-update
+delete

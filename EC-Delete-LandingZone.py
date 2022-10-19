@@ -96,11 +96,11 @@ def main(argv):
         sys.exit(1)
 
     # seclog account
-
+    print(f"Associated SECLOG account : {seclog_profile}")
     seclog_session=boto3.Session(profile_name=seclog_profile, region_name ='eu-west-1')
 
-    sseclog_id = get_account_id(seclog_session)
-    print(f"Account ID : {sseclog_id}")
+    seclog_id = get_account_id(seclog_session)
+    print(f"Account ID : {seclog_id}")
     if (is_seclog(seclog_session) == False):
         print(f"Pofile {seclog_profile} is not a SECLOG account. [{Status.FAIL.value}]")
         print("Exiting...")
@@ -159,6 +159,10 @@ def main(argv):
     for region in regions:
         delete_ssm_parameter('/org/member/SecLog_guardduty-groupname', account_session, region=region)
 
+    print("")
+    print(f"####### AWS Landing Zone deletion script finished. Executed in {time.time() - start_time} seconds")
+    print("#######")
+    print("")
 
 ################################################################################
 # FUNCTIONS
@@ -225,6 +229,7 @@ def deactivate_guardduty(sseclog_id, session):
                 sseclog_id,
             ])
             print(f"Disassociate GuardDuty from source SECLOG account [{Status.OK.value}]")
+            return
         except botocore.exceptions.ClientError as error:
             if error.response['Error']['Code'] == 'BadRequestException':
                 if 'is not associated' in error.response['Error']['Message']:
@@ -239,6 +244,7 @@ def deactivate_guardduty(sseclog_id, session):
                 print(error.response['Error']['Message'])
                 print("Exiting...")
                 sys.exit(1)
+    print(f"Disassociate GuardDuty from source SECLOG account [{Status.NO_ACTION.value}]")
 
 def deactivate_securityhub(sseclog_id,session):
     securityhub = session.client('securityhub')
@@ -251,7 +257,7 @@ def deactivate_securityhub(sseclog_id,session):
         print(f"Disassociate SecurityHub from source SECLOG account [{Status.OK.value}]")
     except botocore.exceptions.ClientError as error:
         if error.response['Error']['Code'] == 'BadRequestException':
-            if 'is not associated' in error.response['Error']['Message']:
+            if 'is not associated' in error.response['Error']['Message'] or 'no such resource found' in error.response['Error']['Message']:
                 print(f"Disassociate SecurityHub from source SECLOG account [{Status.NO_ACTION.value}]")
             else:
                 print(f"Disassociate SecurityHub from source SECLOG account [{Status.FAIL.value}]")
@@ -259,8 +265,7 @@ def deactivate_securityhub(sseclog_id,session):
                 print("Exiting...")
                 sys.exit(1)
         else:
-            print(f"Disassociate SecurityHub from source SECLOG account [{Status.FAIL.value}]")
-            print(error.response['Error']['Message'])
+            print(f"Disassociate SecurityHub from source SECLOG account, error: error.response['Error']['Message'] [{Status.FAIL.value}]")
             print("Exiting...")
             sys.exit(1)
 
@@ -393,7 +398,7 @@ def delete_stack(stack,session):
     try:
         describe = client.describe_stacks(StackName=stack)
         
-        if describe['Stacks'][0]['StackStatus'] not in ('CREATE_COMPLETE', 'UPDATE_COMPLETE','UPDATE_ROLLBACK_COMPLETE'):
+        if describe['Stacks'][0]['StackStatus'] not in ('CREATE_COMPLETE', 'UPDATE_COMPLETE', 'ROLLBACK_COMPLETE','UPDATE_ROLLBACK_COMPLETE'):
             print(f"Cannot delete stack {stack}. Current status is : {describe['Stacks'][0]['StackStatus']} [{Status.FAIL.value}]")
             print("Exiting...")
             sys.exit(1)
@@ -402,6 +407,9 @@ def delete_stack(stack,session):
 
     except ClientError as err:
         if err.response['Error']['Code'] == 'AmazonCloudFormationException':
+            print(f"\033[2K\033[1GDelete stack {stack} [{Status.NO_ACTION.value}]")
+            return
+        elif err.response['Error']['Code'] == 'ValidationError':
             print(f"\033[2K\033[1GDelete stack {stack} [{Status.NO_ACTION.value}]")
             return
         else:
@@ -420,11 +428,7 @@ def delete_stack(stack,session):
                 try:
                     time.sleep(1)
                     response = client.describe_stacks(StackName=stack)
-                    if 'DELETE_COMPLETE' in response['Stacks'][0]['StackStatus'] :
-                        print(f"\033[2K\033[1GDelete stack {stack} [{Status.OK.value}]")
-                        updated=True
-                        break
-                    elif 'FAILED' in response['Stacks'][0]['StackStatus'] or 'ROLLBACK' in response['Stacks'][0]['StackStatus'] :
+                    if 'FAILED' in response['Stacks'][0]['StackStatus'] or 'ROLLBACK' in response['Stacks'][0]['StackStatus'] :
                         print(f"\033[2K\033[1GDelete stack  {stack} failed. Reason {response['Stacks'][0]['StackStatusReason']} [{Status.FAIL.value}]")
                         print("Exiting...")
                         sys.exit(1)
@@ -435,8 +439,8 @@ def delete_stack(stack,session):
                         raise err
 
         except ClientError as err:
-            if err.response['Error']['Code'] == 'AmazonCloudFormationException':
-                print(f"\033[2K\033[1GDelete stack {stack} [{Status.NO_ACTION.value}]")
+            if err.response['Error']['Code'] == 'ValidationError':
+                print(f"\033[2K\033[1GDelete stack {stack} [{Status.OK.value}]")
             else:
                 print(f"\033[2K\033[1GDelete stack  {stack} failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
 
@@ -460,18 +464,18 @@ def delete_ssm_parameter(parameter, session, region=None):
         response = client.get_parameter(Name=parameter)
     except Exception as err:
         exists=False
+    
     try:
-        if not exists or 'Value' not in response['Parameter']:
-            response = client.delete_parameter()
-        else
+        if exists and 'Value' in response['Parameter']:
+            response = client.delete_parameter(Name=parameter)
+            print(f"[{Status.OK.value}]")
+        else:
             print(f"[{Status.NO_ACTION.value}]")
     except Exception as err:
         print(f"failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
         print("Exiting...")
         sys.exit(1)
 
-    
-    print(f"[{Status.NO_ACTION.value}]")
 
 
 ################################################################################
