@@ -658,20 +658,22 @@ def activate_config(account_id,account_session,tseclog_id,tseclog_session):
 
        
             tseclog_cl = tseclog_session.client('config')
+            try:
+                response = tseclog_cl.describe_configuration_aggregators(
+                    ConfigurationAggregatorNames=[
+                        'SecLogAggregator',
+                    ]
+                )
 
-            response = tseclog_cl.describe_configuration_aggregators(
-                ConfigurationAggregatorNames=[
-                    'SecLogAggregator',
-                ]
-            )
-
-        
-            for aggregationSources in response['ConfigurationAggregators'][0]['AccountAggregationSources']:
-                accountsIds = aggregationSources['AccountIds']
             
-                if account_id not in aggregationSources['AccountIds']:
-                    accountsIds.append(account_id)
-
+                for aggregationSources in response['ConfigurationAggregators'][0]['AccountAggregationSources']:
+                    accountsIds = aggregationSources['AccountIds']
+                
+                    if account_id not in aggregationSources['AccountIds']:
+                        accountsIds.append(account_id)
+            except botocore.exceptions.ClientError as error:
+                accountsIds.append(account_id)
+                
             tseclog_cl.put_configuration_aggregator(
                 ConfigurationAggregatorName='SecLogAggregator',
                 AccountAggregationSources=[
