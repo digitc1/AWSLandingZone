@@ -1,0 +1,162 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+#   --------------------------------------------------------
+#   Version History
+#
+#   v1.0.0    J. Silva          Initial Version
+#   --------------------------------------------------------
+
+Description: >-
+    Creates 1 lambda and respective ancilliaries to generate a SECLZ status report
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Code location'
+      Parameters:
+      - inventoryLambdaCodeURI
+
+Parameters:
+  lambdaLogLevel:
+    Description: 'Lambda logging level'
+    Type: String
+    Default: 'INFO'
+
+
+   
+
+
+Resources:
+
+  #   -------------------
+  #   Inventory Lambda Execution role
+  #   -------------------
+
+  InventoryLambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - account:GetAlternateContact
+                  - ssm:GetParameter
+                  - logs:PutLogEvents
+                Resource: 
+                  - !Sub 'arn:aws:ssm:*:${AWS::AccountId}:parameter/*'
+                  - !Sub 'arn:aws:account::${AWS::AccountId}:account'
+                  - !Sub 'arn:aws:logs:eu-west-1:${AWS::AccountId}:log-group:/aws/lambda//SECLZ-Inventory:*'
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                Resource:
+                  Fn::Join:
+                    - ""
+                    - - "arn:aws:logs:"
+                      - Ref: ${AWS::Region}
+                      - ":"
+                      - Ref: AWS::AccountId
+                      - ":log-group:*"
+              - Effect: Allow
+                Action:
+                  - 'cloudformation:ListStacks'
+                  - 's3:GetBucketTagging'
+                  - 'guardduty:ListDetectors'
+                  - 'securityhub:DescribeHub'
+                  - 'cloudformation:ListStackInstances'
+                  - 'config:DescribeDeliveryChannels'
+                  - 'account:ListRegions'
+                  - 'cloudwatch:GetMetricStatistics'
+                  - 'guardduty:GetDetector'
+                  - 'cloudtrail:DescribeTrails'
+                  - 's3:GetEncryptionConfiguration'
+                  - 'config:DescribeConfigurationRecorders'
+                  - 's3:ListAllMyBuckets'
+                  - 'securityhub:ListMembers'
+                  - 'cloudformation:ListStackSets'
+                  - 'securityhub:GetFindings'
+                  - 'guardduty:ListMembers'
+                  - 'iam:GetAccountSummary'
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                - 'cloudformation:ListStackSets'
+                - 'cloudformation:ListStackInstances'
+                Resource:
+                - !Sub arn:aws:account::${AWS::AccountId}:account
+                - !Sub arn:aws:cloudformation:*:${AWS::AccountId}:stackset/*:*
+                - !Sub arn:aws:ssm:*:${AWS::AccountId}:parameter/*
+                - Fn::Join:
+                    - ""
+                    - - "arn:aws:logs:"
+                      - Ref: ${AWS::Region}
+                      - ":"
+                      - Ref: AWS::AccountId
+                      - ":*"
+
+  #   -------------------
+  #   Inventory
+  #   -------------------
+
+  InventoryLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref InventoryFunction
+      Principal: s3.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:aws:s3:::cloudtrail-logs-"
+            - Ref: AWS::AccountId
+            - "-do-not-delete"
+      SourceAccount: !Ref AWS::AccountId
+
+  InventoryFunction:
+    Type: 'AWS::Lambda::Function'
+    DependsOn:
+      - InventoryLambdaExecutionRole
+    Properties:
+      Code: ##inventoryLambdaCodeURI##
+      Handler: 'SecLZInventory.lambda_handler'
+      MemorySize: 128
+      Role: !GetAtt InventoryExecutionRole.Arn
+      Runtime: python3.9
+      Timeout: 900
+      Environment:
+        Variables:
+          LOG_LEVEL: !Ref lambdaLogLevel
+
+  CloudTrailLogShipperLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn: InventoryFunction
+    Properties:
+      LogGroupName:
+        Fn::Join:
+        - ''
+        - - "/aws/lambda/"
+          - Ref: InventoryFunction
+      RetentionInDays: 14
+
+Outputs:
+  inventoryFunctionArn:
+    Description: ARN for InventoryFunction
+    Value: !GetAtt InventoryFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-InventoryFunctionArn"
+

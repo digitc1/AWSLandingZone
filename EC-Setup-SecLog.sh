@@ -71,6 +71,7 @@ LZ_VERSION=`cat EC-SLZ-Version.txt | xargs`
 # parameters for scripts
 CFN_BUCKETS_TEMPLATE='CFN/EC-lz-s3-buckets.yml'
 CFN_LAMBDAS_TEMPLATE='CFN/EC-lz-logshipper-lambdas.yml'
+CFN_LAMBDAS_INVENTORY_TEMPLATE='CFN/EC-lz-inventory-lambdas.yml'
 CFN_LAMBDAS_BUCKET_TEMPLATE='CFN/EC-lz-s3-bucket-lambda-code.yml'
 CFN_GUARDDUTY_TEMPLATE_GLOBAL='CFN/EC-lz-Config-Guardduty-all-regions.yml'
 CFN_LOG_TEMPLATE='CFN/EC-lz-config-cloudtrail-logging.yml'
@@ -358,11 +359,11 @@ configure_seclog() {
 
 
     #   ------------------------------------
-    #   Logshipper lambdas for CloudTrail and AWSConfig ...
+    #   Lambdas Logshipper for CloudTrail / AWSConfig and Inventory...
     #   ------------------------------------
 
     echo ""
-    echo "- Logshipper lambdas for CloudTrail and AWSConfig ... "
+    echo "- Lambdas Logshipper for CloudTrail / AWSConfig and Inventory ... "
     echo "-----------------------------------------------------------"
     echo ""
 
@@ -391,11 +392,12 @@ configure_seclog() {
 
     zip -j $CLOUDTRAIL_LAMBDA_CODE LAMBDAS/CloudtrailLogShipper.py
     zip -j $CONFIG_LAMBDA_CODE LAMBDAS/ConfigLogShipper.py
-
+    
     
     awk -v cl=$CLOUDTRAIL_LAMBDA_CODE -v co=$CONFIG_LAMBDA_CODE '{ sub(/##cloudtrailCodeURI##/,cl);gsub(/##configCodeURI##/,co);print }' $CFN_LAMBDAS_TEMPLATE > $LOGSHIPPER_TEMPLATE_WITH_CODE
-
+    
     aws cloudformation package --template $LOGSHIPPER_TEMPLATE_WITH_CODE --s3-bucket $REPO --output-template-file $LOGSHIPPER_TEMPLATE --profile $seclogprofile
+    aws cloudformation package --template $INVENTORY_TEMPLATE_WITH_CODE --s3-bucket $REPO --output-template-file $INVENTORY_TEMPLATE --profile $seclogprofile
 
     aws cloudformation deploy --stack-name  'SECLZ-LogShipper-Lambdas' \
     --template-file $LOGSHIPPER_TEMPLATE \
@@ -416,6 +418,31 @@ configure_seclog() {
     rm -rf $CLOUDTRAIL_LAMBDA_CODE
     rm -rf $CONFIG_LAMBDA_CODE
 
+
+    INVENTORY_TEMPLATE="EC-lz-inventory-lambda-packaged.yml"
+    INVENTORY_TEMPLATE_WITH_CODE="EC-lz-inventory-lambda.yml"
+    INVENTORY_LAMBDA_CODE="SECLZInventory-$NOW.zip"
+
+    zip -j $INVENTORY_LAMBDA_CODE LAMBDAS/SECLZInventory.py
+    awk -v in=$INVENTORY_LAMBDA_CODE  '{ sub(/##inventoryLambdaCodeURI##/,in);print }' $CFN_LAMBDAS_INVENTORY_TEMPLATE > $INVENTORY_TEMPLATE_WITH_CODE
+    
+    aws cloudformation deploy --stack-name  'SECLZ-Inventory-Lambda' \
+    --template-file $INVENTORY_TEMPLATE \
+    --capabilities CAPABILITY_IAM \
+    --profile $seclogprofile
+
+    StackName=SECLZ-Inventory-Lambda
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    
+    aws cloudformation update-termination-protection \
+        --enable-termination-protection \
+        --stack-name $StackName \
+        --profile $seclogprofile
+
+    rm -rf $INVENTORY_TEMPLATE
+    rm -rf $INVENTORY_TEMPLATE_WITH_CODE
+    rm -rf $INVENTORY_LAMBDA_CODE
+    
     #   ------------------------------------
     #   Cloudtrail bucket / Config bucket / Access_log bucket ...
     #   ------------------------------------
