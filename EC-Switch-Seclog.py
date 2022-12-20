@@ -115,7 +115,7 @@ def main(argv):
     account_id = get_account_id(account_session)
 
     print(f"Account ID : {account_id}")
-    
+
     # get stored seclog_id from ssm parameter
     ssm = account_session.client('ssm')
     try:
@@ -147,6 +147,11 @@ def main(argv):
         stored_SecLogOU = response['Parameter']['Value']
     except ClientError as err:
         print(f"SecLogOU not configured on this account. [{Status.FAIL.value}]")
+        print("Exiting...")
+        sys.exit(1)
+
+    if pre_flight_cfn(account_session) == False:
+        print(f"There are issues with SLZ Cloudformation stacks on this account. Please fix them before running this script [{Status.FAIL.value}]")
         print("Exiting...")
         sys.exit(1)
 
@@ -382,6 +387,16 @@ def get_account_id(session):
             sys.exit(1)
         else:
             raise error
+
+def pre_flight_cfn(session):
+    status = True
+    cfn = session.client('cloudformation')
+    response = cfn.describe_stacks()
+    for stack in [x for x in response['Stacks'] if ( 'SLZ' in x['StackName'] )] :
+        if stack['StackStatus'] not in ['CREATE_COMPLETE','UPDATE_COMPLETE']:
+            print(f"Cloudformation stack {stack['StackName']} in status {stack['StackStatus']} [{Status.FAIL.value}]")
+            status = False
+    return status
 
 def is_seclog(session):
     """
