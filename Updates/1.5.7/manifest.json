@@ -14,7 +14,7 @@
         "include" : []
     },
     "stacks" : {
-        "AWSCloudFormationStackSetExecutionRole" : {
+        "SECLZ-StackSetExecutionRole" : {
             "update" : true
         },
         "SECLZ-LogShipper-Lambdas-Bucket" : {
