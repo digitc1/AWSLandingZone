@@ -58,6 +58,8 @@ configure_client() {
     CFN_STACKSET_EXEC_ROLE='./CFN/AWSCloudFormationStackSetExecutionRole.yml'
     CFN_PROFILES_ROLES='./CFN/EC-lz-Profiles-Roles.yml'
     CFN_LOCAL_SNS_TEMPLATE='./CFN/EC-lz-local-config-SNS.yml'
+    CFN_LAMBDAS_BUCKET_TEMPLATE='./CFN/EC-lz-s3-bucket-lambda-code.yml'
+    CFN_LAMBDAS_INVENTORY_TEMPLATE='./CFN/EC-lz-inventory-lambdas.yml'
 
     CFN_TAGS_FILE='./CFN/EC-lz-TAGS.json'
 
@@ -310,7 +312,6 @@ configure_client() {
     --enable-termination-protection \
     --profile $CLIENT
 
-    sleep 5
 
     echo ""
     echo "- Creating a password policy for IAM in new client account"
@@ -325,7 +326,61 @@ configure_client() {
     --enable-termination-protection \
     --profile $CLIENT
 
-    sleep 5
+ 
+    
+    #   ------------------------------------
+    #   Lambda for Inventor...
+    #   ------------------------------------
+
+    echo ""
+    echo "- Lambda for Inventory ... "
+    echo "-----------------------------------------------------------"
+    echo ""
+
+    ACCOUNT_ID=`aws --profile $CLIENT sts get-caller-identity --query 'Account' --output text`
+
+    REPO="lambda-artefacts-$ACCOUNT_ID"
+    
+    StackName=SECLZ-Inventory-Lambda-Bucket
+
+    aws cloudformation create-stack \
+    --stack-name $StackName \
+    --template-body file://$CFN_LAMBDAS_BUCKET_TEMPLATE \
+    --tags  file://$CFN_TAGS_FILE \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --enable-termination-protection \
+    --profile $CLIENT
+    
+    aws --profile $CLIENT cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $CLIENT cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $CLIENT cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+
+    NOW=`date +"%d%m%Y"`
+
+    INVENTORY_TEMPLATE="EC-lz-inventory-lambda-packaged.yml"
+    INVENTORY_TEMPLATE_WITH_CODE="EC-lz-inventory-lambda.yml"
+    INVENTORY_LAMBDA_CODE="SECLZInventory-$NOW.zip"
+
+    zip -j $INVENTORY_LAMBDA_CODE ./LAMBDAS/SECLZInventory.py
+    awk -v in=$INVENTORY_LAMBDA_CODE  '{ sub(/##inventoryLambdaCodeURI##/,in);print }' $CFN_LAMBDAS_INVENTORY_TEMPLATE > $INVENTORY_TEMPLATE_WITH_CODE
+    
+    aws cloudformation deploy --stack-name  'SECLZ-Inventory-Lambda' \
+    --template-file $INVENTORY_TEMPLATE \
+    --capabilities CAPABILITY_IAM \
+    --profile $CLIENT
+
+    StackName=SECLZ-Inventory-Lambda
+    aws --profile $CLIENT cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    
+    aws cloudformation update-termination-protection \
+        --enable-termination-protection \
+        --stack-name $StackName \
+        --profile $CLIENT
+
+    rm -rf $INVENTORY_TEMPLATE
+    rm -rf $INVENTORY_TEMPLATE_WITH_CODE
+    rm -rf $INVENTORY_LAMBDA_CODE
 
     echo ""
     echo "- Enable Notifications for cloudtrail"
