@@ -26,7 +26,7 @@ from botocore.config import Config
  
 account_id = ''
 
-stacks = { 'SECLZ-AWSCloudFormationStackSetExecutionRole' : { 'Template' : 'CFN/AWSCloudFormationStackSetExecutionRole.yml' } ,
+stacks = { 'AWSCloudFormationStackSetExecutionRole' : { 'Template' : 'CFN/AWSCloudFormationStackSetExecutionRole.yml' } ,
     'SECLZ-Cloudtrail-KMS' : { 'Template' : 'CFN/EC-lz-Cloudtrail-kms-key.yml' } ,
      'SECLZ-LogShipper-Lambdas-Bucket' : { 'Template' : 'CFN/EC-lz-s3-bucket-lambda-code.yml' } ,
      'SECLZ-LogShipper-Lambdas' : { 'Template' : 'CFN/EC-lz-logshipper-lambdas.yml' } ,
@@ -302,8 +302,8 @@ def main(argv):
             cfn = boto3.client('cloudformation',config=boto3_config)
             
             #AWSCloudFormationStackSetExecutionRole template
-            if do_update(stack_actions, 'SECLZ-AWSCloudFormationStackSetExecutionRole') and seclog_status != Execution.FAIL:
-                result = update_stack(cfn, 'SECLZ-AWSCloudFormationStackSetExecutionRole', stacks, get_params(stack_actions,'SECLZ-AWSCloudFormationStackSetExecutionRole'))
+            if do_update(stack_actions, 'AWSCloudFormationStackSetExecutionRole') and seclog_status != Execution.FAIL:
+                result = update_stack(cfn, 'AWSCloudFormationStackSetExecutionRole', stacks, get_params(stack_actions,'AWSCloudFormationStackSetExecutionRole'))
                 if result != Execution.NO_ACTION:
                     seclog_status = result
 
@@ -625,8 +625,8 @@ def main(argv):
 
 
                     #AWSCloudFormationStackSetExecutionRole template
-                    if do_update(stack_actions, 'SECLZ-AWSCloudFormationStackSetExecutionRole') and linked_status != Execution.FAIL:
-                        result = update_stack(cfn, 'SECLZ-AWSCloudFormationStackSetExecutionRole', stacks, get_params(stack_actions,'SECLZ-AWSCloudFormationStackSetExecutionRole'))
+                    if do_update(stack_actions, 'AWSCloudFormationStackSetExecutionRole') and linked_status != Execution.FAIL:
+                        result = update_stack(cfn, 'AWSCloudFormationStackSetExecutionRole', stacks, get_params(stack_actions,'AWSCloudFormationStackSetExecutionRole'))
                         if result != Execution.NO_ACTION:
                             linked_status = result
 
