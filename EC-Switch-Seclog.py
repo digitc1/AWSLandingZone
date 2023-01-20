@@ -115,7 +115,7 @@ def main(argv):
     account_id = get_account_id(account_session)
 
     print(f"Account ID : {account_id}")
-    
+
     # get stored seclog_id from ssm parameter
     ssm = account_session.client('ssm')
     try:
@@ -149,6 +149,12 @@ def main(argv):
         print(f"SecLogOU not configured on this account. [{Status.FAIL.value}]")
         print("Exiting...")
         sys.exit(1)
+
+    if pre_flight_cfn(account_session) == False:
+        print(f"There are issues with SLZ Cloudformation stacks on this account. Please fix them before running this script [{Status.FAIL.value}]")
+        print("Exiting...")
+        sys.exit(1)
+
 
     print(f"Linked account identified. [{Status.OK.value}]")
     print("")
@@ -382,6 +388,16 @@ def get_account_id(session):
             sys.exit(1)
         else:
             raise error
+
+def pre_flight_cfn(session):
+    status = True
+    cfn = session.client('cloudformation')
+    response = cfn.describe_stacks()
+    for stack in [x for x in response['Stacks'] if ( 'SLZ' in x['StackName'] )] :
+        if stack['StackStatus'] not in ['CREATE_COMPLETE','UPDATE_COMPLETE']:
+            print(f"Cloudformation stack {stack['StackName']} in status {stack['StackStatus']} [{Status.FAIL.value}]")
+            status = False
+    return status
 
 def is_seclog(session):
     """
@@ -658,19 +674,21 @@ def activate_config(account_id,account_session,tseclog_id,tseclog_session):
 
        
             tseclog_cl = tseclog_session.client('config')
-
-            response = tseclog_cl.describe_configuration_aggregators(
-                ConfigurationAggregatorNames=[
-                    'SecLogAggregator',
-                ]
-            )
-
-        
-            for aggregationSources in response['ConfigurationAggregators'][0]['AccountAggregationSources']:
-                accountsIds = aggregationSources['AccountIds']
             
-                if account_id not in aggregationSources['AccountIds']:
-                    accountsIds.append(account_id)
+            try:
+                response = tseclog_cl.describe_configuration_aggregators(
+                    ConfigurationAggregatorNames=[
+                        'SecLogAggregator',
+                    ]
+                )
+                
+                for aggregationSources in response['ConfigurationAggregators'][0]['AccountAggregationSources']:
+                    accountsIds = aggregationSources['AccountIds']
+                
+                    if account_id not in aggregationSources['AccountIds']:
+                        accountsIds.append(account_id)
+            except botocore.exceptions.ClientError as error:
+                accountsIds.append(account_id)
 
             tseclog_cl.put_configuration_aggregator(
                 ConfigurationAggregatorName='SecLogAggregator',
