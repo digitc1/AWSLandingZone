@@ -26,7 +26,8 @@ from botocore.config import Config
  
 account_id = ''
 
-stacks = { 'SECLZ-Cloudtrail-KMS' : { 'Template' : 'CFN/EC-lz-Cloudtrail-kms-key.yml' } ,
+stacks = { 'SECLZ-AWSCloudFormationStackSetExecutionRole' : { 'Template' : 'CFN/AWSCloudFormationStackSetExecutionRole.yml' } ,
+    'SECLZ-Cloudtrail-KMS' : { 'Template' : 'CFN/EC-lz-Cloudtrail-kms-key.yml' } ,
      'SECLZ-LogShipper-Lambdas-Bucket' : { 'Template' : 'CFN/EC-lz-s3-bucket-lambda-code.yml' } ,
      'SECLZ-LogShipper-Lambdas' : { 'Template' : 'CFN/EC-lz-logshipper-lambdas.yml' } ,
      'SECLZ-Central-Buckets' : { 'Template' : 'CFN/EC-lz-s3-buckets.yml'} ,
@@ -300,6 +301,12 @@ def main(argv):
 
             cfn = boto3.client('cloudformation',config=boto3_config)
             
+            #AWSCloudFormationStackSetExecutionRole template
+            if do_update(stack_actions, 'SECLZ-AWSCloudFormationStackSetExecutionRole') and seclog_status != Execution.FAIL:
+                result = update_stack(cfn, 'SECLZ-AWSCloudFormationStackSetExecutionRole', stacks, get_params(stack_actions,'SECLZ-AWSCloudFormationStackSetExecutionRole'))
+                if result != Execution.NO_ACTION:
+                    seclog_status = result
+
             #KMS template
             if do_update(stack_actions, 'SECLZ-Cloudtrail-KMS') and seclog_status != Execution.FAIL:            
                 result = update_stack(cfn, 'SECLZ-Cloudtrail-KMS', stacks, get_params(stack_actions,'SECLZ-Central-Buckets'))
@@ -615,6 +622,13 @@ def main(argv):
                         aws_access_key_id=accessKey,
                         aws_secret_access_key=secretAccessKey, 
                         aws_session_token=sessionToken)
+
+
+                    #AWSCloudFormationStackSetExecutionRole template
+                    if do_update(stack_actions, 'SECLZ-AWSCloudFormationStackSetExecutionRole') and linked_status != Execution.FAIL:
+                        result = update_stack(cfn, 'SECLZ-AWSCloudFormationStackSetExecutionRole', stacks, get_params(stack_actions,'SECLZ-AWSCloudFormationStackSetExecutionRole'))
+                        if result != Execution.NO_ACTION:
+                            linked_status = result
 
                     #password policy
                     if do_update(stack_actions, 'SECLZ-Iam-Password-Policy') and linked_status != Execution.FAIL:
