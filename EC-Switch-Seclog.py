@@ -155,6 +155,7 @@ def main(argv):
         print("Exiting...")
         sys.exit(1)
 
+
     print(f"Linked account identified. [{Status.OK.value}]")
     print("")
 
@@ -673,14 +674,14 @@ def activate_config(account_id,account_session,tseclog_id,tseclog_session):
 
        
             tseclog_cl = tseclog_session.client('config')
+            
             try:
                 response = tseclog_cl.describe_configuration_aggregators(
                     ConfigurationAggregatorNames=[
                         'SecLogAggregator',
                     ]
                 )
-
-            
+                
                 for aggregationSources in response['ConfigurationAggregators'][0]['AccountAggregationSources']:
                     accountsIds = aggregationSources['AccountIds']
                 
@@ -688,7 +689,7 @@ def activate_config(account_id,account_session,tseclog_id,tseclog_session):
                         accountsIds.append(account_id)
             except botocore.exceptions.ClientError as error:
                 accountsIds.append(account_id)
-                
+
             tseclog_cl.put_configuration_aggregator(
                 ConfigurationAggregatorName='SecLogAggregator',
                 AccountAggregationSources=[
