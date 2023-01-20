@@ -36,7 +36,7 @@ Resources:
   LambdaArtefactBucketPolicy:
       Type: AWS::S3::BucketPolicy
       Properties:
-          Bucket:
+          Bucket: 
               Ref: LambdaArtefactsBucket
           PolicyDocument:
               Statement:
@@ -86,6 +86,23 @@ Resources:
                   Condition:
                     Bool:
                       "aws:SecureTransport": "false"
-
+                -
+                  Sid: "AWSAccessArtefactsBucketSSL"
+                  Action: "s3:*"
+                  Effect: Deny
+                  Principal: "*"
+                  Resource:
+                    - Fn::Join:
+                      - ""
+                      -
+                        - !GetAtt LambdaArtefactsBucket.Arn
+                    - Fn::Join:
+                      - ""
+                      -
+                        - !GetAtt LambdaArtefactsBucket.Arn
+                        - "/*"
+                  Condition:
+                    Bool:
+                      "aws:SecureTransport": "false"
                 
       
