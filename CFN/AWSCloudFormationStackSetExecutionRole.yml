@@ -26,6 +26,11 @@ Resources:
             Principal:
               AWS:
                 - !Ref SecLogMasterAccountId
+                - !Join
+                  - ''
+                  - - 'arn:aws:iam::'
+                    - !Ref AWS::AccountId
+                    - ':role/AWSCloudFormationStackSetExecutionRole'
             Action:
               - sts:AssumeRole
       Path: /
