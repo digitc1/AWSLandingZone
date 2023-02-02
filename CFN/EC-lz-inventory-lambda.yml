@@ -23,7 +23,11 @@ Parameters:
     Type: String
     Default: 'INFO'
 
-
+  FilesRetentionInDays:
+      Description: 'Specifies the number of days you want to retain inventory files in the SLZ S3 bucket.'
+      Type: Number
+      Default: 1
+      AllowedValues: [1, 2, 3]
    
 
 
@@ -32,6 +36,105 @@ Resources:
   #   -------------------
   #   Inventory Lambda Execution role
   #   -------------------
+
+
+
+  LambdaArtefactsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+          BucketEncryption: 
+            ServerSideEncryptionConfiguration: 
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+          BucketName:
+              Fn::Join:
+              - ""
+              - - "lz-inventory-"
+                - Ref: AWS::AccountId
+                - "-do-not-delete"
+          PublicAccessBlockConfiguration:
+            BlockPublicAcls: true
+            BlockPublicPolicy: true
+            IgnorePublicAcls: true
+            RestrictPublicBuckets: true
+          LifecycleConfiguration:
+            Rules:
+              -
+                Status: Enabled
+                ExpirationInDays: !Ref FilesRetentionInDays
+                NoncurrentVersionExpirationInDays: !Ref FilesRetentionInDays
+
+  LambdaArtefactBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+          Bucket: 
+              Ref: LambdaArtefactsBucket
+          PolicyDocument:
+              Statement:
+                -
+                  Sid: "CloudformationPermissions1"
+                  Effect: "Allow"
+                  Principal:
+                    Service:
+                    - "cloudformation.amazonaws.com"
+                  Action:
+                  - "s3:GetBucketAcl"
+                  - "s3:ListBucket"
+                  Resource: !GetAtt LambdaArtefactsBucket.Arn
+
+                -
+                  Sid: "CloudformationPermissions2"
+                  Effect: "Allow"
+                  Principal:
+                    Service:
+                    - "cloudformation.amazonaws.com"
+                  Action:
+                  - "s3:GetObject"
+                  - "s3:GetObjectAcl"
+                  - "s3:GetObjectVersion"
+                  - "s3:PutObject"
+                  Resource:
+                    Fn::Join:
+                      - ""
+                      -
+                        - !GetAtt LambdaArtefactsBucket.Arn
+                        - "/*"
+                -
+                  Sid: "LambdaBucketSSL"
+                  Action: s3:*
+                  Principal: "*"
+                  Effect: Deny
+                  Resource:
+                    - Fn::Join:
+                      - ""
+                      -
+                        - !GetAtt LambdaArtefactsBucket.Arn
+                    - Fn::Join:
+                      - ""
+                      -
+                        - !GetAtt LambdaArtefactsBucket.Arn
+                        - "/*"
+                  Condition:
+                    Bool:
+                      "aws:SecureTransport": "false"
+                -
+                  Sid: "AWSAccessArtefactsBucketSSL"
+                  Action: "s3:*"
+                  Effect: Deny
+                  Principal: "*"
+                  Resource:
+                    - Fn::Join:
+                      - ""
+                      -
+                        - !GetAtt LambdaArtefactsBucket.Arn
+                    - Fn::Join:
+                      - ""
+                      -
+                        - !GetAtt LambdaArtefactsBucket.Arn
+                        - "/*"
+                  Condition:
+                    Bool:
+                      "aws:SecureTransport": "false"
 
   InventoryLambdaExecutionRole:
     Type: 'AWS::IAM::Role'

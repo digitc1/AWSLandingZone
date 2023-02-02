@@ -37,7 +37,8 @@ stacks = { 'SECLZ-StackSetExecutionRole' : { 'Template' : 'CFN/AWSCloudFormation
      'SECLZ-SecurityHub' : { 'Template' : 'CFN/EC-lz-securityHub.yml', 'Linked':True } ,
      'SECLZ-Notifications-Cloudtrail' : { 'Template' : 'CFN/EC-lz-notifications.yml', 'Linked':True } ,
      'SECLZ-CloudwatchLogs-SecurityHub' : { 'Template' : 'CFN/EC-lz-config-securityhub-logging.yml' } ,
-     'SECLZ-local-SNS-topic' : { 'Template' : 'CFN/EC-lz-local-config-SNS.yml', 'Linked':True} }
+     'SECLZ-local-SNS-topic' : { 'Template' : 'CFN/EC-lz-local-config-SNS.yml', 'Linked':True},
+     'SECLZ-Inventory-Lambda' : { 'Template' : 'CFN/EC-lz-inventory-lambda.yml', 'Linked':True} }
 
 
 stacksets = { 'SECLZ-Enable-Config-SecurityHub-Globally' :  { 'Template' : 'CFN/EC-lz-Config-SecurityHub-all-regions.yml' } ,
@@ -390,6 +391,68 @@ def main(argv):
                         if result != Execution.NO_ACTION:
                             seclog_status = result
                         os.remove(f'EC-lz-logshipper-lambdas-{now}.packaged.yml')
+
+            #inventory lambda
+            if do_update(stack_actions, 'SECLZ-LogShipper-Lambdas') and seclog_status != Execution.FAIL:
+                
+                #packaging lambda
+                now = datetime.now().strftime('%d%m%Y')
+                inventory_lambda=f'SECLZInventory-{now}.zip'
+                with ZipFile(inventory_lambda,'w') as zip:
+                    zip.write('LAMBDAS/SECLZInventory.py','SECLZInventory.py')
+
+                #update CFT file
+                if seclog_status != Execution.FAIL:
+                    template = stacks['SECLZ-Inventory']['Template']
+                    print("Template SECLZ-Inventory update ", end="")
+
+                    try:
+                        template = stacks['SECLZ-Inventory']['Template']
+                        
+                        with open(template, "r") as f:
+                            template_body=f.read()
+                    
+                        template_body = template_body.replace('##inventoryLambdaCodeURI##',inventory_lambda)
+
+                        template = f'EC-lz-inventory-lambda-{now}.yml'
+                        with open(template, "w") as f:
+                            f.write(template_body)
+                    
+
+                        print(f" [{Status.OK.value}]")
+                    except FileNotFoundError as err:
+                        print(f" [{Status.FAIL.value}]")
+                        seclog_status = Execution.FAIL
+                
+                #package stack
+                print("Template SECLZ-Inventory-Lambda package ", end="")
+                bucket=f'lambda-artefacts-{account_id}'
+                if seclog_status != Execution.FAIL:
+                    prf=''
+                    if has_profile:
+                        prf = f'--profile {profile}'
+                    with Spinner():
+                        cmd = f"aws cloudformation package --template-file {template} {prf} --s3-bucket {bucket} --output-template-file EC-lz-inventory-lambda-{now}.packaged.yml"
+                        cmdarg = shlex.split(cmd)
+                        proc = subprocess.Popen(cmdarg,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                        output, errors = proc.communicate()
+                    
+                    if len(errors) > 0:
+                        print(f" failed. Readon {errors} [{Status.FAIL.value}]")
+                        seclog_status = Execution.FAIL
+                    else:
+                        print(f" [{Status.OK.value}]")
+
+                    os.remove(template)
+                    os.remove(inventory_lambda)
+                    
+                    #updating stack
+                    if seclog_status != Execution.FAIL:
+                        stacks['SECLZ-Inventory-Lambda']['Template'] = f'EC-lz-logshipper-lambdas-{now}.packaged.yml'
+                        result = update_stack(cfn, 'SECLZ-Inventory-Lambda', stacks, get_params(stack_actions,'SECLZ-Inventory-Lambda'))
+                        if result != Execution.NO_ACTION:
+                            seclog_status = result
+                        os.remove(f'EC-lz-inventory-lambda-{now}.packaged.yml')
 
             #central buckets
             if do_update(stack_actions, 'SECLZ-Central-Buckets') and seclog_status != Execution.FAIL:
@@ -1204,13 +1267,22 @@ def update_stack(client, stack, templates, params=[]):
     
     with Spinner():
         try:
-            
-            client.update_stack(
-                StackName=stack, 
-                TemplateBody=template_body, 
-                Parameters=validate_params(params, template_body), 
-                Capabilities=capabilities, 
-                Tags=apply_tags)
+            try:
+                client.update_stack(
+                    StackName=stack, 
+                    TemplateBody=template_body, 
+                    Parameters=validate_params(params, template_body), 
+                    Capabilities=capabilities, 
+                    Tags=apply_tags)
+            except ClientError as err:
+                print(f"\033[2K\033[1GStack {stack} unavailble. Creating stack.")
+                client.create_stack(
+                    StackName=stack, 
+                    TemplateBody=template_body, 
+                    Parameters=validate_params(params, template_body), 
+                    Capabilities=capabilities, 
+                    Tags=apply_tags)
+
             updated=False
             while updated == False: 
                 try:
