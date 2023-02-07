@@ -29,7 +29,7 @@ account_id = ''
 stacks = { 'SECLZ-StackSetExecutionRole' : { 'Template' : 'CFN/AWSCloudFormationStackSetExecutionRole.yml' } ,
     'SECLZ-Cloudtrail-KMS' : { 'Template' : 'CFN/EC-lz-Cloudtrail-kms-key.yml' } ,
      'SECLZ-LogShipper-Lambdas-Bucket' : { 'Template' : 'CFN/EC-lz-s3-bucket-lambda-code.yml' } ,
-     'SECLZ-LogShipper-Lambdas' : { 'Template' : 'CFN/EC-lz-logshipper-lambdas.yml' } ,
+     'SECLZ-LogShipper-Lambdas' : { 'Template' : 'CFN/EC-lz-logshipper-lambdas.yml', 'Linked':True } ,
      'SECLZ-Central-Buckets' : { 'Template' : 'CFN/EC-lz-s3-buckets.yml'} ,
      'SECLZ-Iam-Password-Policy' : { 'Template' : 'CFN/EC-lz-iam-setting_password_policy.yml', 'Linked':True } ,
      'SECLZ-config-cloudtrail-SNS' : { 'Template' : 'CFN/EC-lz-config-cloudtrail-logging.yml', 'Linked':True } ,
