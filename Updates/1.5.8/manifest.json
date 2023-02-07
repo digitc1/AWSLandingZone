@@ -13,7 +13,7 @@
         "SECLZ-LogShipper-Lambdas-Bucket" : {
             "update" : true
         },
-        "SECLZ-Inventory-Lambda" : {
+        "SECLZ-Inventory" : {
             "update" : true
         }
     },

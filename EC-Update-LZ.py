@@ -38,7 +38,7 @@ stacks = { 'SECLZ-StackSetExecutionRole' : { 'Template' : 'CFN/AWSCloudFormation
      'SECLZ-Notifications-Cloudtrail' : { 'Template' : 'CFN/EC-lz-notifications.yml', 'Linked':True } ,
      'SECLZ-CloudwatchLogs-SecurityHub' : { 'Template' : 'CFN/EC-lz-config-securityhub-logging.yml' } ,
      'SECLZ-local-SNS-topic' : { 'Template' : 'CFN/EC-lz-local-config-SNS.yml', 'Linked':True},
-     'SECLZ-Inventory-Lambda' : { 'Template' : 'CFN/EC-lz-inventory-lambda.yml', 'Linked':True} }
+     'SECLZ-Inventory' : { 'Template' : 'CFN/EC-lz-inventory.yml', 'Linked':True} }
 
 
 stacksets = { 'SECLZ-Enable-Config-SecurityHub-Globally' :  { 'Template' : 'CFN/EC-lz-Config-SecurityHub-all-regions.yml' } ,
@@ -393,7 +393,7 @@ def main(argv):
                         os.remove(f'EC-lz-logshipper-lambdas-{now}.packaged.yml')
 
             #inventory lambda
-            if do_update(stack_actions, 'SECLZ-Inventory-Lambdas') and seclog_status != Execution.FAIL:
+            if do_update(stack_actions, 'SECLZ-Inventory') and seclog_status != Execution.FAIL:
                 
                 #packaging lambda
                 now = datetime.now().strftime('%d%m%Y')
@@ -448,8 +448,8 @@ def main(argv):
                     
                     #updating stack
                     if seclog_status != Execution.FAIL:
-                        stacks['SECLZ-Inventory-Lambda']['Template'] = f'EC-lz-logshipper-lambdas-{now}.packaged.yml'
-                        result = update_stack(cfn, 'SECLZ-Inventory-Lambda', stacks, get_params(stack_actions,'SECLZ-Inventory-Lambda'))
+                        stacks['SECLZ-Inventory']['Template'] = f'EC-lz-logshipper-lambdas-{now}.packaged.yml'
+                        result = update_stack(cfn, 'SECLZ-Inventory', stacks, get_params(stack_actions,'SECLZ-Inventory'))
                         if result != Execution.NO_ACTION:
                             seclog_status = result
                         os.remove(f'EC-lz-inventory-lambda-{now}.packaged.yml')
