@@ -9,14 +9,17 @@
         { "Key": "Confidentiality","Value": "confidential" },
         { "Key": "ApplicationRole","Value": "security" }
     ],
-    "accounts" : {
-        "exclude" : [],
-        "include" : []
-    },
     "stacks" : {
+        "SECLZ-LogShipper-Lambdas" : {
+            "update" : true
+        },
         "SECLZ-Inventory-Lambda" : {
             "update" : true
         }
+    },
+    "accounts" : {
+        "exclude" : ["199983783985"],
+        "include" : []
     }
     
 }
