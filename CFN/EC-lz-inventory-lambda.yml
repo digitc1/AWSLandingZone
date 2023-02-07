@@ -29,115 +29,75 @@ Parameters:
       Default: 1
       AllowedValues: [1, 2, 3]
    
-
+  AllowedRequestor:
+    Description: 'Account Id allowed to request the Inventory'
+    Type: String
+    Default: 'INFO'
 
 Resources:
+
+  #   -------------------
+  #   Inventory Queue
+  #   -------------------
+  InventoryQueue: 
+    Type: AWS::SQS::Queue
+    Properties: 
+      QueueName: 
+        Fn::Join:
+          - ""
+          - - "SecLZInventory-"
+            - Ref: AWS::AccountId
+
+  #   -------------------
+  #   Inventory Queue role
+  #   -------------------
+  InventoryQueueRole: 
+    Type: AWS::IAM::Role
+    DependsOn:
+      - InventoryQueue
+    Properties:
+      RoleName: LZInventoryRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AllowedRequestor}:root"
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - sts:AssumeRole
+      Description: Role for a approved accounts to request LZ Inventory
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Sid: LZInventoryGetQueueAttributes
+              Effect: Allow
+              Action: sqs:GetQueueAttributes
+              Resource: InventoryQueue.Arn
+            - Sid: LZInventorySendMessage
+              Effect: Allow
+              Action: sqs:SendMessage
+              Resource: InventoryQueue.Arn
+#            - Sid: LZInventoryReceiveMessage
+#              Effect: Allow
+#              Action: sqs:ReceiveMessage
+#              Resource: InventoryQueue.Arn
+#            - Sid: LZInventoryDeleteMessage
+#              Effect: Allow
+#              Action: sqs:DeleteMessage
+#              Resource: InventoryQueue.Arn
 
   #   -------------------
   #   Inventory Lambda Execution role
   #   -------------------
 
-
-
-  LambdaArtefactsBucket:
-      Type: AWS::S3::Bucket
-      Properties:
-          BucketEncryption: 
-            ServerSideEncryptionConfiguration: 
-            - ServerSideEncryptionByDefault:
-                SSEAlgorithm: AES256
-          BucketName:
-              Fn::Join:
-              - ""
-              - - "lz-inventory-"
-                - Ref: AWS::AccountId
-                - "-do-not-delete"
-          PublicAccessBlockConfiguration:
-            BlockPublicAcls: true
-            BlockPublicPolicy: true
-            IgnorePublicAcls: true
-            RestrictPublicBuckets: true
-          LifecycleConfiguration:
-            Rules:
-              -
-                Status: Enabled
-                ExpirationInDays: !Ref FilesRetentionInDays
-                NoncurrentVersionExpirationInDays: !Ref FilesRetentionInDays
-
-  LambdaArtefactBucketPolicy:
-      Type: AWS::S3::BucketPolicy
-      Properties:
-          Bucket: 
-              Ref: LambdaArtefactsBucket
-          PolicyDocument:
-              Statement:
-                -
-                  Sid: "CloudformationPermissions1"
-                  Effect: "Allow"
-                  Principal:
-                    Service:
-                    - "cloudformation.amazonaws.com"
-                  Action:
-                  - "s3:GetBucketAcl"
-                  - "s3:ListBucket"
-                  Resource: !GetAtt LambdaArtefactsBucket.Arn
-
-                -
-                  Sid: "CloudformationPermissions2"
-                  Effect: "Allow"
-                  Principal:
-                    Service:
-                    - "cloudformation.amazonaws.com"
-                  Action:
-                  - "s3:GetObject"
-                  - "s3:GetObjectAcl"
-                  - "s3:GetObjectVersion"
-                  - "s3:PutObject"
-                  Resource:
-                    Fn::Join:
-                      - ""
-                      -
-                        - !GetAtt LambdaArtefactsBucket.Arn
-                        - "/*"
-                -
-                  Sid: "LambdaBucketSSL"
-                  Action: s3:*
-                  Principal: "*"
-                  Effect: Deny
-                  Resource:
-                    - Fn::Join:
-                      - ""
-                      -
-                        - !GetAtt LambdaArtefactsBucket.Arn
-                    - Fn::Join:
-                      - ""
-                      -
-                        - !GetAtt LambdaArtefactsBucket.Arn
-                        - "/*"
-                  Condition:
-                    Bool:
-                      "aws:SecureTransport": "false"
-                -
-                  Sid: "AWSAccessArtefactsBucketSSL"
-                  Action: "s3:*"
-                  Effect: Deny
-                  Principal: "*"
-                  Resource:
-                    - Fn::Join:
-                      - ""
-                      -
-                        - !GetAtt LambdaArtefactsBucket.Arn
-                    - Fn::Join:
-                      - ""
-                      -
-                        - !GetAtt LambdaArtefactsBucket.Arn
-                        - "/*"
-                  Condition:
-                    Bool:
-                      "aws:SecureTransport": "false"
-
   InventoryLambdaExecutionRole:
     Type: 'AWS::IAM::Role'
+    DependsOn:
+      - InventoryQueue
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -211,24 +171,22 @@ Resources:
                       - ":"
                       - Ref: AWS::AccountId
                       - ":*"
+        - PolicyName: allowSqs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:ChangeMessageVisibility
+              Resource: !GetAtt InventoryQueue.Arn
+  
 
   #   -------------------
-  #   Inventory
+  #   Inventory function
   #   -------------------
-
-  InventoryLambdaPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref InventoryFunction
-      Principal: s3.amazonaws.com
-      SourceArn:
-        Fn::Join:
-          - ""
-          - - "arn:aws:s3:::cloudtrail-logs-"
-            - Ref: AWS::AccountId
-            - "-do-not-delete"
-      SourceAccount: !Ref AWS::AccountId
 
   InventoryFunction:
     Type: 'AWS::Lambda::Function'
@@ -238,12 +196,29 @@ Resources:
       Code: ##inventoryLambdaCodeURI##
       Handler: 'SecLZInventory.lambda_handler'
       MemorySize: 128
-      Role: !GetAtt InventoryExecutionRole.Arn
+      Role: !GetAtt InventoryLambdaExecutionRole.Arn
       Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
           LOG_LEVEL: !Ref lambdaLogLevel
+
+  #   -------------------
+  #   Event mapping
+  #   -------------------
+  InventoryFunctionEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 10
+      Enabled: true
+      EventSourceArn: !GetAtt InventoryQueue.Arn
+      FunctionName: !GetAtt InventoryFunction.Arn
+
+  
+
+  #   -------------------
+  #   Inventory log group
+  #   -------------------
 
   CloudTrailLogShipperLogGroup:
     Type: AWS::Logs::LogGroup
