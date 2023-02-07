@@ -1267,15 +1267,15 @@ def update_stack(client, stack, templates, params=[]):
     
     with Spinner():
 
-        action = True
-        try 
+        action_update = True
+        try:
             response = client.describe_stacks(StackName=stack)
         except ClientError as err:
             print(f"\033[2K\033[1GStack {stack} unavailble. Creating stack. {err.response['Error']['Code']} - {err.response['Error']['Message']}")
             action = False
       
         try:
-            if (action):
+            if (action_update):
                 client.update_stack(
                     StackName=stack, 
                     TemplateBody=template_body, 
