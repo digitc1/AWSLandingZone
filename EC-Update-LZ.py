@@ -1275,7 +1275,7 @@ def update_stack(client, stack, templates, params=[]):
                     Capabilities=capabilities, 
                     Tags=apply_tags)
             except ClientError as err:
-                print(f"\033[2K\033[1GStack {stack} unavailble. Creating stack.")
+                print(f"\033[2K\033[1GStack {stack} unavailble. Creating stack. {err.response['Error']['Code']} - {err.response['Error']['Message']}")
                 client.create_stack(
                     StackName=stack, 
                     TemplateBody=template_body, 
@@ -1312,7 +1312,7 @@ def update_stack(client, stack, templates, params=[]):
                 print(f"\033[2K\033[1GStack {stack} update [{Status.NO_ACTION.value}]")
                 return Execution.NO_ACTION
             else:
-                print(f"\033[2K\033[1GStack {stack} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
+                print(f"\033[2K\033[1GStack {stack} create or update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
         
         return Execution.FAIL
 

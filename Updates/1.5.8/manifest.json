@@ -10,7 +10,7 @@
         { "Key": "ApplicationRole","Value": "security" }
     ],
     "stacks" : {
-        "SECLZ-LogShipper-Lambdas" : {
+        "SECLZ-LogShipper-Lambdas-Bucket" : {
             "update" : true
         },
         "SECLZ-Inventory-Lambda" : {
