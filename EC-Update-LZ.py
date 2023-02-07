@@ -393,7 +393,7 @@ def main(argv):
                         os.remove(f'EC-lz-logshipper-lambdas-{now}.packaged.yml')
 
             #inventory lambda
-            if do_update(stack_actions, 'SECLZ-LogShipper-Lambdas') and seclog_status != Execution.FAIL:
+            if do_update(stack_actions, 'SECLZ-Inventory-Lambdas') and seclog_status != Execution.FAIL:
                 
                 #packaging lambda
                 now = datetime.now().strftime('%d%m%Y')
@@ -537,9 +537,10 @@ def main(argv):
                 print(f"[{Status.NO_ACTION.value}]")
 
         #update linked account stacks
+        
+        linked_status = Execution.NO_ACTION
         if seclog_status == Execution.FAIL and len(linked_accounts) > 0:
             print("Skipping linked accounts update")
-            linked_status = Execution.NO_ACTION
         else:
             if len(accounts['include']) > 0:
                 linked_accounts = [d for d in accounts['include'] if d != account_id]
