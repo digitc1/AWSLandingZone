@@ -1266,16 +1266,24 @@ def update_stack(client, stack, templates, params=[]):
     print("in progress ", end="")
     
     with Spinner():
+
+        action = False
         try:
-            try:
+            response = client.describe_stacks(StackName=stack)
+        except ClientError as err:
+            if err.response['Error']['Code'] == 'AmazonCloudFormationException':
+                print(f"\033[2K\033[1GStack {stack} unavailble. Creating stack. {err.response['Error']['Code']} - {err.response['Error']['Message']}")
+                action = True
+        try:
+            if (action):
                 client.update_stack(
                     StackName=stack, 
                     TemplateBody=template_body, 
                     Parameters=validate_params(params, template_body), 
                     Capabilities=capabilities, 
                     Tags=apply_tags)
-            except ClientError as err:
-                print(f"\033[2K\033[1GStack {stack} unavailble. Creating stack. {err.response['Error']['Code']} - {err.response['Error']['Message']}")
+            else
+            
                 client.create_stack(
                     StackName=stack, 
                     TemplateBody=template_body, 
