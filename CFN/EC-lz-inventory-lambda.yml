@@ -32,7 +32,7 @@ Parameters:
   AllowedRequestor:
     Description: 'Account Id allowed to request the Inventory'
     Type: String
-    Default: 'INFO'
+    Default: '126027396100'
 
 Resources:
 
