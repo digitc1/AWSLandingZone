@@ -448,7 +448,7 @@ def main(argv):
                     
                     #updating stack
                     if seclog_status != Execution.FAIL:
-                        stacks['SECLZ-Inventory']['Template'] = f'EC-lz-logshipper-lambdas-{now}.packaged.yml'
+                        stacks['SECLZ-Inventory']['Template'] = f'EC-lz-inventory-lambdas-{now}.packaged.yml'
                         result = update_stack(cfn, 'SECLZ-Inventory', stacks, get_params(stack_actions,'SECLZ-Inventory'))
                         if result != Execution.NO_ACTION:
                             seclog_status = result
@@ -1271,7 +1271,7 @@ def update_stack(client, stack, templates, params=[]):
         action_update = True
         try:
             response = client.describe_stacks(StackName=stack)
-        except ClientError as err:
+        except ValidationError as err:
             print(f"\033[2K\033[1GStack {stack} unavailble. Creating stack. {err.response['Error']['Code']} - {err.response['Error']['Message']}")
             action = False
       
