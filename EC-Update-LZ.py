@@ -414,7 +414,7 @@ def main(argv):
                     
                         template_body = template_body.replace('##inventoryLambdaCodeURI##',inventory_lambda)
 
-                        template = f'EC-lz-inventory-lambda-{now}.yml'
+                        template = f'EC-lz-inventory-{now}.yml'
                         with open(template, "w") as f:
                             f.write(template_body)
                     
@@ -425,14 +425,14 @@ def main(argv):
                         seclog_status = Execution.FAIL
                 
                 #package stack
-                print("Template SECLZ-Inventory-Lambda package ", end="")
+                print("Template SECLZ-Inventory package ", end="")
                 bucket=f'lambda-artefacts-{account_id}'
                 if seclog_status != Execution.FAIL:
                     prf=''
                     if has_profile:
                         prf = f'--profile {profile}'
                     with Spinner():
-                        cmd = f"aws cloudformation package --template-file {template} {prf} --s3-bucket {bucket} --output-template-file EC-lz-inventory-lambda-{now}.packaged.yml"
+                        cmd = f"aws cloudformation package --template-file {template} {prf} --s3-bucket {bucket} --output-template-file EC-lz-inventory-{now}.packaged.yml"
                         cmdarg = shlex.split(cmd)
                         proc = subprocess.Popen(cmdarg,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
                         output, errors = proc.communicate()
@@ -448,11 +448,11 @@ def main(argv):
                     
                     #updating stack
                     if seclog_status != Execution.FAIL:
-                        stacks['SECLZ-Inventory']['Template'] = f'EC-lz-inventory-lambdas-{now}.packaged.yml'
+                        stacks['SECLZ-Inventory']['Template'] = f'EC-lz-inventory-{now}.packaged.yml'
                         result = update_stack(cfn, 'SECLZ-Inventory', stacks, get_params(stack_actions,'SECLZ-Inventory'))
                         if result != Execution.NO_ACTION:
                             seclog_status = result
-                        os.remove(f'EC-lz-inventory-lambda-{now}.packaged.yml')
+                        os.remove(f'EC-lz-inventory-{now}.packaged.yml')
 
             #central buckets
             if do_update(stack_actions, 'SECLZ-Central-Buckets') and seclog_status != Execution.FAIL:
