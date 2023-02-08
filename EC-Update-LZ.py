@@ -1270,10 +1270,10 @@ def update_stack(client, stack, templates, params=[]):
 
         action_update = True
         try:
-            response = client.describe_stacks(StackName=stack)
-        except ValidationError as err:
+            client.describe_stacks(StackName=stack)
+        except Exception as err:
             print(f"\033[2K\033[1GStack {stack} unavailble. Creating stack. {err.response['Error']['Code']} - {err.response['Error']['Message']}")
-            action = False
+            action_update = False
       
         try:
             if (action_update):
