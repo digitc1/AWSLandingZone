@@ -14,8 +14,7 @@
             "update" : true
         },
         "SECLZ-Inventory" : {
-            "update" : true,
-            "Capabilities" : ["CAPABILITY_NAMED_IAM"]
+            "update" : true
         }
     },
     "accounts" : {
