@@ -1222,7 +1222,7 @@ def update_stack(client, stack, templates, params=[]):
     global tags
     template = templates[stack]['Template']
     capabilities=[]
-    
+    action_update = True
     print(f"Stack {stack} update ", end="")
 
     try:
@@ -1233,8 +1233,8 @@ def update_stack(client, stack, templates, params=[]):
         print(f"\033[2K\033[Stack template file not found : {err.strerror} [{Status.FAIL.value}]")
         return Execution.FAIL
     except ClientError as err:
-        print(f"\033[2K\033[1GStack {stack} update failed. Reason : {err.response['Error']['Message']} [{Status.FAIL.value}]")
-        return Execution.FAIL
+        print(f"\033[2K\033[1GStack {stack} unavailble. Creating stack.")
+        action_update = false
     
     if 'Parameters:' in template_body:
         
@@ -1248,19 +1248,19 @@ def update_stack(client, stack, templates, params=[]):
             except json.decoder.JSONDecodeError as err:
                 print(f"\033[2K\033[1GParameter file problem : {err.strerror} [{Status.FAIL.value}]")
                 Execution.FAIL
-        elif not null_empty(response['Stacks'][0], 'Parameters'):
+        elif action_update and not null_empty(response['Stacks'][0], 'Parameters'):
             params = merge_params(response['Stacks'][0]['Parameters'], params)
         
         
 
-    if not null_empty(response['Stacks'][0], 'Capabilities'):
+    if action_update and not null_empty(response['Stacks'][0], 'Capabilities'):
         capabilities = response['Stacks'][0]['Capabilities']
 
-    if not null_empty(response['Stacks'][0], 'Tags'):
+    if action_update and not null_empty(response['Stacks'][0], 'Tags'):
         apply_tags =  merge_tags(response['Stacks'][0]['Tags'], tags)
 
    
-    if response['Stacks'][0]['StackStatus'] not in ('CREATE_COMPLETE', 'UPDATE_COMPLETE','UPDATE_ROLLBACK_COMPLETE'):
+    if action_update and response['Stacks'][0]['StackStatus'] not in ('CREATE_COMPLETE', 'UPDATE_COMPLETE','UPDATE_ROLLBACK_COMPLETE'):
         print(f"Cannot update stack {stack}. Current status is : {response['Stacks'][0]['StackStatus']} [{Status.FAIL.value}]")
         return Execution.FAIL
         
@@ -1268,13 +1268,7 @@ def update_stack(client, stack, templates, params=[]):
     
     with Spinner():
 
-        action_update = True
-        try:
-            client.describe_stacks(StackName=stack)
-        except Exception as err:
-            print(f"\033[2K\033[1GStack {stack} unavailble. Creating stack. {err.response['Error']['Code']} - {err.response['Error']['Message']}")
-            action_update = False
-      
+       
         try:
             if (action_update):
                 client.update_stack(
