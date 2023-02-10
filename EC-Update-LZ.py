@@ -1222,6 +1222,8 @@ def update_stack(client, stack, templates, params=[]):
     global tags
     template = templates[stack]['Template']
     capabilities=[]
+    apply_tags=[]
+    params=[]
     action_update = True
     print(f"Stack {stack} update ", end="")
 
@@ -1234,7 +1236,7 @@ def update_stack(client, stack, templates, params=[]):
         return Execution.FAIL
     except ClientError as err:
         print(f"\033[2K\033[1GStack {stack} unavailble. Creating stack.")
-        action_update = false
+        action_update = False
     
     if 'Parameters:' in template_body:
         
