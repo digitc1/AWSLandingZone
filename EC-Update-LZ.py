@@ -1254,9 +1254,12 @@ def update_stack(client, stack, templates, params=[]):
             params = merge_params(response['Stacks'][0]['Parameters'], params)
         
         
+            capabilities = 
 
     if action_update and not null_empty(response['Stacks'][0], 'Capabilities'):
         capabilities = response['Stacks'][0]['Capabilities']
+    elif not action_update and not null_empty(templates[stack], 'Capabilities'):
+        capabilities = templates[stack]['Capabilities']
 
     if action_update and not null_empty(response['Stacks'][0], 'Tags'):
         apply_tags =  merge_tags(response['Stacks'][0]['Tags'], tags)
