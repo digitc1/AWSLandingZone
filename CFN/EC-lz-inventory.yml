@@ -131,7 +131,7 @@ Resources:
                   Fn::Join:
                     - ""
                     - - "arn:aws:logs:"
-                      - Ref: ${AWS::Region}
+                      - Ref: AWS::Region
                       - ":"
                       - Ref: AWS::AccountId
                       - ":log-group:*"
@@ -167,7 +167,7 @@ Resources:
                 - Fn::Join:
                     - ""
                     - - "arn:aws:logs:"
-                      - Ref: ${AWS::Region}
+                      - Ref: AWS::Region
                       - ":"
                       - Ref: AWS::AccountId
                       - ":*"
