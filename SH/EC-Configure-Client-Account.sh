@@ -55,6 +55,7 @@ configure_client() {
     CFN_NOTIFICATIONS_CT_TEMPLATE='./CFN/EC-lz-notifications.yml'
     CFN_IAM_PWD_POLICY='./CFN/EC-lz-iam-setting_password_policy.yml'
     CFN_TAGS_PARAMS_FILE='./CFN/EC-lz-TAGS-params.json'
+    CFN_STACKSET_EXEC_ROLE_INIT='./CFN/AWSCloudFormationStackSetExecutionRoleInit.yml'
     CFN_STACKSET_EXEC_ROLE='./CFN/AWSCloudFormationStackSetExecutionRole.yml'
     CFN_PROFILES_ROLES='./CFN/EC-lz-Profiles-Roles.yml'
     CFN_LOCAL_SNS_TEMPLATE='./CFN/EC-lz-local-config-SNS.yml'
@@ -200,9 +201,22 @@ configure_client() {
     StackName=SECLZ-StackSetExecutionRole
     aws cloudformation create-stack \
     --stack-name $StackName \
-    --template-body file://$CFN_STACKSET_EXEC_ROLE \
+    --template-body file://$CFN_STACKSET_EXEC_ROLE_INIT \
     --tags file://$CFN_TAGS_FILE \
     --enable-termination-protection \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --profile $CLIENT
+   
+    aws --profile $CLIENT cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $CLIENT cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $CLIENT cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+    sleep 5
+
+    aws cloudformation update-stack \
+    --stack-name $StackName \
+    --template-body file://$CFN_STACKSET_EXEC_ROLE \
+    --tags  file://$CFN_TAGS_FILE \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $CLIENT
 

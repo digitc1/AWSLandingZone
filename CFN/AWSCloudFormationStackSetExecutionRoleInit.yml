@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: >-
+  v1.0. Creates an IAM Role in the SecLog account to assume a role and give permission to cloudformation to deploy StackSet instances on target accounts
+
+  Configure the AWSCloudFormationStackSetExecutionRole to enable use of your account as a target account in AWS CloudFormation StackSets.
+
+  Execution:
+    - Create this CloudFormation stack in all accounts part of the project (SecLog + client accounts)
+
+Parameters:
+  SecLogMasterAccountId:
+    Description: 'SecLogMaster account ID'
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/org/member/SecLogMasterAccountId"
+
+Resources:
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: AWSCloudFormationStackSetExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !Ref SecLogMasterAccountId
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess

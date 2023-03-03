@@ -82,6 +82,7 @@ CFN_TAGS_PARAMS_FILE='CFN/EC-lz-TAGS-params.json'
 CFN_TAGS_FILE='CFN/EC-lz-TAGS.json'
 CFN_CLOUDTRAIL_KMS='CFN/EC-lz-Cloudtrail-kms-key.yml'
 CFN_STACKSET_ADMIN_ROLE='CFN/AWSCloudFormationStackSetAdministrationRole.yml'
+CFN_STACKSET_EXEC_ROLE_INIT='CFN/AWSCloudFormationStackSetExecutionRoleInit.yml'
 CFN_STACKSET_EXEC_ROLE='CFN/AWSCloudFormationStackSetExecutionRole.yml'
 CFN_STACKSET_CONFIG_SECHUB_GLOBAL='CFN/EC-lz-Config-SecurityHub-all-regions.yml'
 CFN_USER_GROUP='CFN/EC-lz-Master-User-Groups.yml'
@@ -319,9 +320,23 @@ configure_seclog() {
     # ExecutionRole
     aws cloudformation create-stack \
     --stack-name SECLZ-StackSetExecutionRole \
-    --template-body file://$CFN_STACKSET_EXEC_ROLE \
+    --template-body file://$CFN_STACKSET_EXEC_ROLE_INIT \
     --tags  file://$CFN_TAGS_FILE \
     --enable-termination-protection \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --profile $seclogprofile
+
+    StackName=SECLZ-StackSetExecutionRole
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    while [ `aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    aws --profile $seclogprofile cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+
+    sleep 5
+
+    aws cloudformation update-stack \
+    --stack-name SECLZ-StackSetExecutionRole \
+    --template-body file://$CFN_STACKSET_EXEC_ROLE \
+    --tags  file://$CFN_TAGS_FILE \
     --capabilities CAPABILITY_NAMED_IAM \
     --profile $seclogprofile
 
