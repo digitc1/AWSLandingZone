@@ -304,8 +304,8 @@ def main(argv):
             #SECLZ-StackSetExecutionRole template
             if do_update(stack_actions, 'SECLZ-StackSetExecutionRole') and seclog_status != Execution.FAIL:
                 result = update_stack(cfn, 'SECLZ-StackSetExecutionRole', stacks, get_params(stack_actions,'SECLZ-StackSetExecutionRole'))
-                if result != Execution.NO_ACTION:
-                    seclog_status = result
+                #if result != Execution.NO_ACTION:
+                #    seclog_status = result
 
             #KMS template
             if do_update(stack_actions, 'SECLZ-Cloudtrail-KMS') and seclog_status != Execution.FAIL:            
@@ -473,10 +473,10 @@ def main(argv):
             else:
                 print(f"[{Status.NO_ACTION.value}]")
 
+         linked_status = Execution.NO_ACTION
         #update linked account stacks
         if seclog_status == Execution.FAIL and len(linked_accounts) > 0:
             print("Skipping linked accounts update")
-            linked_status = Execution.NO_ACTION
         else:
             if len(accounts['include']) > 0:
                 linked_accounts = [d for d in accounts['include'] if d != account_id]
@@ -627,8 +627,8 @@ def main(argv):
                     #SECLZ-StackSetExecutionRole template
                     if do_update(stack_actions, 'SECLZ-StackSetExecutionRole') and linked_status != Execution.FAIL:
                         result = update_stack(cfn, 'SECLZ-StackSetExecutionRole', stacks, get_params(stack_actions,'SECLZ-StackSetExecutionRole'))
-                        if result != Execution.NO_ACTION:
-                            linked_status = result
+                        #if result != Execution.NO_ACTION:
+                        #    linked_status = result
 
                     #password policy
                     if do_update(stack_actions, 'SECLZ-Iam-Password-Policy') and linked_status != Execution.FAIL:
