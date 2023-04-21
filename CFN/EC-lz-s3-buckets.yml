@@ -276,7 +276,6 @@ Resources:
           - - "access-logs-"
             - Ref: AWS::AccountId
             - "-do-not-delete"
-        AccessControl: LogDeliveryWrite
         OwnershipControls:
           Rules:
           - ObjectOwnership: BucketOwnerEnforced
@@ -312,8 +311,22 @@ Resources:
                   Condition:
                     Bool:
                       "aws:SecureTransport": "false"
-
-    
+                -
+                  Sid: "S3ServerAccessLogsPolicy"
+                  Action: "s3:PutObject"
+                  Effect: Allow
+                  Principal: "logging.s3.amazonaws.com"
+                  Resource:
+                    - Fn::Join:
+                      - ""
+                      -
+                        - !GetAtt AccessLogsBucket.Arn
+                    - Fn::Join:
+                      - ""
+                      -
+                        - !GetAtt AccessLogsBucket.Arn
+                        - "/*"
+                  
 Outputs:
   ConfigBucket:
     Description: Bucket for storing config-logs
