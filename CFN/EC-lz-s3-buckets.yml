@@ -71,11 +71,9 @@ Resources:
                 Function: 
                   Fn::ImportValue: 
                     !Sub "${lambdaStack}-CloudTrailFunctionArn"
-          PublicAccessBlockConfiguration:
-            BlockPublicAcls: true
-            BlockPublicPolicy: true
-            IgnorePublicAcls: true
-            RestrictPublicBuckets: true
+          OwnershipControls:
+            Rules:
+            - ObjectOwnership: BucketOwnerEnforced
           LifecycleConfiguration:
               Rules:
                 -
@@ -204,11 +202,9 @@ Resources:
               DestinationBucketName: !Ref AccessLogsBucket
           VersioningConfiguration:
               Status: Enabled
-          PublicAccessBlockConfiguration:
-            BlockPublicAcls: true
-            BlockPublicPolicy: true
-            IgnorePublicAcls: true
-            RestrictPublicBuckets: true
+          OwnershipControls:
+            Rules:
+            - ObjectOwnership: BucketOwnerEnforced
 
   ConfigBucketPolicy:
       Type: AWS::S3::BucketPolicy
@@ -281,11 +277,9 @@ Resources:
             - Ref: AWS::AccountId
             - "-do-not-delete"
         AccessControl: LogDeliveryWrite
-        PublicAccessBlockConfiguration:
-          BlockPublicAcls: true
-          BlockPublicPolicy: true
-          IgnorePublicAcls: true
-          RestrictPublicBuckets: true
+        OwnershipControls:
+          Rules:
+          - ObjectOwnership: BucketOwnerEnforced
         LifecycleConfiguration:
             Rules:
               -
