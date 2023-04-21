@@ -315,7 +315,9 @@ Resources:
                   Sid: "S3ServerAccessLogsPolicy"
                   Action: "s3:PutObject"
                   Effect: Allow
-                  Principal: "logging.s3.amazonaws.com"
+                  Principal:
+                    Service:
+                    - "logging.s3.amazonaws.com"
                   Resource:
                     - Fn::Join:
                       - ""
