@@ -27,11 +27,9 @@ Resources:
               - ""
               - - "lambda-artefacts-"
                 - Ref: AWS::AccountId
-          PublicAccessBlockConfiguration:
-            BlockPublicAcls: true
-            BlockPublicPolicy: true
-            IgnorePublicAcls: true
-            RestrictPublicBuckets: true
+          OwnershipControls:
+            Rules:
+            - ObjectOwnership: BucketOwnerEnforced
   
   LambdaArtefactBucketPolicy:
       Type: AWS::S3::BucketPolicy
