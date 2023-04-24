@@ -71,11 +71,9 @@ Resources:
                 Function: 
                   Fn::ImportValue: 
                     !Sub "${lambdaStack}-CloudTrailFunctionArn"
-          PublicAccessBlockConfiguration:
-            BlockPublicAcls: true
-            BlockPublicPolicy: true
-            IgnorePublicAcls: true
-            RestrictPublicBuckets: true
+          OwnershipControls:
+            Rules:
+            - ObjectOwnership: BucketOwnerEnforced
           LifecycleConfiguration:
               Rules:
                 -
@@ -204,11 +202,9 @@ Resources:
               DestinationBucketName: !Ref AccessLogsBucket
           VersioningConfiguration:
               Status: Enabled
-          PublicAccessBlockConfiguration:
-            BlockPublicAcls: true
-            BlockPublicPolicy: true
-            IgnorePublicAcls: true
-            RestrictPublicBuckets: true
+          OwnershipControls:
+            Rules:
+            - ObjectOwnership: BucketOwnerEnforced
 
   ConfigBucketPolicy:
       Type: AWS::S3::BucketPolicy
@@ -280,12 +276,9 @@ Resources:
           - - "access-logs-"
             - Ref: AWS::AccountId
             - "-do-not-delete"
-        AccessControl: LogDeliveryWrite
-        PublicAccessBlockConfiguration:
-          BlockPublicAcls: true
-          BlockPublicPolicy: true
-          IgnorePublicAcls: true
-          RestrictPublicBuckets: true
+        OwnershipControls:
+          Rules:
+          - ObjectOwnership: BucketOwnerEnforced
         LifecycleConfiguration:
             Rules:
               -
@@ -318,8 +311,24 @@ Resources:
                   Condition:
                     Bool:
                       "aws:SecureTransport": "false"
-
-    
+                -
+                  Sid: "S3ServerAccessLogsPolicy"
+                  Action: "s3:PutObject"
+                  Effect: Allow
+                  Principal:
+                    Service:
+                    - "logging.s3.amazonaws.com"
+                  Resource:
+                    - Fn::Join:
+                      - ""
+                      -
+                        - !GetAtt AccessLogsBucket.Arn
+                    - Fn::Join:
+                      - ""
+                      -
+                        - !GetAtt AccessLogsBucket.Arn
+                        - "/*"
+                  
 Outputs:
   ConfigBucket:
     Description: Bucket for storing config-logs

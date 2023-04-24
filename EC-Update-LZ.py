@@ -473,7 +473,7 @@ def main(argv):
             else:
                 print(f"[{Status.NO_ACTION.value}]")
 
-         linked_status = Execution.NO_ACTION
+        linked_status = Execution.NO_ACTION
         #update linked account stacks
         if seclog_status == Execution.FAIL and len(linked_accounts) > 0:
             print("Skipping linked accounts update")
