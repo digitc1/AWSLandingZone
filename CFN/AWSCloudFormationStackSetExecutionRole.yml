@@ -14,7 +14,7 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: "/org/member/SecLogMasterAccountId"
 
-Resources:
+Resources: 
   ExecutionRole:
     Type: AWS::IAM::Role
     Properties:
