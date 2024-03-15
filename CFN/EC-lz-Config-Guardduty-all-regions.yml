@@ -78,13 +78,11 @@ Resources:
           Key: "aws:PrincipalOrgID"
           Value: !Ref OrganizationOuId
 
-  GuardDutyLogGroup:
-    Type: AWS::Logs::LogGroup
-    UpdateReplacePolicy: Retain
-    Condition: IsSecLogMasterAccount
+  GuardDutyDetector:
+    Type: AWS::GuardDuty::Detector
     Properties:
-      LogGroupName: !Ref AwsGuardDutyGroupName
-      RetentionInDays: !Ref LogsRetentionInDays
+        Enable: true
+        FindingPublishingFrequency: FIFTEEN_MINUTES
 
   AWSEventsInvokeEventBusSecLogRole:
     Type: AWS::IAM::Role
@@ -112,16 +110,11 @@ Resources:
                     - !Sub "eu-west-1:${SecLogMasterAccountId}:"
                     - 'event-bus/default'
 
-  GuardDutyDetector:
-    Type: AWS::GuardDuty::Detector
-    Properties:
-        Enable: true
-        FindingPublishingFrequency: FIFTEEN_MINUTES
+
   
   # Enable notifications for AWS GuardDuty Rule compliance changes in client account to event bus
   GuardDutyRuleComplianceChangeEvent:
     Type: AWS::Events::Rule
-    Condition: IsNotSecLogMasterAccount
     DependsOn: AWSEventsInvokeEventBusSecLogRole
     Properties:
       Name: SECLZ-GuardDuty-Events-CloudWatch-Rule-To-SecLog
@@ -141,51 +134,3 @@ Resources:
           - "AWSEventsInvokeEventBusSecLogRole"
           - "Arn"
   
-  CloudWatchEventsLogGroupRole:
-    Type: AWS::IAM::Role
-    Condition: IsSecLogMasterAccount
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - events.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Policies:
-        - PolicyName: SECLZ-CloudWatchEvents-policy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-            - Effect: Allow
-              Action: logs:CreateLogStream
-              Resource:
-              - !GetAtt GuardDutyLogGroup.Arn
-            - Effect: Allow
-              Action: logs:PutLogEvents
-              Resource:
-              - !GetAtt GuardDutyLogGroup.Arn
-            
-
-  # GuardDuty CloudWatch Event - For GuardDuty
-  GuardDutyEvents: 
-    Type: AWS::Events::Rule
-    DependsOn: GuardDutyLogGroup
-    Condition: IsSecLogMasterAccount
-    Properties: 
-      Name: SECLZ-GuardDuty-Event
-      RoleArn: 
-        Fn::GetAtt: 
-        - "AWSEventsInvokeEventBusSecLogRole"
-        - "Arn"
-      Description: "GuardDuty Event Handler"
-      EventPattern: 
-        source:
-        - aws.guardduty
-      State: ENABLED
-      Targets:
-        - 
-          Id: "CrossAccountTargetId"
-          Arn: !Sub "arn:aws:events:eu-west-1:${SecLogMasterAccountId}:event-bus/default"
