@@ -110,7 +110,7 @@ Resources:
                 Resource: !Join 
                   - ''
                   - - 'arn:aws:events:'
-                    - !Sub "${AWS::Region}:${SecLogMasterAccountId}:"
+                    - !Sub "eu-west-1:${SecLogMasterAccountId}:"
                     - 'event-bus/default'
 
   GuardDutyDetector:
@@ -136,12 +136,12 @@ Resources:
       State: ENABLED
       Targets:
       - Id: "CrossAccountTargetId"
-        Arn: !Sub "arn:aws:events:${AWS::Region}:${SecLogMasterAccountId}:event-bus/default"
+        Arn: !Sub "arn:aws:events:eu-west-1:${SecLogMasterAccountId}:event-bus/default"
         RoleArn: 
           Fn::GetAtt: 
           - "AWSEventsInvokeEventBusSecLogRole"
           - "Arn"
-
+  
   CloudWatchEventsLogGroupRole:
     Type: AWS::IAM::Role
     Condition: IsSecLogMasterAccount
@@ -188,6 +188,6 @@ Resources:
       State: ENABLED
       Targets:
         -
-          Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${GuardDutyLogGroup}"
+          Arn: !Sub "arn:aws:logs:eu-west-1:${AWS::AccountId}:log-group:${GuardDutyLogGroup}"
           Id: "AwsGuardDutyCloudWatch-Seclog"
- 
+  
