@@ -179,7 +179,7 @@ Resources:
       Name: SECLZ-GuardDuty-Event
       RoleArn: 
         Fn::GetAtt: 
-        - "CloudWatchEventsLogGroupRole"
+        - "AWSEventsInvokeEventBusSecLogRole"
         - "Arn"
       Description: "GuardDuty Event Handler"
       EventPattern: 
@@ -187,7 +187,6 @@ Resources:
         - aws.guardduty
       State: ENABLED
       Targets:
-        -
-          Arn: !Sub "arn:aws:logs:eu-west-1:${AWS::AccountId}:log-group:${GuardDutyLogGroup}"
-          Id: "AwsGuardDutyCloudWatch-Seclog"
-  
+        - 
+          Id: "CrossAccountTargetId"
+          Arn: !Sub "arn:aws:events:eu-west-1:${SecLogMasterAccountId}:event-bus/default"
