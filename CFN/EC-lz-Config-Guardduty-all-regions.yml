@@ -88,7 +88,6 @@ Resources:
 
   AWSEventsInvokeEventBusSecLogRole:
     Type: AWS::IAM::Role
-    Condition: IsNotSecLogMasterAccount
     Properties: 
       Description: "Service Linked role to send messages to event bus of seclog account"
       AssumeRolePolicyDocument:
