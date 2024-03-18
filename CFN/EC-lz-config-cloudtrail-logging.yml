@@ -354,9 +354,10 @@ Resources:
       RecordingGroup:
         IncludeGlobalResourceTypes: True
         AllSupported: True
-      RoleARN: !GetAtt 
-      - ConfigRole
-      - Arn
+      RoleARN: 
+        Fn::GetAtt: 
+        - ConfigRole
+        - Arn
   
   DeliveryChannel:
     Type: 'AWS::Config::DeliveryChannel'
