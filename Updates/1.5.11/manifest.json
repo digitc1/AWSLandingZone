@@ -13,7 +13,7 @@
         "exclude" : [],
         "include" : []
     },
-    "stacksets" : {
+    "stacks" : {
         "SECLZ-LogShipper-Lambdas" : {
             "update" : true
         }
