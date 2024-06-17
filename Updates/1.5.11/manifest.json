@@ -16,6 +16,9 @@
     "stacks" : {
         "SECLZ-LogShipper-Lambdas" : {
             "update" : true
+        },
+        "SECLZ-CloudwatchLogs-SecurityHub" : {
+            "update" : true
         }
     }
     

@@ -42,6 +42,7 @@ cloudtrailgroupname=${cloudtrailgroupname:-}
 insightgroupname=${insightgroupname:-}
 guarddutygroupname=${guarddutygroupname:-}
 securityhubgroupname=${securityhubgroupname:-}
+securityhubgroupsubscriptionfiltername=${securityhubgroupsubscriptionfiltername:-}
 configgroupname=${configgroupname:-}
 alarmsgroupname=${alarmsgroupname:-}
 
@@ -100,21 +101,22 @@ display_help() {
     echo "Usage: $0 <params>"
     echo ""
     echo "   Provide "
-    echo "   --organisation                 : The orgnisation account as configured in your AWS profile (optional)"
-    echo "   --seclogprofile                : The account profile of the central SecLog account as configured in your AWS profile"
-    echo "   --splunkprofile                : The Splunk account profile as configured in your AWS profile"
-    echo "   --notificationemail            : The notification email to where logs are to be sent"
-    echo "   --logdestination               : The name of the DG of the firehose log destination"
-    echo "   --cloudtrailintegration        : Flag to enable or disable CloudTrail seclog integration. Default: true (optional)"
-    echo "   --guarddutyintegration         : Flag to enable or disable GuardDuty seclog integration. Default: true (optional)"
-    echo "   --securityhubintegration       : Flag to enable or disable SecurityHub seclog integration. Default: true (optional)"
-    echo "   --cloudtrailgroupname          : The custom name for CloudTrail Cloudwatch loggroup name (optional)"
-    echo "   --insightgroupname             : The custom name for CloudTrail Insight Cloudwatch loggroup name (optional)"
-    echo "   --guarddutygroupname           : The custom name for GuardDuty Cloudwatch loggroup name (optional)"
-    echo "   --securityhubgroupname         : The custom name for SecurityHub Cloudwatch loggroup name (optional)"
-    echo "   --configgroupname              : The custom name for AWSConfig Cloudwatch loggroup name (optional)"
-    echo "   --alarmsgroupname              : The custom name for Cloudwatch Alarms loggroup name (optional)"
-    echo "   --batch                        : Flag to enable or disable batch execution mode. Default: false (optional)"
+    echo "   --organisation                          : The orgnisation account as configured in your AWS profile (optional)"
+    echo "   --seclogprofile                         : The account profile of the central SecLog account as configured in your AWS profile"
+    echo "   --splunkprofile                         : The Splunk account profile as configured in your AWS profile"
+    echo "   --notificationemail                     : The notification email to where logs are to be sent"
+    echo "   --logdestination                        : The name of the DG of the firehose log destination"
+    echo "   --cloudtrailintegration                 : Flag to enable or disable CloudTrail seclog integration. Default: true (optional)"
+    echo "   --guarddutyintegration                  : Flag to enable or disable GuardDuty seclog integration. Default: true (optional)"
+    echo "   --securityhubintegration                : Flag to enable or disable SecurityHub seclog integration. Default: true (optional)"
+    echo "   --cloudtrailgroupname                   : The custom name for CloudTrail Cloudwatch loggroup name (optional)"
+    echo "   --insightgroupname                      : The custom name for CloudTrail Insight Cloudwatch loggroup name (optional)"
+    echo "   --guarddutygroupname                    : The custom name for GuardDuty Cloudwatch loggroup name (optional)"
+    echo "   --securityhubgroupname                  : The custom name for SecurityHub Cloudwatch loggroup name (optional)"
+    echo "   --securityhubgroupsubscriptionfiltername: The custom name for SecurityHub Cloudwatch loggroup subscription filter name (optional)"
+    echo "   --configgroupname                       : The custom name for AWSConfig Cloudwatch loggroup name (optional)"
+    echo "   --alarmsgroupname                       : The custom name for Cloudwatch Alarms loggroup name (optional)"
+    echo "   --batch                                 : Flag to enable or disable batch execution mode. Default: false (optional)"
     echo ""
     exit 1
 }
@@ -180,6 +182,12 @@ configure_seclog() {
     if  [ ! -z "$securityhubgroupname" ] ; then
         echo "     SecurityHub loggroup name:           $securityhubgroupname"
     fi
+
+    if  [ ! -z "$securityhubgroupsubscriptionfiltername" ] ; then
+        echo "     SecurityHub loggroup subscription filter name:           $securityhubgroupsubscriptionfiltername"
+    fi
+
+    
     
     if  [ ! -z "$configgroupname" ] ; then
         echo "     AWSConfig loggroup name:           $configgroupname"
@@ -267,6 +275,17 @@ configure_seclog() {
         fi
     fi
     aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_securityhub-groupname --tags  file://$CFN_TAGS_FILE
+
+    if  [ ! -z "$securityhubgroupsubscriptionfiltername" ] ; then
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_securityhub-group-subscription-filter-name --type String --value $securityhubgroupsubscriptionfiltername --overwrite
+        
+    else
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_securityhub-group-subscription-filter-name --type String --value "DEFAULT" --overwrite
+    fi
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_securityhub-group-subscription-filter-name --tags  file://$CFN_TAGS_FILE
+
+
+
 
     if  [ ! -z "$configgroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value $configgroupname --overwrite
