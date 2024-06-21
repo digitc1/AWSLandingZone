@@ -39,11 +39,15 @@ guarddutyintegration=${guarddutyintegration:-true}
 securityhubintegration=${securityhubintegration:-true}
 batch=${batch:-false}
 cloudtrailgroupname=${cloudtrailgroupname:-}
+cloudtrailgroupsubscriptionfiltername=${cloudtrailgroupsubscriptionfiltername:-}
 insightgroupname=${insightgroupname:-}
+insightgroupsubscriptionfiltername=${insightgroupsubscriptionfiltername:-}
 guarddutygroupname=${guarddutygroupname:-}
+guarddutygroupsubscriptionfiltername=${guarddutygroupsubscriptionfiltername:-}
 securityhubgroupname=${securityhubgroupname:-}
 securityhubgroupsubscriptionfiltername=${securityhubgroupsubscriptionfiltername:-}
 configgroupname=${configgroupname:-}
+configgroupsubscriptionfiltername=${configgroupsubscriptionfiltername:-}
 alarmsgroupname=${alarmsgroupname:-}
 
 while [ $# -gt 0 ]; do
@@ -110,11 +114,15 @@ display_help() {
     echo "   --guarddutyintegration                  : Flag to enable or disable GuardDuty seclog integration. Default: true (optional)"
     echo "   --securityhubintegration                : Flag to enable or disable SecurityHub seclog integration. Default: true (optional)"
     echo "   --cloudtrailgroupname                   : The custom name for CloudTrail Cloudwatch loggroup name (optional)"
+    echo "   --cloudtrailgroupsubscriptionfiltername : The custom name for CloudTrail Cloudwatch loggroup subscription filter name (optional)"
     echo "   --insightgroupname                      : The custom name for CloudTrail Insight Cloudwatch loggroup name (optional)"
+    echo "   --insightgroupsubscriptionfiltername    : The custom name for CloudTrail Insight Cloudwatch loggroup subscription filter name (optional)"
     echo "   --guarddutygroupname                    : The custom name for GuardDuty Cloudwatch loggroup name (optional)"
+    echo "   --guarddutygroupsubscriptionfiltername  : The custom name for GuardDuty Cloudwatch loggroup subscription filter name (optional)"
     echo "   --securityhubgroupname                  : The custom name for SecurityHub Cloudwatch loggroup name (optional)"
     echo "   --securityhubgroupsubscriptionfiltername: The custom name for SecurityHub Cloudwatch loggroup subscription filter name (optional)"
     echo "   --configgroupname                       : The custom name for AWSConfig Cloudwatch loggroup name (optional)"
+    echo "   --configgroupsubscriptionfiltername     : The custom name for AWSConfig Cloudwatch loggroup subscription filter name (optional)"
     echo "   --alarmsgroupname                       : The custom name for Cloudwatch Alarms loggroup name (optional)"
     echo "   --batch                                 : Flag to enable or disable batch execution mode. Default: false (optional)"
     echo ""
@@ -171,14 +179,26 @@ configure_seclog() {
         echo "     CloudTrail Insight loggroup name:            $insightgroupname"
     fi
 
+    if  [ ! -z "$insightgroupsubscriptionfiltername" ] ; then
+        echo "     CloudTrail Insight loggroup subscription filter name:            $insightgroupsubscriptionfiltername"
+    fi
+
     if  [ ! -z "$cloudtrailgroupname" ] ; then
         echo "     CloudTrail loggroup name:             $cloudtrailgroupname"
     fi
-    
+
+    if  [ ! -z "$cloudtrailgroupsubscriptionfiltername" ] ; then
+        echo "     CloudTrail loggroup subscription filter name:             $cloudtrailgroupsubscriptionfiltername"
+    fi
+
     if  [ ! -z "$guarddutygroupname" ] ; then
          echo "     Guardduty loggroup name:            $guarddutygroupname"
     fi
-    
+
+    if  [ ! -z "$guarddutygroupsubscriptionfiltername" ] ; then
+         echo "     Guardduty loggroup subscription filter name:            $guarddutygroupsubscriptionfiltername"
+    fi
+
     if  [ ! -z "$securityhubgroupname" ] ; then
         echo "     SecurityHub loggroup name:           $securityhubgroupname"
     fi
@@ -191,6 +211,10 @@ configure_seclog() {
     
     if  [ ! -z "$configgroupname" ] ; then
         echo "     AWSConfig loggroup name:           $configgroupname"
+    fi
+
+    if  [ ! -z "$configgroupsubscriptionfiltername" ] ; then
+        echo "     AWSConfig loggroup subscription filter name:           $configgroupsubscriptionfiltername"
     fi
 
     if  [ ! -z "$alarmsgroupname" ] ; then
@@ -223,10 +247,15 @@ configure_seclog() {
     echo "   - /org/member/SecLog_notification-mail"
     echo "    - /org/member/SecLogVersion"
     echo "    - /org/member/SecLog_cloudtrail-groupname"
+    echo "    - /org/member/SecLog_cloudtrail-group-subscription-filter-name"
     echo "    - /org/member/SecLog_insight-groupname"
+    echo "    - /org/member/SecLog_insight-group-subscription-filter-name"
     echo "    - /org/member/SecLog_guardduty-groupname"
+    echo "    - /org/member/SecLog_guardduty-group-subscription-filter-name"
     echo "    - /org/member/SecLog_securityhub-groupname"
+    echo "    - /org/member/SecLog_securityhub-group-subscription-filter-name"
     echo "    - /org/member/SecLog_config-groupname"
+    echo "    - /org/member/SecLog_config-group-subscription-filter-name"
 
     tags=`cat $CFN_TAGS_FILE`
 
@@ -241,7 +270,15 @@ configure_seclog() {
         fi
     fi
     aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_cloudtrail-groupname --tags  file://$CFN_TAGS_FILE
-    
+
+    if  [ ! -z "$cloudtrailgroupsubscriptionfiltername" ] ; then
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-group-subscription-filter-name --type String --value $cloudtrailgroupsubscriptionfiltername --overwrite
+        
+    else
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_cloudtrail-group-subscription-filter-name --type String --value "DEFAULT" --overwrite
+    fi
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_cloudtrail-group-subscription-filter-name --tags  file://$CFN_TAGS_FILE
+
     if  [ ! -z "$insightgroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value $insightgroupname --overwrite
     else
@@ -251,7 +288,15 @@ configure_seclog() {
         fi
     fi
     aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_insight-groupname --tags  file://$CFN_TAGS_FILE
-    
+
+    if  [ ! -z "$insightgroupsubscriptionfiltername" ] ; then
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_insight-group-subscription-filter-name --type String --value $insightgroupsubscriptionfiltername --overwrite
+        
+    else
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_insight-group-subscription-filter-name --type String --value "DEFAULT" --overwrite
+    fi
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_insight-group-subscription-filter-name --tags  file://$CFN_TAGS_FILE
+
     for region in $(aws --profile $seclogprofile ec2 describe-regions --output text --query "Regions[*].[RegionName]"); do
         if  [ ! -z "$guarddutygroupname" ] ; then
             aws --profile $seclogprofile --region $region ssm put-parameter --name /org/member/SecLog_guardduty-groupname --type String --value $guarddutygroupname --overwrite
@@ -262,6 +307,14 @@ configure_seclog() {
             fi
         fi
         aws --profile $seclogprofile --region $region ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_guardduty-groupname --tags  file://$CFN_TAGS_FILE
+
+        if  [ ! -z "$guarddutygroupsubscriptionfiltername" ] ; then
+            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_guardduty-group-subscription-filter-name --type String --value $guarddutygroupsubscriptionfiltername --overwrite
+            
+        else
+            aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_guardduty-group-subscription-filter-name --type String --value "DEFAULT" --overwrite
+        fi
+        aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_guardduty-group-subscription-filter-name --tags  file://$CFN_TAGS_FILE
     done
     
     
@@ -296,6 +349,14 @@ configure_seclog() {
         fi
     fi
     aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_config-groupname --tags  file://$CFN_TAGS_FILE
+
+    if  [ ! -z "$configgroupsubscriptionfiltername" ] ; then
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_config-group-subscription-filter-name --type String --value $configgroupsubscriptionfiltername --overwrite
+        
+    else
+        aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_config-group-subscription-filter-name --type String --value "DEFAULT" --overwrite
+    fi
+    aws --profile $seclogprofile ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_config-group-subscription-filter-name --tags  file://$CFN_TAGS_FILE
 
     if  [ ! -z "$alarmsgroupname" ] ; then
         aws --profile $seclogprofile ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value $alarmsgroupname --overwrite
