@@ -85,6 +85,8 @@ configure() {
             aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/aws-foundational-security-best-practices/v/1.0.0/$cischeck" --control-status "DISABLED" --disabled-reason "Disable recording of global resources in all but one Region"
             echo "CIS Check $cischeck update for aws-foundational-security-best-practices in region $region: exit code $?"
         done
+        aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/cis-aws-foundations-benchmark/v/1.2.0/1.14" --control-status "DISABLED" --disabled-reason "Managed by Cloud Broker Team"
+        echo "CIS Check $cischeck update for cis-aws-foundations-benchmark in region $region: exit code $?"
     done
 }
 

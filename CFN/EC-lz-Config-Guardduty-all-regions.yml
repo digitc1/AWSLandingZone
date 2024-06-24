@@ -42,7 +42,7 @@ Parameters:
   OrganizationOuId:
     Description: 'Organizational OU Id'
     Type: String
-    Default: "o-jyyw8qs5c8"
+    Default: "/org/member/SecLogOU"
 
 Conditions:
   IsSecLogMasterAccount: !Equals
