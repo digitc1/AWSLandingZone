@@ -574,9 +574,9 @@ def main(argv):
                                 will_update(stack_actions,'SECLZ-config-cloudtrail-SNS')
                             if result != Execution.NO_ACTION:
                                 linked_status = result     
-                        #add tags
-                        if 'tags' in ssm_actions['seclog-ou'] and ssm_actions['seclog-ou']['tags'] == True:
-                            linked_status = add_tags_parameter(cfn, '/org/member/SecLogOU')
+                            #add tags
+                            if 'tags' in ssm_actions['seclog-ou'] and ssm_actions['seclog-ou']['tags'] == True:
+                                linked_status = add_tags_parameter(cfn, '/org/member/SecLogOU')
 
                         if do_update(ssm_actions, 'notification-mail') and linked_status != Execution.FAIL:
                             result=update_ssm_parameter(cfn, '/org/member/SecLog_notification-mail', ssm_actions['notification-mail']['value'])
@@ -584,9 +584,9 @@ def main(argv):
                                 will_update(stack_actions,'SECLZ-config-cloudtrail-SNS')
                             if result != Execution.NO_ACTION:
                                 linked_status = result     
-                        #add tags
-                        if 'tags' in ssm_actions['notification-mail'] and ssm_actions['notification-mail']['tags'] == True:
-                            linked_status = add_tags_parameter(cfn, '/org/member/SecLog_notification-mail')
+                            #add tags
+                            if 'tags' in ssm_actions['notification-mail'] and ssm_actions['notification-mail']['tags'] == True:
+                                linked_status = add_tags_parameter(cfn, '/org/member/SecLog_notification-mail')
 
 
                         if do_update(ssm_actions, 'cloudtrail-groupname') and linked_status != Execution.FAIL:
@@ -597,9 +597,9 @@ def main(argv):
                                 will_update(stack_actions,'SECLZ-Notifications-Cloudtrail')
                             if result != Execution.NO_ACTION:
                                 linked_status = result  
-                        #add tags
-                        if 'tags' in ssm_actions['cloudtrail-groupname'] and ssm_actions['cloudtrail-groupname']['tags'] == True:
-                            linked_status = add_tags_parameter(cfn, '/org/member/SecLog_cloudtrail-groupname')
+                            #add tags
+                            if 'tags' in ssm_actions['cloudtrail-groupname'] and ssm_actions['cloudtrail-groupname']['tags'] == True:
+                                linked_status = add_tags_parameter(cfn, '/org/member/SecLog_cloudtrail-groupname')
 
 
                         if  do_update(ssm_actions, 'insight-groupname') and linked_status != Execution.FAIL:
@@ -609,9 +609,9 @@ def main(argv):
                                 will_update(stack_actions,'SECLZ-LogShipper-Lambdas')
                             if result != Execution.NO_ACTION:
                                 linked_status = result  
-                        #add tags
-                        if 'tags' in ssm_actions['insight-groupname'] and ssm_actions['insight-groupname']['tags'] == True:
-                            linked_status = add_tags_parameter(cfn, '/org/member/SecLog_insight-groupname')
+                            #add tags
+                            if 'tags' in ssm_actions['insight-groupname'] and ssm_actions['insight-groupname']['tags'] == True:
+                                linked_status = add_tags_parameter(cfn, '/org/member/SecLog_insight-groupname')
 
 
                         if  do_update(ssm_actions, 'guardduty-groupname') and linked_status != Execution.FAIL:
@@ -629,18 +629,18 @@ def main(argv):
                                 aws_access_key_id=accessKey,
                                 aws_secret_access_key=secretAccessKey, 
                                 aws_session_token=sessionToken)
-                        #add tags
-                        if 'tags' in ssm_actions['guardduty-groupname'] and ssm_actions['guardduty-groupname']['tags'] == True:
-                            for region in all_regions:
-                                cfn = boto3.client('ssm', aws_access_key_id=accessKey,
+                            #add tags
+                            if 'tags' in ssm_actions['guardduty-groupname'] and ssm_actions['guardduty-groupname']['tags'] == True:
+                                for region in all_regions:
+                                    cfn = boto3.client('ssm', aws_access_key_id=accessKey,
+                                        aws_secret_access_key=secretAccessKey, 
+                                        aws_session_token=sessionToken,
+                                        region_name=region)
+                                    linked_status = add_tags_parameter(cfn, '/org/member/SecLog_guardduty-groupname', region)
+                                cfn = boto3.client('ssm',  
+                                    aws_access_key_id=accessKey,
                                     aws_secret_access_key=secretAccessKey, 
-                                    aws_session_token=sessionToken,
-                                    region_name=region)
-                                linked_status = add_tags_parameter(cfn, '/org/member/SecLog_guardduty-groupname', region)
-                            cfn = boto3.client('ssm',  
-                                aws_access_key_id=accessKey,
-                                aws_secret_access_key=secretAccessKey, 
-                                aws_session_token=sessionToken)
+                                    aws_session_token=sessionToken)
 
 
                         if  do_update(ssm_actions, 'securityhub-groupname') and linked_status != Execution.FAIL:
@@ -649,9 +649,9 @@ def main(argv):
                                 will_update(stack_actions,'SECLZ-CloudwatchLogs-SecurityHub')                            
                             if result != Execution.NO_ACTION:
                                 linked_status = result  
-                        #add tags
-                        if 'tags' in ssm_actions['securityhub-groupname'] and ssm_actions['securityhub-groupname']['tags'] == True:
-                            linked_status = add_tags_parameter(cfn, '/org/member/SecLog_securityhub-groupname')
+                            #add tags
+                            if 'tags' in ssm_actions['securityhub-groupname'] and ssm_actions['securityhub-groupname']['tags'] == True:
+                                linked_status = add_tags_parameter(cfn, '/org/member/SecLog_securityhub-groupname')
 
 
                         if  do_update(ssm_actions, 'config-groupname') and linked_status != Execution.FAIL:
@@ -661,9 +661,9 @@ def main(argv):
                                 will_update(stack_actions,'SECLZ-LogShipper-Lambdas')       
                             if result != Execution.NO_ACTION:
                                 linked_status = result
-                        #add tags
-                        if 'tags' in ssm_actions['config-groupname'] and ssm_actions['config-groupname']['tags'] == True:
-                            linked_status = add_tags_parameter(cfn, '/org/member/SecLog_config-groupname')
+                            #add tags
+                            if 'tags' in ssm_actions['config-groupname'] and ssm_actions['config-groupname']['tags'] == True:
+                                linked_status = add_tags_parameter(cfn, '/org/member/SecLog_config-groupname')
 
 
                         if  do_update(ssm_actions, 'alarms-groupname') and linked_status != Execution.FAIL:
@@ -672,9 +672,9 @@ def main(argv):
                                 will_update(stack_actions,'SECLZ-config-cloudtrail-SNS')  
                             if result != Execution.NO_ACTION:
                                 linked_status = result
-                        #add tags
-                        if 'tags' in ssm_actions['alarms-groupname'] and ssm_actions['alarms-groupname']['tags'] == True:
-                            linked_status = add_tags_parameter(cfn, '/org/member/SecLog_alarms-groupname')
+                            #add tags
+                            if 'tags' in ssm_actions['alarms-groupname'] and ssm_actions['alarms-groupname']['tags'] == True:
+                                linked_status = add_tags_parameter(cfn, '/org/member/SecLog_alarms-groupname')
 
 
 
