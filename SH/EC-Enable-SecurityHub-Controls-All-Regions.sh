@@ -57,10 +57,10 @@ configure() {
         done
         # Disable "ControlId": "IAM.6", "Title": "Hardware MFA should be enabled for the root user"
         aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/aws-foundational-security-best-practices/v/1.0.0/IAM.6" --control-status "DISABLED" --disabled-reason "Managed by Cloud Broker Team"
-        echo "CIS Check $cischeck update for aws-foundational-security-best-practices in region $region: exit code $?"
+        echo "CIS Check IAM.6 update for aws-foundational-security-best-practices in region $region: exit code $?"
         # Disable "ControlId": "CIS1.14", "1.14 Ensure hardware MFA is enabled for the \"root\" account"
         aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/cis-aws-foundations-benchmark/v/1.2.0/1.14" --control-status "DISABLED" --disabled-reason "Managed by Cloud Broker Team"
-        echo "CIS Check $cischeck update for cis-aws-foundations-benchmark in region $region: exit code $?"
+        echo "CIS Check CIS1.14 update for cis-aws-foundations-benchmark in region $region: exit code $?"
     done
 
     # ------------------
@@ -85,8 +85,11 @@ configure() {
             aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/aws-foundational-security-best-practices/v/1.0.0/$cischeck" --control-status "DISABLED" --disabled-reason "Disable recording of global resources in all but one Region"
             echo "CIS Check $cischeck update for aws-foundational-security-best-practices in region $region: exit code $?"
         done
+
+        # Disable "ControlId": "CIS1.14", "1.14 Ensure hardware MFA is enabled for the \"root\" account"
         aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/cis-aws-foundations-benchmark/v/1.2.0/1.14" --control-status "DISABLED" --disabled-reason "Managed by Cloud Broker Team"
-        echo "CIS Check $cischeck update for cis-aws-foundations-benchmark in region $region: exit code $?"
+        echo "CIS Check CIS1.14 update for cis-aws-foundations-benchmark in region $region: exit code $?"
+
     done
 }
 
