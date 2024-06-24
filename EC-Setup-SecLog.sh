@@ -38,17 +38,17 @@ cloudtrailintegration=${cloudtrailintegration:-true}
 guarddutyintegration=${guarddutyintegration:-true}
 securityhubintegration=${securityhubintegration:-true}
 batch=${batch:-false}
-cloudtrailgroupname=${cloudtrailgroupname:-}
+
 cloudtrailgroupsubscriptionfiltername=${cloudtrailgroupsubscriptionfiltername:-}
-insightgroupname=${insightgroupname:-}
+
 insightgroupsubscriptionfiltername=${insightgroupsubscriptionfiltername:-}
-guarddutygroupname=${guarddutygroupname:-}
+
 guarddutygroupsubscriptionfiltername=${guarddutygroupsubscriptionfiltername:-}
-securityhubgroupname=${securityhubgroupname:-}
+
 securityhubgroupsubscriptionfiltername=${securityhubgroupsubscriptionfiltername:-}
-configgroupname=${configgroupname:-}
+
 configgroupsubscriptionfiltername=${configgroupsubscriptionfiltername:-}
-alarmsgroupname=${alarmsgroupname:-}
+
 
 while [ $# -gt 0 ]; do
 
@@ -113,17 +113,11 @@ display_help() {
     echo "   --cloudtrailintegration                 : Flag to enable or disable CloudTrail seclog integration. Default: true (optional)"
     echo "   --guarddutyintegration                  : Flag to enable or disable GuardDuty seclog integration. Default: true (optional)"
     echo "   --securityhubintegration                : Flag to enable or disable SecurityHub seclog integration. Default: true (optional)"
-    echo "   --cloudtrailgroupname                   : The custom name for CloudTrail Cloudwatch loggroup name (optional)"
     echo "   --cloudtrailgroupsubscriptionfiltername : The custom name for CloudTrail Cloudwatch loggroup subscription filter name (optional)"
-    echo "   --insightgroupname                      : The custom name for CloudTrail Insight Cloudwatch loggroup name (optional)"
     echo "   --insightgroupsubscriptionfiltername    : The custom name for CloudTrail Insight Cloudwatch loggroup subscription filter name (optional)"
-    echo "   --guarddutygroupname                    : The custom name for GuardDuty Cloudwatch loggroup name (optional)"
     echo "   --guarddutygroupsubscriptionfiltername  : The custom name for GuardDuty Cloudwatch loggroup subscription filter name (optional)"
-    echo "   --securityhubgroupname                  : The custom name for SecurityHub Cloudwatch loggroup name (optional)"
     echo "   --securityhubgroupsubscriptionfiltername: The custom name for SecurityHub Cloudwatch loggroup subscription filter name (optional)"
-    echo "   --configgroupname                       : The custom name for AWSConfig Cloudwatch loggroup name (optional)"
     echo "   --configgroupsubscriptionfiltername     : The custom name for AWSConfig Cloudwatch loggroup subscription filter name (optional)"
-    echo "   --alarmsgroupname                       : The custom name for Cloudwatch Alarms loggroup name (optional)"
     echo "   --batch                                 : Flag to enable or disable batch execution mode. Default: false (optional)"
     echo ""
     exit 1
@@ -175,51 +169,30 @@ configure_seclog() {
     echo "     GuardDuty integration with Splunk:   $guarddutyintegration"
     echo "     SecurityHub integration with Splunk: $securityhubintegration"
     
-    if  [ ! -z "$insightgroupname" ] ; then
-        echo "     CloudTrail Insight loggroup name:            $insightgroupname"
-    fi
-
+ 
     if  [ ! -z "$insightgroupsubscriptionfiltername" ] ; then
         echo "     CloudTrail Insight loggroup subscription filter name:            $insightgroupsubscriptionfiltername"
     fi
 
-    if  [ ! -z "$cloudtrailgroupname" ] ; then
-        echo "     CloudTrail loggroup name:             $cloudtrailgroupname"
-    fi
 
     if  [ ! -z "$cloudtrailgroupsubscriptionfiltername" ] ; then
         echo "     CloudTrail loggroup subscription filter name:             $cloudtrailgroupsubscriptionfiltername"
-    fi
-
-    if  [ ! -z "$guarddutygroupname" ] ; then
-         echo "     Guardduty loggroup name:            $guarddutygroupname"
     fi
 
     if  [ ! -z "$guarddutygroupsubscriptionfiltername" ] ; then
          echo "     Guardduty loggroup subscription filter name:            $guarddutygroupsubscriptionfiltername"
     fi
 
-    if  [ ! -z "$securityhubgroupname" ] ; then
-        echo "     SecurityHub loggroup name:           $securityhubgroupname"
-    fi
-
     if  [ ! -z "$securityhubgroupsubscriptionfiltername" ] ; then
         echo "     SecurityHub loggroup subscription filter name:           $securityhubgroupsubscriptionfiltername"
     fi
 
-    
-    
-    if  [ ! -z "$configgroupname" ] ; then
-        echo "     AWSConfig loggroup name:           $configgroupname"
-    fi
 
     if  [ ! -z "$configgroupsubscriptionfiltername" ] ; then
         echo "     AWSConfig loggroup subscription filter name:           $configgroupsubscriptionfiltername"
     fi
 
-    if  [ ! -z "$alarmsgroupname" ] ; then
-        echo "     Alarms loggroup name:           $alarmsgroupname"
-    fi
+
     
     if [[ ("$cloudtrailintegration" == "true" || "$guarddutyintegration" == "true" || "$securityhubintegration" == "true" ) ]]; then
       echo "     Splunk Account Id:                   $SPLUNK_ACCOUNT_ID"
@@ -246,15 +219,10 @@ configure_seclog() {
     echo "   - /org/member/SecLogOU"
     echo "   - /org/member/SecLog_notification-mail"
     echo "    - /org/member/SecLogVersion"
-    echo "    - /org/member/SecLog_cloudtrail-groupname"
     echo "    - /org/member/SecLog_cloudtrail-group-subscription-filter-name"
-    echo "    - /org/member/SecLog_insight-groupname"
     echo "    - /org/member/SecLog_insight-group-subscription-filter-name"
-    echo "    - /org/member/SecLog_guardduty-groupname"
     echo "    - /org/member/SecLog_guardduty-group-subscription-filter-name"
-    echo "    - /org/member/SecLog_securityhub-groupname"
     echo "    - /org/member/SecLog_securityhub-group-subscription-filter-name"
-    echo "    - /org/member/SecLog_config-groupname"
     echo "    - /org/member/SecLog_config-group-subscription-filter-name"
 
     tags=`cat $CFN_TAGS_FILE`
