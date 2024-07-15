@@ -29,6 +29,10 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Description: Guardduty CloudWatch LogGroup name
     Default: "/org/member/SecLog_guardduty-groupname"
+  AwsGuardDutyGroupSubscriptionFilterName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Guardduty CloudWatch LogGroup subscription filter name
+    Default: "/org/member/SecLog_guardduty-group-subscription-filter-name"
     
   FirehoseDestinationArn:
     Type: String
@@ -65,6 +69,10 @@ Conditions:
     - !Equals
       - !Ref EnableSecLogIntegrationFoGuardDutyParam
       - 'true'
+  IsAwsGuardDutyGroupSubscriptionFilterNameNotDefault: !Not
+    - !Equals
+      - !Ref AwsGuardDutyGroupSubscriptionFilterName
+      - 'DEFAULT'
       
 Resources:
   GuardDutyLogGroup:
@@ -82,6 +90,11 @@ Resources:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
       LogGroupName: !Ref 'GuardDutyLogGroup'
+      FilterName:
+        !If 
+          - IsAwsGuardDutyGroupSubscriptionFilterNameNotDefault
+          - !Ref 'AwsGuardDutyGroupSubscriptionFilterName'
+          - !Ref AWS::NoValue
 
 
   AWSEventsInvokeEventBusSecLogRole:

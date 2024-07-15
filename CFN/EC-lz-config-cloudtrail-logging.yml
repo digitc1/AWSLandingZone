@@ -91,14 +91,26 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Description: CloudTrail Insights CloudWatch LogGroup name
     Default: "/org/member/SecLog_insight-groupname"
+  CloudTrailInsightsLogsGroupSubscriptionFilterName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Cloudtrail CloudWatch LogGroup subscription filter name
+    Default: "/org/member/SecLog_insight-group-subscription-filter-name"
   CloudTrailLogGroupName:
     Type: AWS::SSM::Parameter::Value<String>
     Default: '/org/member/SecLog_cloudtrail-groupname'
     Description: Cloudtrail CloudWatch LogGroup name
+  CloudTrailLogGroupSubscriptionFilterName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Cloudtrail CloudWatch LogGroup subscription filter name
+    Default: "/org/member/SecLog_cloudtrail-group-subscription-filter-name"
   AwsConfigLogGroupName:
     Type: AWS::SSM::Parameter::Value<String>
     Default: '/org/member/SecLog_config-groupname'
-    Description: AWS config CloudWatch LogGroup name
+    Description: AWS config CloudWatch LogGroup 
+  AwsConfigLogGroupSubscriptionFilterName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: AWS config CloudWatch LogGroup subscription filter name
+    Default: "/org/member/SecLog_config-group-subscription-filter-name"
   CloudwatchAlarmsLogGroupName:
     Type: AWS::SSM::Parameter::Value<String>
     Default: '/org/member/SecLog_alarms-groupname'
@@ -138,6 +150,18 @@ Conditions:
   - !Equals
     - !Ref EnableSecLogForCloudTrailParam
     - 'true'
+  IsCloudTrailLogGroupSubscriptionFilterNameNotDefault: !Not
+    - !Equals
+      - !Ref CloudTrailLogGroupSubscriptionFilterName
+      - 'DEFAULT'
+  IsCloudTrailInsightsLogsGroupSubscriptionFilterNameNotDefault: !Not
+    - !Equals
+      - !Ref CloudTrailInsightsLogsGroupSubscriptionFilterName
+      - 'DEFAULT'
+  IsAwsConfigLogGroupSubscriptionFilterNameNotDefault: !Not
+    - !Equals
+      - !Ref AwsConfigLogGroupSubscriptionFilterName
+      - 'DEFAULT'
 Mappings: {}
 
 Resources:
@@ -215,6 +239,11 @@ Resources:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
       LogGroupName: !Ref 'TrailLogGroup'
+      FilterName:
+        !If 
+          - IsCloudTrailLogGroupSubscriptionFilterNameNotDefault
+          - !Ref 'CloudTrailLogGroupSubscriptionFilterName'
+          - !Ref AWS::NoValue
 
 
   #   -------------------
@@ -266,6 +295,11 @@ Resources:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
       LogGroupName: !Ref 'TrailInsightsLogGroup'
+      FilterName:
+        !If 
+          - IsCloudTrailInsightsLogsGroupSubscriptionFilterNameNotDefault
+          - !Ref 'CloudTrailInsightsLogsGroupSubscriptionFilterName'
+          - !Ref AWS::NoValue
 
 
   # Enable Trail Ingisght events to be sent to the corresponding loggroup
@@ -346,6 +380,11 @@ Resources:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
       LogGroupName: !Ref 'AwsConfigLogGroup'
+      FilterName:
+        !If 
+          - IsAwsConfigLogGroupSubscriptionFilterNameNotDefault
+          - !Ref 'AwsConfigLogGroupSubscriptionFilterName'
+          - !Ref AWS::NoValue
 
   ConfigRecorder:
     Type: 'AWS::Config::ConfigurationRecorder'

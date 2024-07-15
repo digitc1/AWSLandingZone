@@ -302,16 +302,21 @@ def deactivate_config(account_id,sseclog_id,account_session,sseclog_session):
             
                 if account_id in aggregationSources['AccountIds']:
                     accountsIds.remove(account_id)
-
-            client.put_configuration_aggregator(
-                ConfigurationAggregatorName='SecLogAggregator',
-                AccountAggregationSources=[
-                    {
-                    'AccountIds': accountsIds,
-                        'AllAwsRegions': True
-                    },
-            ]
-            )
+            if len(accountsIds) > 0:
+                client.put_configuration_aggregator(
+                    ConfigurationAggregatorName='SecLogAggregator',
+                    AccountAggregationSources=[
+                        {
+                        'AccountIds': accountsIds,
+                            'AllAwsRegions': True
+                        },
+                    ]
+                )
+            else: 
+                 client.delete_configuration_aggregator(
+                    ConfigurationAggregatorName='SecLogAggregator',
+                   
+                )
 
             print(f"\033[2K\033[1GDisassociate AWSConfig from source SECLOG account [{Status.OK.value}]")
 

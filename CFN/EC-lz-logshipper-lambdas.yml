@@ -45,6 +45,10 @@ Parameters:
     Default: '/org/member/SecLog_config-groupname'
     Description: AWS config CloudWatch LogGroup name  
 
+  CloudtrailKMSarn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: arn for KMS key to encrypt cloudtrail
+    Default: "/org/member/KMSCloudtrailKey_arn"
 
 Resources:
 
@@ -114,12 +118,7 @@ Resources:
               - Effect: Allow
                 Action:
                 - 'kms:Decrypt'
-                Resource:
-                  Fn::Join:
-                    - ""
-                    - - "arn:aws:kms:*:"
-                      - Ref: AWS::AccountId
-                      - ":key/*"
+                Resource: !Ref CloudtrailKMSarn
 
   #   -------------------
   #   Cloudtrail
