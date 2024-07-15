@@ -18,6 +18,10 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Description: SecurityHub CloudWatch LogGroup name
     Default: "/org/member/SecLog_securityhub-groupname"
+  SecurityHubLogsGroupSubscriptionFilterName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: SecurityHub CloudWatch LogGroup subscription filter name
+    Default: "/org/member/SecLog_securityhub-group-subscription-filter-name"
   FirehoseDestinationArn:
     Type: String
     Default: ""
@@ -53,6 +57,10 @@ Conditions:
     - !Equals
       - !Ref EnableSecLogForSecurityHubParam
       - 'true'
+  IsSecurityHubLogsGroupSubscriptionFilterNameNotDefault: !Not
+    - !Equals
+      - !Ref SecurityHubLogsGroupSubscriptionFilterName
+      - 'DEFAULT'
 
 Resources:
   SecurityHubLogGroup:
@@ -70,6 +78,11 @@ Resources:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
       LogGroupName: !Ref 'SecurityHubLogGroup'
+      FilterName:
+        !If 
+          - IsSecurityHubLogsGroupSubscriptionFilterNameNotDefault
+          - !Ref 'SecurityHubLogsGroupSubscriptionFilterName'
+          - !Ref AWS::NoValue
 
   CloudWatchEventsLogGroupRole:
     Type: AWS::IAM::Role
