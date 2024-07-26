@@ -85,6 +85,7 @@ configure_client() {
     securityhubgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_securityhub-groupname" --output text --query 'Parameter.Value'`
     configgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_config-groupname" --output text --query 'Parameter.Value'`
     alarmsgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_alarms-groupname" --output text --query 'Parameter.Value'`
+    alarmsgroupname=`aws --profile $SECLOG ssm get-parameter --name "/org/member/SecLog_alarms-groupname" --output text --query 'Parameter.Value'`
     
 
     echo ""
@@ -162,6 +163,9 @@ configure_client() {
         fi
         aws --profile $CLIENT --region $region  ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_guardduty-groupname --tags  file://$CFN_TAGS_FILE
     
+        aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_guardduty-group-subscription-filter-name --type String --value "DEFAULT" --overwrite
+        aws --profile $CLIENT --region $region ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_guardduty-group-subscription-filter-name --tags  file://$CFN_TAGS_FILE
+
     done
     
     if  [ ! -z "$securityhubgroupname" ] ; then
