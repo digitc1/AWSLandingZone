@@ -145,6 +145,10 @@ configure_client() {
         aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_cloudtrail-groupname --type String --value "/aws/cloudtrail" --overwrite 
     fi
     aws --profile $CLIENT ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_cloudtrail-groupname --tags  file://$CFN_TAGS_FILE
+
+    aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_cloudtrail-group-subscription-filter-name --type String --value "DEFAULT" --overwrite
+    aws --profile $CLIENT --region $region ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_cloudtrail-group-subscription-filter-name --tags  file://$CFN_TAGS_FILE
+
     
     
     if  [ ! -z "$insightgroupname" ] ; then
@@ -153,7 +157,10 @@ configure_client() {
         aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_insight-groupname --type String --value "/aws/cloudtrail/insight" --overwrite 
     fi
     aws --profile $CLIENT ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_insight-groupname --tags  file://$CFN_TAGS_FILE
-    
+
+    aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_insight-group-subscription-filter-name --type String --value "DEFAULT" --overwrite
+    aws --profile $CLIENT --region $region ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_insight-group-subscription-filter-name --tags  file://$CFN_TAGS_FILE
+
     
     for region in $(aws --profile $CLIENT ec2 describe-regions --output text --query "Regions[*].[RegionName]"); do
         if  [ ! -z "$guarddutygroupname" ] ; then
@@ -182,7 +189,11 @@ configure_client() {
         aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_config-groupname --type String --value "/aws/events/config" --overwrite 
     fi
     aws --profile $CLIENT ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_config-groupname --tags  file://$CFN_TAGS_FILE
-    
+
+
+    aws --profile $CLIENT --region $region ssm put-parameter --name /org/member/SecLog_config-group-subscription-filter-name --type String --value "DEFAULT" --overwrite
+    aws --profile $CLIENT --region $region ssm add-tags-to-resource --resource-type "Parameter" --resource-id /org/member/SecLog_config-group-subscription-filter-name --tags  file://$CFN_TAGS_FILE
+
 
     if  [ ! -z "$alarmsgroupname" ] ; then
         aws --profile $CLIENT ssm put-parameter --name /org/member/SecLog_alarms-groupname --type String --value $alarmsgroupname --overwrite 
