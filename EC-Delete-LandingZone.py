@@ -152,12 +152,17 @@ def main(argv):
     delete_ssm_parameter('/org/member/KMSCloudtrailKey_arn', account_session)
     delete_ssm_parameter('/org/member/SLZVersion', account_session)
     delete_ssm_parameter('/org/member/SecLog_cloudtrail-groupname', account_session)
+    delete_ssm_parameter('/org/member/SecLog_cloudtrail-group-subscription-filter-name', account_session)
     delete_ssm_parameter('/org/member/SecLog_insight-groupname', account_session)
+    delete_ssm_parameter('/org/member/SecLog_insight-group-subscription-filter-name', account_session)
     delete_ssm_parameter('/org/member/SecLog_securityhub-groupname', account_session)
+    delete_ssm_parameter('/org/member/SecLog_securityhub-group-subscription-filter-name', account_session)
     delete_ssm_parameter('/org/member/SecLog_config-groupname', account_session)
+    delete_ssm_parameter('/org/member/SecLog_config-group-subscription-filter-name', account_session)
     delete_ssm_parameter('/org/member/SecLog_alarms-groupname', account_session)
     for region in regions:
         delete_ssm_parameter('/org/member/SecLog_guardduty-groupname', account_session, region=region)
+        delete_ssm_parameter('/org/member/SecLog_guardduty-group-subscription-filter-name', account_session, region=region)
 
     print("")
     print(f"####### AWS Landing Zone deletion script finished. Executed in {time.time() - start_time} seconds")
