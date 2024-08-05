@@ -160,6 +160,8 @@ def main(argv):
     delete_ssm_parameter('/org/member/SecLog_config-groupname', account_session)
     delete_ssm_parameter('/org/member/SecLog_config-group-subscription-filter-name', account_session)
     delete_ssm_parameter('/org/member/SecLog_alarms-groupname', account_session)
+    delete_ssm_parameter('/org/member/SecLog_config-group-subscription-filter-name', account_session)
+    delete_ssm_parameter('/org/member/SecLog_insight-group-subscription-filter-name', account_session)
     for region in regions:
         delete_ssm_parameter('/org/member/SecLog_guardduty-groupname', account_session, region=region)
         delete_ssm_parameter('/org/member/SecLog_guardduty-group-subscription-filter-name', account_session, region=region)
