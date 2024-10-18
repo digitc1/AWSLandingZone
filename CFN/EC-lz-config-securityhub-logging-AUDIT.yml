@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: 2010-09-09
+#   --------------------------------------------------------
+#   Version History
+#
+#   v1.0.0  J. Vandenbergen   Initial Version
+#   v1.0.1  J. Neisius        Added CloudWatchEventsLogGroupRole and SecurityHubSubscriptionFilter 
+#   v1.1.0  J. Silva          Enables optional resource installation (SOC integration)
+#   --------------------------------------------------------
+Description: >-
+  v1.1. Add SecurityHubSubscriptionFilter to send logs to splunk
+  v1.0. Enable Cloudwatch Event Rules to Cloudwatch logs for Security Hub
+ 
+
+
+Parameters:
+
+  SecurityHubLogsGroupName:
+    Type: String
+    Description: SecurityHub CloudWatch LogGroup name
+    Default: "/aws/events/securityhub"
+  FirehoseDestinationArn:
+    Type: String
+    Default: "arn:aws:logs:eu-west-1:189111522208:destination:CLW-digit-splunk-nonprod-digit-dest"
+    Description: The ARN of the firehose stream aggregating the logs in the DIGIT C2 Log Aggregation Central Account
+  LogsRetentionInDays:
+    Description: 'Specifies the number of days you want to retain CloudTrail log events in the CloudWatch Logs.'
+    Type: Number
+    Default: 60
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+
+Resources:
+  SecurityHubLogGroup:
+    Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName:  !Ref SecurityHubLogsGroupName
+      RetentionInDays: !Ref LogsRetentionInDays
+
+  SecurityHubSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Ref 'FirehoseDestinationArn'
+      FilterPattern: ''
+      LogGroupName: !Ref 'SecurityHubLogGroup'
+      FilterName: !Ref AWS::NoValue
+
+  CloudWatchEventsLogGroupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+                - events.amazonaws.com
+            Action: 
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: SECLZ-CloudWatchEvents-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action: logs:CreateLogStream
+              Resource: 
+              - !GetAtt SecurityHubLogGroup.Arn
+            - Effect: Allow
+              Action: logs:PutLogEvents
+              Resource: 
+              - !GetAtt SecurityHubLogGroup.Arn
+
+  # SecurityHub CloudWatch Events to Cloudwatch LogGroup
+  SecurityHubEvent:
+    Type: AWS::Events::Rule
+    DependsOn: SecurityHubLogGroup
+    Properties:
+      Name: SECLZ-SecurityHub
+      RoleArn: 
+        Fn::GetAtt: 
+        - "CloudWatchEventsLogGroupRole"
+        - "Arn"
+      Description: "SecurityHub Event Handler"
+      EventPattern:
+        source:
+        - aws.securityhub
+      State: ENABLED
+      Targets:
+        -
+          Arn: 
+            Fn::Join: 
+              - ""
+              - 
+                - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${SecurityHubLogGroup}"
+          Id: "SecurityHubCloudWatch-Seclog"

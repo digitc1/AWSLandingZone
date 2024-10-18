@@ -1,0 +1,221 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+#   --------------------------------------------------------
+#   Version History
+#
+#   v1.0  J. Vandenbergen   Initial Version
+#   --------------------------------------------------------
+
+Description: >-
+  v1.0. Creates KMS key for SNS and a parameter in the parameterstore for the key arn
+
+Parameters:
+  OrganizationAccountId:
+      Description: 'The Id of the Organization Management Account'
+      Type: String
+      Default: ''
+  KeyDescription:
+      Description: 'A brief description of why this key is required'
+      Type: String
+      Default: 'KMS key for SNS'
+
+  KeyAlias:
+      Description: 'A short friendly name for the key'
+      Type: String
+      Default: 'SECLZ-SNS-encryption-key'
+
+Mappings: {}
+
+Resources:
+
+  KMSSNSKey:
+    Type: "AWS::KMS::Key"
+    Properties:
+      Description: !Ref KeyDescription
+      Enabled: True
+      EnableKeyRotation: True
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: "key-default-1"
+        Statement:
+          -
+            Sid: "Key-admin-root"
+            Effect: "Allow"
+            Principal:
+              AWS:
+                Fn::Join:
+                - ""
+                - - "arn:aws:iam::"
+                  - Ref: AWS::AccountId
+                  - ":root"
+            Action:
+              - "kms:*"
+            Resource: "*"
+          # -
+          #   Sid: "Allow access for Key Administrators"
+          #   Effect: "Allow"
+          #   Principal:
+          #     AWS:
+          #       Fn::Join:
+          #       - ""
+          #       - - "arn:aws:iam::"
+          #         - Ref: AWS::AccountId
+          #         - ":role/OrganizationAccountAccessRole"
+          #   Action:
+          #     - "kms:Encrypt"
+          #     - "kms:Decrypt"
+          #     - "kms:ReEncrypt*"
+          #     - "kms:GenerateDataKey*"
+          #     - "kms:DescribeKey"
+          #     - "kms:Create*"
+          #     - "kms:Describe*"
+          #     - "kms:Enable*"
+          #     - "kms:List*"
+          #     - "kms:Put*"
+          #     - "kms:Update*"
+          #     - "kms:Revoke*"
+          #     - "kms:Disable*"
+          #     - "kms:Get*"
+          #     - "kms:Delete*"
+          #     - "kms:TagResource"
+          #     - "kms:UntagResource"
+          #     - "kms:ScheduleKeyDeletion"
+          #     - "kms:CancelKeyDeletion"
+          #   Resource: "*"
+          - 
+            Sid: "Allow use of the key"
+            Effect: "Allow"
+            Principal:
+              AWS:
+                # - Fn::Join:
+                #   -  ""
+                #   - - "arn:aws:iam::"
+                #     - Ref: AWS::AccountId
+                #     - ":role/OrganizationAccountAccessRole"
+                - Fn::Join:
+                  -  ""
+                  - - "arn:aws:iam::"
+                    - Ref: AWS::AccountId
+                    - ":role/aws-service-role/organizations.amazonaws.com/AWSServiceRoleForOrganizations"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+          - 
+            Sid: "Allow CloudTrail to encrypt logs"
+            Effect: "Allow"
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: kms:GenerateDataKey*
+            Resource: "*"
+            Condition: 
+              StringLike:
+                kms:EncryptionContext:aws:cloudtrail:arn: "arn:aws:cloudtrail:*:*:trail/*"
+          - 
+            Sid: "Allow CloudTrail to describe key"
+            Effect: "Allow"
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action:
+              - "kms:DescribeKey"
+            Resource: "*"
+          - 
+            Sid: "Allow principals in the account to decrypt log files"
+            Effect: "Allow"
+            Principal:
+              AWS: "*"
+            Action:
+              - "kms:Decrypt"
+              - "kms:ReEncryptFrom"
+            Resource: "*"
+            Condition: 
+              StringEquals:
+                kms:CallerAccount: !Ref AWS::AccountId
+              StringLike:
+                kms:EncryptionContext:aws:cloudtrail:arn:
+                  Fn::Join:
+                  -  ""
+                  - - "arn:aws:cloudtrail:*:"
+                    - Ref: AWS::AccountId
+                    - ":trail/*"
+          - 
+            Sid: "Allow alias creation during setup"
+            Effect: "Allow"
+            Principal:
+              AWS: "*"
+            Action: kms:CreateAlias
+            Resource: "*"
+            Condition: 
+              StringEquals:
+                kms:CallerAccount: !Ref AWS::AccountId
+                kms:ViaService: "ec2.eu-west-1.amazonaws.com"
+          - 
+            Sid: "Enable cross account log decryption"
+            Effect: "Allow"
+            Principal:
+              AWS: "*"
+            Action: 
+              - "kms:Decrypt"
+              - "kms:ReEncryptFrom"
+            Resource: "*"
+            Condition: 
+              StringEquals:
+                kms:CallerAccount: !Ref AWS::AccountId
+              StringLike:
+                kms:EncryptionContext:aws:cloudtrail:arn:
+                  Fn::Join:
+                  -  ""
+                  - - "arn:aws:cloudtrail:*:"
+                    - Ref: AWS::AccountId
+                    - ":trail/*"
+          -
+            Sid: "Allow Guardduty to encrypt logs"
+            Effect: "Allow"
+            Principal:
+              Service: guardduty.amazonaws.com
+            Action: kms:GenerateDataKey*
+            Resource: "*"
+            Condition: 
+              StringEquals:
+                kms:CallerAccount: !Ref AWS::AccountId
+          - 
+            Sid: "Allow Guardduty to describe key"
+            Effect: "Allow"
+            Principal:
+              Service: guardduty.amazonaws.com
+            Action:
+              - "kms:DescribeKey"
+            Resource: "*"
+
+  myKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName:
+        Fn::Join:
+          - ""
+          -
+            - "alias/"
+            - !Ref KeyAlias
+      TargetKeyId:
+        Ref: KMSSNSKey
+
+  rSNSKMSkeyParameter:
+    DependsOn:
+      - KMSSNSKey
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: '/org/member/KMSSNSKey_arn'
+      Description: Contains the KMS SNS key arn in the AUDIT account'
+      Type: String
+      Value: !GetAtt 'KMSSNSKey.Arn' 
+
+Outputs:
+
+    KeyId:
+        Description: "KeyId to be used in applications or AWS Services"
+        Value: !Ref KMSSNSKey
+        Export:
+           Name: !Sub "${AWS::StackName}-KeyId"

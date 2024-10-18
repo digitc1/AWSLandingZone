@@ -1,0 +1,167 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+#   --------------------------------------------------------
+#   Version History
+#
+#   
+#   v1.0.0  J. Vandenbergen   Initial Version
+#   v1.0.1  J. Vandenbergen   Added description and disabled notifications for all changes
+#   v1.0.2  J. Vandenbergen   Added configuration for local SNS topics
+#   v1.0.3  L. Leonard        Notification allowed from several organizations
+#   v1.1.0  J. Silva          Enables optional resource installation (SOC integration)
+#   --------------------------------------------------------
+
+Description: >-
+  v1.2. Enables Config logging to S3 buckets in the logging account
+
+  Prerequisites: 
+
+  Mandatory Input:
+
+  Execution:
+    - Run in the Audit account
+
+  Creates in all accounts:
+    - Config: config recoder created and alerts for config rules created
+    - SNS: EC-Landing-Zone-Security-Notification topic created
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "S3 Buckets"
+        Parameters:
+          - CloudTrailBucket
+          - ConfigBucket
+
+Parameters:
+  DigitFMB:
+    Type: String
+    Description: Backup Email for the security notifications
+    Default: "DIGIT-CLOUD-LANDING-ZONE@ec.europa.eu"
+  SNSKMSarn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: arn for KMS key to encrypt SNS
+    Default: "/org/member/KMSSNSKey_arn"
+  NotifyDisplayName:
+    Type: 'String'
+    Default: EC-LZ-Notify
+    Description: SNS display name for security administrator(s)
+  NotifyTopicName:
+    Type: 'String'
+    Default: EC-Landing-Zone-Security-Notification
+    Description: SNS topic name for security notification
+  AwsConfigLogGroupName:
+    Type: String
+    Default: '/aws/events/config'
+    Description: AWS config CloudWatch LogGroup 
+  LogsRetentionInDays:
+    Description: 'Specifies the number of days you want to retain CloudTrail log events in the CloudWatch Logs.'
+    Type: Number
+    Default: 60
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  FirehoseDestinationArn:
+    Type: String
+    Default: "arn:aws:logs:eu-west-1:189111522208:destination:CLW-digit-splunk-nonprod-digit-dest"
+    Description: The ARN of the firehose stream aggregating the logs in the DIGIT C2 Log Aggregation Central Account
+
+Resources:
+
+
+  #   -------------------
+  #   Enable Config
+  #   -------------------
+
+  AwsConfigLogGroup:
+    Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: !Ref AwsConfigLogGroupName
+      RetentionInDays: !Ref LogsRetentionInDays
+
+  AwsConfigSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Ref 'FirehoseDestinationArn'
+      FilterPattern: ''
+      LogGroupName: !Ref 'AwsConfigLogGroup'
+      FilterName: !Ref AWS::NoValue
+
+  SNSNotificationTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties:
+      DisplayName: !Ref NotifyDisplayName
+      TopicName: !Ref NotifyTopicName
+      KmsMasterKeyId: !Ref SNSKMSarn
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref DigitFMB
+
+  SNSNotificationPolicy:
+    Type: 'AWS::SNS::TopicPolicy'
+    Properties:
+      Topics:
+        - !Ref SNSNotificationTopic
+      PolicyDocument:
+        Id: SNSNotificationTopicPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: __default_statement_ID
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Action:
+            - SNS:GetTopicAttributes
+            - SNS:SetTopicAttributes
+            - SNS:AddPermission
+            - SNS:RemovePermission
+            - SNS:DeleteTopic
+            - SNS:Subscribe
+            - SNS:ListSubscriptionsByTopic
+            - SNS:Publish
+            - SNS:Receive
+            Resource: !Ref SNSNotificationTopic
+            Condition:
+              StringEquals:
+                AWS:SourceOwner: !Sub ${AWS::AccountId}
+          - Sid: AWSSNSPolicy
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Action: sns:Publish
+            Resource: !Ref SNSNotificationTopic
+            Condition:
+              StringLike: 
+                aws:PrincipalOrgID : 
+                - 'o-jyyw8qs5c8'
+                - 'o-xj5nzaqffn'
+          - Sid: TrustCWEToPublishEventsToMyTopic
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: SNS:Publish
+            Resource: !Ref SNSNotificationTopic
+
+
+  # Enable notifications for AWS Config Rule compliance changes
+  ConfigRuleComplianceChangeEventSecLog:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: SECLZ-Config-Rule-Compliance-Change-CloudWatch-Rule
+      Description: 'Landing Zone rule to send notification on Config Rule compliance changes.'
+      EventPattern:
+        {
+          "source": [
+            "aws.config"
+          ],
+          "detail-type": [
+            "Config Rules Compliance Change"
+          ]
+        }
+      State: ENABLED
+      Targets:
+      - Id: "AwsConfigCloudWatch-Seclog"
+        Arn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${AwsConfigLogGroup}"
+
+Outputs: {}
