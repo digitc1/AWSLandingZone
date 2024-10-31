@@ -56,6 +56,14 @@ Parameters:
     Type: String
     Default: '/aws/cloudtrail'
     Description: Cloudtrail CloudWatch LogGroup name
+  CloudTrailSubscriptionFilterName:
+    Type: String
+    Default: '##DG##DIGIT##Project##Cloud brokerage##'
+    Description: Cloudtrail CloudWatch LogGroup subscription filter name
+  TrailInsightsSubscriptionFilterName:
+    Type: String
+    Default: '##DG##DIGIT##Project##Cloud brokerage##'
+    Description: Trail Insights CloudWatch LogGroup subscription filter name
   CloudwatchAlarmsLogGroupName:
     Type: String
     Default: '/aws/events/cloudwatch-alarms'
@@ -421,7 +429,7 @@ Resources:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
       LogGroupName: !Ref 'TrailLogGroup'
-      FilterName: !Ref AWS::NoValue
+      FilterName: !Ref CloudTrailSubscriptionFilterName
 
 
   #   -------------------
@@ -471,7 +479,7 @@ Resources:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
       LogGroupName: !Ref 'TrailInsightsLogGroup'
-      FilterName: !Ref AWS::NoValue
+      FilterName: !Ref TrailInsightsSubscriptionFilterName
 
   # Enable Trail Ingisght events to be sent to the corresponding loggroup
   TrailInsightsEventSecLog:

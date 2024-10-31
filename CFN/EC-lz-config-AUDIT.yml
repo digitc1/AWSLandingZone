@@ -56,6 +56,10 @@ Parameters:
     Type: String
     Default: '/aws/events/config'
     Description: AWS config CloudWatch LogGroup 
+  AwsConfigSubscriptionFilterName:
+    Type: String
+    Default: '##DG##DIGIT##Project##Cloud brokerage##'
+    Description: AWS Config CloudWatch LogGroup subscription filter name
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain CloudTrail log events in the CloudWatch Logs.'
     Type: Number
@@ -86,7 +90,7 @@ Resources:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
       LogGroupName: !Ref 'AwsConfigLogGroup'
-      FilterName: !Ref AWS::NoValue
+      FilterName: !Ref AwsConfigSubscriptionFilterName
 
   SNSNotificationTopic:
     Type: 'AWS::SNS::Topic'

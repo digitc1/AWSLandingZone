@@ -29,6 +29,10 @@ Parameters:
     Type: String
     Description: Guardduty CloudWatch LogGroup name
     Default: "/aws/events/guardduty"
+  AwsGuardDutySubscriptionFilterName:
+    Type: String
+    Default: '##DG##DIGIT##Project##Cloud brokerage##'
+    Description: Aws GuardDuty CloudWatch LogGroup subscription filter name
   FirehoseDestinationArn:
     Type: String
     Default: "arn:aws:logs:eu-west-1:189111522208:destination:CLW-digit-splunk-nonprod-digit-dest"
@@ -52,7 +56,7 @@ Resources:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
       LogGroupName: !Ref 'GuardDutyLogGroup'
-      FilterName: !Ref AWS::NoValue
+      FilterName: !Ref AwsGuardDutySubscriptionFilterName
 
   CloudWatchEventsLogGroupRole:
     Type: AWS::IAM::Role

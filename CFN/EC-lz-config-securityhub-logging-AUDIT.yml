@@ -18,6 +18,10 @@ Parameters:
     Type: String
     Description: SecurityHub CloudWatch LogGroup name
     Default: "/aws/events/securityhub"
+  SecurityHubSubscriptionFilterName:
+    Type: String
+    Default: '##DG##DIGIT##Project##Cloud brokerage##'
+    Description: SecurityHub CloudWatch LogGroup subscription filter name
   FirehoseDestinationArn:
     Type: String
     Default: "arn:aws:logs:eu-west-1:189111522208:destination:CLW-digit-splunk-nonprod-digit-dest"
@@ -42,7 +46,7 @@ Resources:
       DestinationArn: !Ref 'FirehoseDestinationArn'
       FilterPattern: ''
       LogGroupName: !Ref 'SecurityHubLogGroup'
-      FilterName: !Ref AWS::NoValue
+      FilterName: !Ref SecurityHubSubscriptionFilterName
 
   CloudWatchEventsLogGroupRole:
     Type: AWS::IAM::Role
