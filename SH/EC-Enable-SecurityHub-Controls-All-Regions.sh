@@ -61,6 +61,10 @@ configure() {
         # Disable "ControlId": "CIS1.14", "1.14 Ensure hardware MFA is enabled for the \"root\" account"
         aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/cis-aws-foundations-benchmark/v/1.2.0/1.14" --control-status "DISABLED" --disabled-reason "Managed by Cloud Broker Team"
         echo "CIS Check CIS1.14 update for cis-aws-foundations-benchmark in region $region: exit code $?"
+
+        # Turn off the check for AWS Config service-linked role
+        aws --profile $PROFILE --region $region securityhub update-security-control --security-control-id "Config.1" --parameters '{"includeConfigServiceLinkedRoleCheck": {"ValueType": "CUSTOM", "Value": {"Boolean": false}}}' --last-update-reason "The LZ does not use the AWS Config service-linked role"
+        echo "Config.1 update for cis-aws-foundations-benchmark in region $region: exit code $?"
     done
 
     # ------------------
@@ -89,6 +93,10 @@ configure() {
         # Disable "ControlId": "CIS1.14", "1.14 Ensure hardware MFA is enabled for the \"root\" account"
         aws --profile $PROFILE --region $region securityhub update-standards-control --standards-control-arn "arn:aws:securityhub:$region:$accountid:control/cis-aws-foundations-benchmark/v/1.2.0/1.14" --control-status "DISABLED" --disabled-reason "Managed by Cloud Broker Team"
         echo "CIS Check CIS1.14 update for cis-aws-foundations-benchmark in region $region: exit code $?"
+
+        # Turn off the check for AWS Config service-linked role
+        aws --profile $PROFILE --region $region securityhub update-security-control --security-control-id "Config.1" --parameters '{"includeConfigServiceLinkedRoleCheck": {"ValueType": "CUSTOM", "Value": {"Boolean": false}}}' --last-update-reason "The LZ does not use the AWS Config service-linked role"
+        echo "Config.1 update for cis-aws-foundations-benchmark in region $region: exit code $?"
 
     done
 }
