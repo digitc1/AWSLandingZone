@@ -9,7 +9,7 @@ disable_securityhub() {
 
     # Check if Security Hub is enabled
     STATUS=$(aws securityhub get-findings --region $1 --max-items 1 2>&1)
-    if [[ "$STATUS" == *"Security Hub is not enabled"* ]]; then
+    if [[ "$STATUS" == *"is not subscribed to AWS Security Hub"* ]]; then
         echo "Security Hub is already disabled in region: $1"
         return
     fi
