@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 1.5.15
+=======
+1.5.14
+>>>>>>> a9bfd85 (Add support for Guard Duty trusted IP list for CSIRC Nessus EC2 (#219))
