@@ -605,6 +605,8 @@ configure_seclog() {
     --profile $seclogprofile \
     --parameters $guarddutyparams
 
+    aws guardduty create-ip-set --detector-id $(aws guardduty list-detectors --output text --query DetectorIds[0]) --name CSIRC_Nessus_EC2 --format TXT --location https://csirc-nessus-scanner-ec2-ip-ranges.s3.eu-west-1.amazonaws.com/ip-ranges.txt --activate
+
     sleep 5
 
     echo ""
