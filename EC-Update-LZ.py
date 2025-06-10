@@ -59,6 +59,7 @@ def main(argv):
     ssm_actions = []
     stack_actions = []
     securityhub_actions = []
+    guardduty_actions = []
     stacksets_actions = []
     cis_actions = []
     version=None
@@ -191,6 +192,9 @@ def main(argv):
         
         if not null_empty(manifest, 'securityhub'):
             securityhub_actions = manifest['securityhub']
+
+        if not null_empty(manifest, 'guardduty'):
+            guardduty_actions = manifest['guardduty']
 
         seclog_status = Execution.NO_ACTION
         
@@ -512,8 +516,14 @@ def main(argv):
                 print("Enable SecurityHub Multi-region findings", end="")
                 toggle_securityhub_multiregion_findings(cfn, securityhub_actions['multiregion-findings']['enable'])
             
-
+            #guardduty actions
+            if guardduty_actions and seclog_status != Execution.FAIL:
+                cfn = boto3.client('guardduty')
+                print("Create/Update GuardDuty trusted IP list", end="")
+                add_update_guardduty_trusted_ip_list(cfn, guardduty_actions['ipset']['enable'])
             
+
+
 
             #update LZ version
             if version and seclog_status != Execution.FAIL:
@@ -1101,6 +1111,46 @@ def toggle_securityhub_multiregion_findings(client, enable=True):
         except Exception as err:
             print(f"failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
             return Execution.FAIL
+    else: 
+        print(f" [{Status.NO_ACTION.value}]")
+        return Execution.NO_ACTION
+
+def add_update_guardduty_trusted_ip_list(client, enable=True):
+    
+    response0 = client.list_detectors()
+
+    if len(response0['DetectorIds']) == 1 and enable:
+        response1 = client.list_ip_sets(
+            DetectorId=response0['DetectorIds'][0]
+        )
+        if (len(response1['IpSetIds']) == 1):
+            try:
+                response = client.update_ip_set(
+                    DetectorId=response0['DetectorIds'][0],
+                    IpSetId=response1['IpSetIds'][0],
+                    Name='CSIRC_Nessus_EC2',
+                    Location='https://csirc-nessus-scanner-ec2-ip-ranges.s3.eu-west-1.amazonaws.com/ip-ranges.txt',
+                    Activate=True
+                )
+                print(f" [{Status.OK.value}]")
+                return Execution.OK
+            except Exception as err:
+                print(f"failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
+                return Execution.FAIL
+        else:
+            try:
+                response = client.create_ip_set(
+                    DetectorId=response0['DetectorIds'][0],
+                    Name='CSIRC_Nessus_EC2',
+                    Format='TXT',
+                    Location='https://csirc-nessus-scanner-ec2-ip-ranges.s3.eu-west-1.amazonaws.com/ip-ranges.txt',
+                    Activate=True
+                )
+                print(f" [{Status.OK.value}]")
+                return Execution.OK
+            except Exception as err:
+                print(f"failed. Reason {err.response['Error']['Message']} [{Status.FAIL.value}]")
+                return Execution.FAIL
     else: 
         print(f" [{Status.NO_ACTION.value}]")
         return Execution.NO_ACTION
