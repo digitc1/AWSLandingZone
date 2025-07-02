@@ -185,6 +185,20 @@ Resources:
             Action:
               - "kms:DescribeKey"
             Resource: "*"
+          - 
+            Sid: "Allow encrypt from member accounts"
+            Effect: "Allow"
+            Principal:
+              AWS: "*"
+            Action:
+              - "kms:Decrypt"
+              - "kms:GenerateDataKey"
+            Resource: "*"
+            Condition:
+              StringLike: 
+                aws:PrincipalOrgID : 
+                - 'o-jyyw8qs5c8'
+                - 'o-xj5nzaqffn'
 
   myKeyAlias:
     Type: AWS::KMS::Alias

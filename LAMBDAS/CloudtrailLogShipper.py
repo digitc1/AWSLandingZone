@@ -41,8 +41,8 @@ def lambda_handler(event, context):
   account = sts.get_caller_identity()
   for record in event['Records']:
     filename = record['s3']['object']['key']
-    pattern1 = 'AWSLogs/\d+/CloudTrail/'
-    pattern2 = 'AWSLogs/\d+/CloudTrail-Insight/'
+    pattern1 = r'AWSLogs/\d+/CloudTrail/'
+    pattern2 = r'AWSLogs/\d+/CloudTrail-Insight/'
     isCloudTrail = re.match(pattern1, filename)
     isCloudTrailInsight = re.match(pattern2, filename)
     if not account['Account'] in filename and (isCloudTrail or isCloudTrailInsight):

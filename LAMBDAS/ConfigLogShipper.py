@@ -43,7 +43,7 @@ def lambda_handler(event, context):
   for record in event['Records']:
     filename = urllib.parse.unquote(record['s3']['object']['key'])
     LOGGER.info('S3 object detected: ' + filename)
-    pattern = 'AWSLogs/\d+/Config/'
+    pattern = r'AWSLogs/\d+/Config/'
     result = re.match(pattern, filename)
     if not account['Account'] in filename and result and 'ConfigWritabilityCheckFile' not in filename:
         # retrieve bucket name and file_key from the S3 event
