@@ -22,6 +22,10 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /org/member/SecLog_sns_arn
     Description: "Local Admin SNS Topic for Landing Zone"
+  SNSNotificationTopicKmsKey:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /org/member/KMSCloudtrailKey_arn
+    Description: "Local Admin KMS Key of the SNS Topic for Landing Zone"
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain notification forwarding log events in the Lambda log group.'
     Type: Number
@@ -112,6 +116,11 @@ Resources:
                   - !Sub ${AWS::Region}
                   - !Select [4, !Split [":", !Ref SNSNotificationTopic]]
                   - !Select [5, !Split [":", !Ref SNSNotificationTopic]]
+          - Effect: Allow
+            Action:
+            - 'kms:Decrypt'
+            - 'kms:GenerateDataKey'
+            Resource: !Ref SNSNotificationTopicKmsKey
   ForwardSnsNotification:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -148,7 +157,7 @@ Resources:
       Handler: 'index.lambda_handler'
       MemorySize: 128
       Role: !GetAtt 'ForwardSnsNotificationLambdaRole.Arn'
-      Runtime: 'python3.9'
+      Runtime: 'python3.13'
       Timeout: 60
       Environment:
         Variables:
