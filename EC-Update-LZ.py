@@ -437,7 +437,7 @@ def main(argv):
                         proc = subprocess.Popen(cmdarg,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
                         output, errors = proc.communicate()
                     
-                    if len(errors) > 0:
+                    if proc.returncode != 0:
                         print(f" failed. Readon {errors} [{Status.FAIL.value}]")
                         seclog_status = Execution.FAIL
                     else:
@@ -911,17 +911,26 @@ def get_linked_accounts():
         :return: list with linked account details
     """
     linked_accounts = []
+    next_token = None
     accountId = get_account_id()
     client = boto3.client('guardduty')
     response = client.list_detectors()
     
     if response['DetectorIds'][0] != '':
-        data = client.list_members(DetectorId=response['DetectorIds'][0])
-        
-        for member in data['Members']:
-            if member['RelationshipStatus'] == 'Enabled':
-                linked_accounts.append(member['AccountId'])
-                
+        while True:
+            if next_token:
+                data = client.list_members(DetectorId=response['DetectorIds'][0], NextToken=next_token)
+            else:
+                data = client.list_members(DetectorId=response['DetectorIds'][0])
+
+            for member in data['Members']:
+                if member['RelationshipStatus'] == 'Enabled':
+                    linked_accounts.append(member['AccountId'])
+
+            next_token = data.get('NextToken')
+            if not next_token:
+                break
+
     return linked_accounts
 
 def is_seclog():
