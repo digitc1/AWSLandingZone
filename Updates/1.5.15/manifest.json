@@ -13,6 +13,97 @@
         "exclude" : [],
         "include" : []
     },
+    "ssm" : {
+        "cloudtrail-group-subscription-filter-name" : {
+            "value" : "DEFAULT",
+            "update" : true
+        },
+        "insight-group-subscription-filter-name" : {
+            "value" : "DEFAULT",
+            "update" : true
+        },
+        "guardduty-group-subscription-filter-name" : {
+            "value" : "DEFAULT",
+            "update" : true
+        },
+        "securityhub-group-subscription-filter-name" : {
+            "value" : "DEFAULT",
+            "update" : true
+        },
+        "config-group-subscription-filter-name" : {
+            "value" : "DEFAULT",
+            "update" : true
+        },
+        "seclog-ou" : {
+            "update" : false,
+            "tags" : true
+        },
+        "notification-mail" : {
+            "update" : false,
+            "tags" : true
+        },
+        "cloudtrail-groupname" : {
+            "update" : false,
+            "tags" : true
+        },
+        "insight-groupname" : {
+            "update" : false,
+            "tags" : true
+        },
+        "guardduty-groupname" : {
+            "update" : true,
+            "tags" : true,
+            "value": "/aws/events/guardduty"
+        },
+        "securityhub-groupname" : {
+            "update" : false,
+            "tags" : true
+        },
+        "config-groupname" : {
+            "value" : "/aws/events/config",
+            "update" : true,
+            "tags" : true
+        },
+        "alarms-groupname" : {
+            "value" : "/aws/events/cloudwatch-alarms",
+            "update" : true,
+            "tags" : true
+        }
+    },
+    "cis" :  { 
+        "cis-aws-foundations-benchmark/v/1.2.0":  {
+            "checks" : ["3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"],
+            "disabled" : true,
+            "disabled-reason" : "Alarm action unmanaged by SNS but cloudwatch event",
+            "regions": [],
+            "exclusions" : []
+        },
+        "cis-aws-foundations-benchmark/v/1.2.0/1.11":  {
+            "disabled" : true,
+            "disabled-reason" : "Managed by Cloud Broker Team",
+            "regions": [],
+            "exclusions" : []
+        },
+        "cis-aws-foundations-benchmark/v/1.2.0/1.14":  { 
+            "disabled" : true,
+            "disabled-reason" : "Managed by Cloud Broker Team",
+            "regions": [],
+            "exclusions" : []
+        },
+        "aws-foundational-security-best-practices/v/1.0.0": { 
+            "checks" : ["IAM.1", "IAM.2", "IAM.3", "IAM.4", "IAM.6", "IAM.7", "Config.1"],
+            "disabled" : true,
+            "disabled-reason" : "Disable recording of global resources in all but one Region",
+            "regions": [],
+            "exclusions" : ["eu-west-1"]
+        },
+        "aws-foundational-security-best-practices/v/1.0.0/IAM.6":  { 
+            "disabled" : true,
+            "disabled-reason" : "Managed by Cloud Broker Team",
+            "regions": ["eu-west-1"],
+            "exclusions" : []
+        }
+    },
     "stacks" : {
         "SECLZ-Cloudtrail-KMS" : {
             "update" : true
@@ -25,7 +116,24 @@
         },
         "SECLZ-LogShipper-Lambdas" : {
             "update" : true
+        },
+        "SECLZ-Guardduty-detector" : {
+            "update" : true
+        },
+        "SECLZ-config-cloudtrail-SNS" : {
+            "update" : true
+        },
+        "SECLZ-StackSetExecutionRole" : {
+            "update" : true
+        },
+        "SECLZ-SecurityHub" : {
+            "update" : true
+         },
+         "SECLZ-Notifications-Cloudtrail" : {
+            "update" : true,
+            "params" : [
+                {"ParameterKey": "LogGroupName", "ParameterValue": "/org/member/SecLog_cloudtrail-groupname"}
+            ]
         }
     }
-    
 }
