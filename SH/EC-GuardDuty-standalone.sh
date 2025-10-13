@@ -28,6 +28,10 @@ FIREHOSE_DESTINATION_NAME=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]|
 FIREHOSE_ACCESS_POLICY=`echo $DESCRIBE_DESTINATIONS | jq -r '.destinations[]| select (.destinationName | contains("'$logdestination'")) .accessPolicy'`
 echo $FIREHOSE_ACCESS_POLICY | jq '.Statement[0].Principal.AWS = (.Statement[0].Principal.AWS | if type == "array" then . += ["'$SECLOG_ACCOUNT_ID'", "'$ORG_ACCOUNT_ID'"] else [.,"'$SECLOG_ACCOUNT_ID'", "'$ORG_ACCOUNT_ID'"] end)' > ./SecLogAccessPolicy.json
 
+aws logs put-destination-policy \
+--destination-name $FIREHOSE_DESTINATION_NAME \
+--access-policy file://./SecLogAccessPolicy.json
+
 export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID_DEVOPS
 export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY_DEVOPS
 export AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN_DEVOPS
