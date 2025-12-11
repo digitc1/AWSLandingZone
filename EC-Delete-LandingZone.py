@@ -124,10 +124,10 @@ def main(argv):
     print("")
 
     # deactivate guardduty from source SECLOG
-    deactivate_guardduty(seclog_id,account_session)
+    # deactivate_guardduty(seclog_id,account_session)
 
     # deactivate securityhub from source SECLOG
-    deactivate_securityhub(seclog_id,account_session)
+    # deactivate_securityhub(seclog_id,account_session)
 
     # deactivate config from source SECLOG
     deactivate_config(account_id,seclog_id,account_session,seclog_session)
@@ -139,8 +139,8 @@ def main(argv):
     # delete stacks from linked account
     delete_stack('SECLZ-Notifications-Cloudtrail',account_session)
     delete_stack('SECLZ-Iam-Password-Policy',account_session)
-    delete_stack('SECLZ-SecurityHub',account_session)
-    delete_stack('SECLZ-Guardduty-detector',account_session)
+    # delete_stack('SECLZ-SecurityHub',account_session)
+    # delete_stack('SECLZ-Guardduty-detector',account_session)
     delete_stack('SECLZ-local-SNS-topic',account_session)
     delete_stack('SECLZ-config-cloudtrail-SNS',account_session)
     delete_stack('SECLZ-StackSetExecutionRole',account_session)
@@ -296,34 +296,34 @@ def deactivate_config(account_id,sseclog_id,account_session,sseclog_session):
                         print(f"{error}{region}")
             
 
-            client = sseclog_session.client('config')
+            # client = sseclog_session.client('config')
 
-            response = client.describe_configuration_aggregators(
-                ConfigurationAggregatorNames=[
-                    'SecLogAggregator',
-                ]
-            )
+            # response = client.describe_configuration_aggregators(
+            #     ConfigurationAggregatorNames=[
+            #         'SecLogAggregator',
+            #     ]
+            # )
         
-            for aggregationSources in response['ConfigurationAggregators'][0]['AccountAggregationSources']:
-                accountsIds = aggregationSources['AccountIds']
+            # for aggregationSources in response['ConfigurationAggregators'][0]['AccountAggregationSources']:
+            #     accountsIds = aggregationSources['AccountIds']
             
-                if account_id in aggregationSources['AccountIds']:
-                    accountsIds.remove(account_id)
-            if len(accountsIds) > 0:
-                client.put_configuration_aggregator(
-                    ConfigurationAggregatorName='SecLogAggregator',
-                    AccountAggregationSources=[
-                        {
-                        'AccountIds': accountsIds,
-                            'AllAwsRegions': True
-                        },
-                    ]
-                )
-            else: 
-                 client.delete_configuration_aggregator(
-                    ConfigurationAggregatorName='SecLogAggregator',
+            #     if account_id in aggregationSources['AccountIds']:
+            #         accountsIds.remove(account_id)
+            # if len(accountsIds) > 0:
+            #     client.put_configuration_aggregator(
+            #         ConfigurationAggregatorName='SecLogAggregator',
+            #         AccountAggregationSources=[
+            #             {
+            #             'AccountIds': accountsIds,
+            #                 'AllAwsRegions': True
+            #             },
+            #         ]
+            #     )
+            # else: 
+            #      client.delete_configuration_aggregator(
+            #         ConfigurationAggregatorName='SecLogAggregator',
                    
-                )
+            #     )
 
             print(f"\033[2K\033[1GDisassociate AWSConfig from source SECLOG account [{Status.OK.value}]")
 
@@ -378,7 +378,7 @@ def remove_stacks_from_stackset(stackset,account_id, session):
                 Regions=regions, 
                 Accounts=[account_id],
                 OperationPreferences=operationPreferences,
-                RetainStacks=False
+                RetainStacks=True
                 )
 
             time.sleep(5)
