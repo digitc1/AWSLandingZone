@@ -181,7 +181,7 @@ configure_client(){
         #   Validate the Client account
         #   -----------------------------
 
-        sh ./SH/EC-Validate-Client-Account.sh $clientaccprofile $seclogprofile
+        # sh ./SH/EC-Validate-Client-Account.sh $clientaccprofile $seclogprofile
 
 
         # echo "--------------------------------------------------------------------------------------------------------------------"
