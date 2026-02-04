@@ -312,34 +312,34 @@ configure_client() {
 
     sleep 5
 
-    echo ""
-    echo "- Enable guardduty in new client account"
-    echo "----------------------------------------"
-    echo ""
+    # echo ""
+    # echo "- Enable guardduty in new client account"
+    # echo "----------------------------------------"
+    # echo ""
 
-    aws cloudformation create-stack \
-    --stack-name 'SECLZ-Guardduty-detector' \
-    --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
-    --capabilities CAPABILITY_NAMED_IAM \
-    --enable-termination-protection \
-    --profile $CLIENT
+    # aws cloudformation create-stack \
+    # --stack-name 'SECLZ-Guardduty-detector' \
+    # --template-body file://$CFN_GUARDDUTY_DETECTOR_TEMPLATE \
+    # --tags file://$CFN_TAGS_FILE \
+    # --capabilities CAPABILITY_NAMED_IAM \
+    # --enable-termination-protection \
+    # --profile $CLIENT
 
-    sleep 5
+    # sleep 5
 
-    echo ""
-    echo "- Enable SecurityHub in new client account"
-    echo "------------------------------------------"
-    echo ""
+    # echo ""
+    # echo "- Enable SecurityHub in new client account"
+    # echo "------------------------------------------"
+    # echo ""
 
-    aws cloudformation create-stack \
-    --stack-name 'SECLZ-SecurityHub' \
-    --template-body file://$CFN_SECURITYHUB_TEMPLATE \
-    --tags file://$CFN_TAGS_FILE \
-    --enable-termination-protection \
-    --profile $CLIENT
+    # aws cloudformation create-stack \
+    # --stack-name 'SECLZ-SecurityHub' \
+    # --template-body file://$CFN_SECURITYHUB_TEMPLATE \
+    # --tags file://$CFN_TAGS_FILE \
+    # --enable-termination-protection \
+    # --profile $CLIENT
 
-    sleep 5
+    # sleep 5
 
     echo ""
     echo "- Creating a password policy for IAM in new client account"

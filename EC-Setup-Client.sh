@@ -157,24 +157,24 @@ configure_client(){
         sh ./SH/EC-Configure-Client-Account.sh $clientaccprofile $seclogprofile
 
        
-        sh ./SH/EC-Invite-from-SecLog-Account.sh $clientaccprofile $seclogprofile $clientaccountemail $batch
+        # sh ./SH/EC-Invite-from-SecLog-Account.sh $clientaccprofile $seclogprofile $clientaccountemail $batch
         #   -----------------------------------------------------------------------------
         #   Accept invitations (Config, GuardDuty, Security Hub) from the Client account
         #   -----------------------------------------------------------------------------
 
-        echo ""
-        echo "   ---------------------------------------------------------"
-        echo "   Accepting invitation on client... "
-        echo "     Client Profile:                       $clientaccprofile"
-        echo "     Seclog Profile:                       $seclogprofile"
-        echo "   ---------------------------------------------------------"
-        echo ""
-         if [ "$batch" == "false" ] ; then
-            echo "   If this is correct press enter to continue"
-            read -p "  or CTRL-C to break"
-        fi
+        # echo ""
+        # echo "   ---------------------------------------------------------"
+        # echo "   Accepting invitation on client... "
+        # echo "     Client Profile:                       $clientaccprofile"
+        # echo "     Seclog Profile:                       $seclogprofile"
+        # echo "   ---------------------------------------------------------"
+        # echo ""
+        #  if [ "$batch" == "false" ] ; then
+        #     echo "   If this is correct press enter to continue"
+        #     read -p "  or CTRL-C to break"
+        # fi
 
-        sh ./SH/EC-Accept-from-Client-Account.sh $clientaccprofile $seclogprofile
+        # sh ./SH/EC-Accept-from-Client-Account.sh $clientaccprofile $seclogprofile
         
         
         #   -----------------------------
@@ -184,34 +184,34 @@ configure_client(){
         sh ./SH/EC-Validate-Client-Account.sh $clientaccprofile $seclogprofile
 
 
-        echo "--------------------------------------------------------------------------------------------------------------------"
-        echo "|                                         ATTENTION PLEASE:                                                        |"
-        echo "--------------------------------------------------------------------------------------------------------------------"
-        echo "|                                                                                                                  |"
-        if [ "$batch" == "true" ] ; then
-          echo "|                                                                                                                  |"
-          echo "|  Batch mode has been selected. You'll be required to execute an intermediary step to create instances from       |"
-          echo "|  two stacksets provisioned on the seclog account. When the batch installation of the LZ script finishes,         |"
-          echo "|  please execute the following command:                                                                           |"
-          echo "|                                                                                                                  |"
-          echo "|                                                                                                                  |"
-          echo "|               sh ./SH/EC-Install-Stacksets-from-SecLog-Account.sh 001111111111,002222222222,...  $seclogprofile  |"
-          echo "|                                                                                                                  |"
-          echo "|                                                                                                                  |"
-          echo "|  where the first parameter (comma separated) are the client account IDs where the LZ has been installed and      |"
-          echo "|  the second parameter is the SECLOG account profile.                                                             |"
-          echo "|                                                                                                                  |"
-          echo "|                                                                                                                  |"
-          echo "|                                                                                                                  |"
-        fi
-        echo "|  Please check the installation of the stackset instances from the AWS console for the SECLOG account. As soon    |"
-        echo "|  all the instances are deployed, please execute the final stage of the LZ installation with the following cmd    |"
-        echo "|                                                                                                                  |"
-        echo "|                                                                                                                  |"
-        echo "|               sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh $clientaccprofile                            |"
-        echo "|                                                                                                                  |"
-        echo "|                                                                                                                  |"
-        echo "--------------------------------------------------------------------------------------------------------------------"
+        # echo "--------------------------------------------------------------------------------------------------------------------"
+        # echo "|                                         ATTENTION PLEASE:                                                        |"
+        # echo "--------------------------------------------------------------------------------------------------------------------"
+        # echo "|                                                                                                                  |"
+        # if [ "$batch" == "true" ] ; then
+        #   echo "|                                                                                                                  |"
+        #   echo "|  Batch mode has been selected. You'll be required to execute an intermediary step to create instances from       |"
+        #   echo "|  two stacksets provisioned on the seclog account. When the batch installation of the LZ script finishes,         |"
+        #   echo "|  please execute the following command:                                                                           |"
+        #   echo "|                                                                                                                  |"
+        #   echo "|                                                                                                                  |"
+        #   echo "|               sh ./SH/EC-Install-Stacksets-from-SecLog-Account.sh 001111111111,002222222222,...  $seclogprofile  |"
+        #   echo "|                                                                                                                  |"
+        #   echo "|                                                                                                                  |"
+        #   echo "|  where the first parameter (comma separated) are the client account IDs where the LZ has been installed and      |"
+        #   echo "|  the second parameter is the SECLOG account profile.                                                             |"
+        #   echo "|                                                                                                                  |"
+        #   echo "|                                                                                                                  |"
+        #   echo "|                                                                                                                  |"
+        # fi
+        # echo "|  Please check the installation of the stackset instances from the AWS console for the SECLOG account. As soon    |"
+        # echo "|  all the instances are deployed, please execute the final stage of the LZ installation with the following cmd    |"
+        # echo "|                                                                                                                  |"
+        # echo "|                                                                                                                  |"
+        # echo "|               sh ./SH/EC-Enable-SecurityHub-Controls-All-Regions.sh $clientaccprofile                            |"
+        # echo "|                                                                                                                  |"
+        # echo "|                                                                                                                  |"
+        # echo "--------------------------------------------------------------------------------------------------------------------"
 }
 
 # ---------------------------------------------
