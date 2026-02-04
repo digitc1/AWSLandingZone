@@ -217,7 +217,7 @@ Resources:
       TrailName: 'lz-cloudtrail-logging'
       S3BucketName: !Sub "cloudtrail-logs-${SecLogMasterAccountId}-do-not-delete"
       KMSKeyId: !Ref CloudtrailKMSarn
-      IsLogging: true
+      IsLogging: false
       InsightSelectors: 
         - InsightType : 'ApiCallRateInsight'
         - InsightType : 'ApiErrorRateInsight'
@@ -605,7 +605,7 @@ Resources:
             "Config Rules Compliance Change"
           ]
         }
-      State: ENABLED
+      State: DISABLED
       Targets:
       - Id: "CrossAccountTargetId"
         Arn: !Sub "arn:aws:events:${AWS::Region}:${SecLogMasterAccountId}:event-bus/default"
