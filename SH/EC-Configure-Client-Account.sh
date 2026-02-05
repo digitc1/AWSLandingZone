@@ -207,33 +207,33 @@ configure_client() {
     #   Create ExecRole
     #   -------------------
 
-    echo ""
-    echo "- Creating StackSetExecutionRole"
-    echo "--------------------------------"
-    echo ""
+    # echo ""
+    # echo "- Creating StackSetExecutionRole"
+    # echo "--------------------------------"
+    # echo ""
 
-    # ExecutionRole
-    StackName=SECLZ-StackSetExecutionRole
-    aws cloudformation create-stack \
-    --stack-name $StackName \
-    --template-body file://$CFN_STACKSET_EXEC_ROLE_INIT \
-    --tags file://$CFN_TAGS_FILE \
-    --enable-termination-protection \
-    --capabilities CAPABILITY_NAMED_IAM \
-    --profile $CLIENT
+    # # ExecutionRole
+    # StackName=SECLZ-StackSetExecutionRole
+    # aws cloudformation create-stack \
+    # --stack-name $StackName \
+    # --template-body file://$CFN_STACKSET_EXEC_ROLE_INIT \
+    # --tags file://$CFN_TAGS_FILE \
+    # --enable-termination-protection \
+    # --capabilities CAPABILITY_NAMED_IAM \
+    # --profile $CLIENT
    
-    aws --profile $CLIENT cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
-    while [ `aws --profile $CLIENT cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
-    aws --profile $CLIENT cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    # aws --profile $CLIENT cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
+    # while [ `aws --profile $CLIENT cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName | awk '{print$2}'` == "CREATE_IN_PROGRESS" ]; do printf "\b${sp:i++%${#sp}:1}"; sleep 1; done
+    # aws --profile $CLIENT cloudformation describe-stacks --query 'Stacks[*][StackName, StackStatus]' --output text | grep $StackName
 
-    sleep 5
+    # sleep 5
 
-    aws cloudformation update-stack \
-    --stack-name $StackName \
-    --template-body file://$CFN_STACKSET_EXEC_ROLE \
-    --tags  file://$CFN_TAGS_FILE \
-    --capabilities CAPABILITY_NAMED_IAM \
-    --profile $CLIENT
+    # aws cloudformation update-stack \
+    # --stack-name $StackName \
+    # --template-body file://$CFN_STACKSET_EXEC_ROLE \
+    # --tags  file://$CFN_TAGS_FILE \
+    # --capabilities CAPABILITY_NAMED_IAM \
+    # --profile $CLIENT
 
     #   Create Profiles Roles (PowerUser, ReadOnly and AdminAcces)
     #   -------------------
